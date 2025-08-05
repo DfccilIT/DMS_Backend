@@ -331,7 +331,7 @@ namespace ModuleManagementBackend.BAL.Services
             try
             {
                 var records = await context.tblEmployeeOfTheMonths
-                    .Where(x => x.status == 0 && x.yr!=currentYear && x.mnth !=currentMonth)
+                    .Where(x => x.status == 9 && x.yr!=currentYear && x.mnth !=currentMonth)
                     .OrderByDescending(x => x.yr)
                     .ThenByDescending(x => x.mnth)
                     .Select(x => new
