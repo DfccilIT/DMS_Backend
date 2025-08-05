@@ -5,12 +5,14 @@ using ModuleManagementBackend.DAL.DapperServices;
 using ModuleManagementBackend.DAL.Models;
 using ModuleManagementBackend.Model.Common;
 using ModuleManagementBackend.Model.DTOs.EditEmployeeDTO;
+using ModuleManagementBackend.Model.DTOs.UserDTO;
+using System;
 using System.Data;
 using System.Net;
 
 namespace ModuleManagementBackend.BAL.Services
 {
-    public class ModuleManagementService:IModuleManagementService
+    public class ModuleManagementService : IModuleManagementService
     {
         private readonly SAPTOKENContext context;
         private readonly IDapperService dapper;
@@ -20,7 +22,6 @@ namespace ModuleManagementBackend.BAL.Services
             this.context=context;
             this.dapper=dapper;
         }
-
 
         public async Task<ResponseModel> ProcessEditEmployeeRequest(AprooveEmployeeReportDto request)
         {
@@ -65,7 +66,7 @@ namespace ModuleManagementBackend.BAL.Services
 
                 if (isApproved)
                 {
-                    var mstRecord =  await context.MstEmployeeMasters
+                    var mstRecord = await context.MstEmployeeMasters
                         .FirstOrDefaultAsync(e => e.EmployeeCode == employeeCode && e.Status == 0);
 
                     if (mstRecord == null)
@@ -75,7 +76,7 @@ namespace ModuleManagementBackend.BAL.Services
                         return response;
                     }
 
-                    // Manual field mapping from editRecord to mstRecord
+
                     mstRecord.EmployeeCode = editRecord.EmployeeCode;
                     mstRecord.UserName = editRecord.UserName;
                     mstRecord.Gender = editRecord.Gender;
@@ -98,12 +99,12 @@ namespace ModuleManagementBackend.BAL.Services
                     mstRecord.ReportingOfficer = editRecord.ReportingOfficer;
                     mstRecord.ExtnNo = editRecord.ExtensionNo;
 
-                   
+
                     editRecord.status = 0;
                     mstRecord.Status = 0;
 
                     context.SaveChanges();
-                  
+
 
                     response.Message = "Approved successfully.";
                     response.StatusCode = HttpStatusCode.OK;
@@ -112,7 +113,7 @@ namespace ModuleManagementBackend.BAL.Services
                 }
                 else
                 {
-                    
+
                     editRecord.remarks = remarks;
                     editRecord.status = 0;
                     context.SaveChanges();
@@ -249,7 +250,6 @@ namespace ModuleManagementBackend.BAL.Services
                 return responseModel;
             }
         }
-
         public async Task<ResponseModel> GetDfccilDirectory(string? EmpCode = null)
         {
             ResponseModel responseModel = new ResponseModel();
@@ -284,6 +284,185 @@ namespace ModuleManagementBackend.BAL.Services
                 return responseModel;
             }
         }
+        public async Task<ResponseModel> UpdateDfccilDirectory(UpdateEmployeeDto updateDto)
+        {
+            ResponseModel responseModel = new ResponseModel();
+
+            try
+            {
+                var employee = await context.MstEmployeeMasters
+                    .FirstOrDefaultAsync(x => x.EmployeeCode.Trim() == updateDto.EmployeeCode.Trim() && x.Status == 0);
+
+                if (employee == null)
+                {
+                    responseModel.Message = "Employee not found.";
+                    responseModel.StatusCode = System.Net.HttpStatusCode.NotFound;
+                    return responseModel;
+                }
+
+
+                if (!string.IsNullOrEmpty(updateDto.PersonalMobile)) employee.PersonalMobile = updateDto.PersonalMobile;
+                if (!string.IsNullOrEmpty(updateDto.ExtnNo)) employee.ExtnNo = updateDto.ExtnNo;
+
+                employee.Modify_Date= DateTime.Now;
+                employee.Modify_By = updateDto.UpdatedBy;
+                await context.SaveChangesAsync();
+
+                responseModel.Message = "DfccilDirectory updated successfully .";
+                responseModel.StatusCode = System.Net.HttpStatusCode.OK;
+                responseModel.Data = updateDto;
+
+                return responseModel;
+            }
+            catch (Exception ex)
+            {
+                responseModel.Message = $"An error occurred: {ex.Message}";
+                responseModel.StatusCode = System.Net.HttpStatusCode.InternalServerError;
+                return responseModel;
+            }
+        }
+        public async Task<ResponseModel> GetAllEmployeeOfTheMonth()
+        {
+            ResponseModel response = new ResponseModel();
+
+            try
+            {
+                var records = await context.tblEmployeeOfTheMonths
+                    .Where(x => x.status == 0)
+                    .OrderByDescending(x => x.yr)
+                    .ThenByDescending(x => x.mnth)
+                    .Select(x => new
+                    {
+                        EMPCode = x.fkEmployeeMasterAuto.EmployeeCode,
+                        EmployeeName = x.fkEmployeeMasterAuto.UserName,
+                        Designation = x.fkEmployeeMasterAuto.GenericDesignation,
+                        Department = x.fkEmployeeMasterAuto.DeptDFCCIL,
+                        EmpPhoto = x.fkEmployeeMasterAuto.Photo,
+                        Month = x.mnth,
+                        Year = x.yr,
+                        x.createDate,
+                        x.createBy
+                    })
+                    .ToListAsync();
+
+                response.Message = "Employee of the Month records fetched successfully.";
+                response.StatusCode = System.Net.HttpStatusCode.OK;
+                response.Data = records;
+                response.TotalRecords = records.Count;
+            }
+            catch (Exception ex)
+            {
+                response.Message = $"An error occurred: {ex.Message}";
+                response.StatusCode = System.Net.HttpStatusCode.InternalServerError;
+            }
+
+            return response;
+        }
+        public async Task<ResponseModel> GetCurrentEmployeeOfTheMonth()
+        {
+            ResponseModel response = new ResponseModel();
+            var currentDate = DateTime.Now;
+            var currentMonth = currentDate.Month;
+            var currentYear = currentDate.Year;
+            try
+            {
+                var records = await context.tblEmployeeOfTheMonths
+                    .Where(x => x.status == 0 && x.mnth==currentMonth && x.yr==currentYear)
+                    .Select(x => new
+                    {
+                        EMPCode = x.fkEmployeeMasterAuto.EmployeeCode,
+                        EmployeeName = x.fkEmployeeMasterAuto.UserName,
+                        Designation = x.fkEmployeeMasterAuto.GenericDesignation,
+                        Department = x.fkEmployeeMasterAuto.DeptDFCCIL,
+                        EmpPhoto = x.fkEmployeeMasterAuto.Photo,
+                        Month = x.mnth,
+                        Year = x.yr,
+                        x.createDate,
+                        x.createBy
+                    })
+                    .FirstOrDefaultAsync();
+
+                if (records == null)
+                {
+                    response.Message = "No Employee of the Month record found for the current month.";
+                    response.StatusCode = System.Net.HttpStatusCode.NotFound;
+                    return response;
+                }
+
+                response.Message = "Employee of the Month record fetched successfully.";
+                response.StatusCode = System.Net.HttpStatusCode.OK;
+                response.Data = records;
+                response.TotalRecords = 1;
+            }
+            catch (Exception ex)
+            {
+                response.Message = $"An error occurred: {ex.Message}";
+                response.StatusCode = System.Net.HttpStatusCode.InternalServerError;
+            }
+
+            return response;
+        }
+        public async Task<ResponseModel> AddEmployeeOfTheMonth(EmployeeOfTheMonthDto dto)
+        {
+            ResponseModel response = new ResponseModel();
+            var employee = await context.MstEmployeeMasters
+                .FirstOrDefaultAsync(e => e.EmployeeCode == dto.EmpCode && e.Status == 0);
+            if (employee == null)
+            {
+                response.Message = "No Employee Found";
+                response.StatusCode = System.Net.HttpStatusCode.NotFound;
+                return response;
+
+            }
+
+            try
+            {
+                string uploadedFileName = null;
+
+                if (dto.photo != null && dto.photo.Length > 0)
+                {
+                    string uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot","EmployeeOftheMonth");
+                    if (!Directory.Exists(uploadsFolder))
+                        Directory.CreateDirectory(uploadsFolder);
+
+                   
+                    uploadedFileName = $"{Guid.NewGuid()}{Path.GetExtension(dto.photo.FileName)}";
+                    string filePath = Path.Combine(uploadsFolder, uploadedFileName);
+
+                    using (var stream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await dto.photo.CopyToAsync(stream);
+                    }
+                }
+
+                var newEntry = new tblEmployeeOfTheMonth
+                {
+                    fkEmployeeMasterAutoId = employee.EmployeeMasterAutoId,
+                    mnth = dto.Month,
+                    yr = dto.Year,
+                    createBy = dto.CreatedBy,
+                    createDate = DateTime.Now,
+                    photo = uploadedFileName,
+                    status = 0 
+                };
+
+                context.tblEmployeeOfTheMonths.Add(newEntry);
+                await context.SaveChangesAsync();
+
+                response.Message = "Employee of the Month added successfully.";
+                response.StatusCode = System.Net.HttpStatusCode.OK;
+                response.Data = newEntry;
+
+                return response;
+            }
+            catch (Exception ex)
+            {
+                response.Message = $"An error occurred: {ex.Message}";
+                response.StatusCode = System.Net.HttpStatusCode.InternalServerError;
+                return response;
+            }
+        }
+
         private async Task ApproveKraReportingOfficer(long employeeAutoId, string reportingOfficerEmpCode)
         {
             var parameters = new DynamicParameters();

@@ -15,5 +15,7 @@ namespace ModuleManagementBackend.BAL.IServices
         Task<ResponseModel> GetAllReportingOfficerRequest(string? employeeCode = null, string? location = null, string? userName = null);
         Task<ResponseModel> ProcessEditReportingOfficerRequest(AprooveEmployeeReportDto request);
         Task<ResponseModel> GetDfccilDirectory(string? EmpCode = null);
+        Task<ResponseModel> UpdateDfccilDirectory(UpdateEmployeeDto updateDto);
+
     }
 }
