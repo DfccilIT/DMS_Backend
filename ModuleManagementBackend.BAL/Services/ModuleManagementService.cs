@@ -1,12 +1,11 @@
 ﻿using Dapper;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using ModuleManagementBackend.BAL.IServices;
 using ModuleManagementBackend.DAL.DapperServices;
 using ModuleManagementBackend.DAL.Models;
 using ModuleManagementBackend.Model.Common;
 using ModuleManagementBackend.Model.DTOs.EditEmployeeDTO;
-using ModuleManagementBackend.Model.DTOs.UserDTO;
-using System;
 using System.Data;
 using System.Net;
 
@@ -16,11 +15,13 @@ namespace ModuleManagementBackend.BAL.Services
     {
         private readonly SAPTOKENContext context;
         private readonly IDapperService dapper;
+        private readonly IHttpContextAccessor httpContext;
 
-        public ModuleManagementService(SAPTOKENContext context, IDapperService dapper)
+        public ModuleManagementService(SAPTOKENContext context, IDapperService dapper, IHttpContextAccessor httpContext)
         {
             this.context=context;
             this.dapper=dapper;
+            this.httpContext=httpContext;
         }
 
         public async Task<ResponseModel> ProcessEditEmployeeRequest(AprooveEmployeeReportDto request)
@@ -339,7 +340,9 @@ namespace ModuleManagementBackend.BAL.Services
                         EmployeeName = x.fkEmployeeMasterAuto.UserName,
                         Designation = x.fkEmployeeMasterAuto.GenericDesignation,
                         Department = x.fkEmployeeMasterAuto.DeptDFCCIL,
-                        EmpPhoto = x.fkEmployeeMasterAuto.Photo,
+                        PhotoUrl = x.photo != null
+            ? $"{httpContext.HttpContext.Request.Scheme}://{httpContext.HttpContext.Request.Host}/EmployeeOfTheMonth/{x.photo}"
+            : null,
                         Month = x.mnth,
                         Year = x.yr,
                         x.createDate,
@@ -376,7 +379,9 @@ namespace ModuleManagementBackend.BAL.Services
                         EmployeeName = x.fkEmployeeMasterAuto.UserName,
                         Designation = x.fkEmployeeMasterAuto.GenericDesignation,
                         Department = x.fkEmployeeMasterAuto.DeptDFCCIL,
-                        EmpPhoto = x.fkEmployeeMasterAuto.Photo,
+                        PhotoUrl = x.photo != null
+            ? $"{httpContext.HttpContext.Request.Scheme}://{httpContext.HttpContext.Request.Host}/EmployeeOfTheMonth/{x.photo}"
+            : null,
                         Month = x.mnth,
                         Year = x.yr,
                         x.createDate,
@@ -423,11 +428,11 @@ namespace ModuleManagementBackend.BAL.Services
 
                 if (dto.photo != null && dto.photo.Length > 0)
                 {
-                    string uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot","EmployeeOftheMonth");
+                    string uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "EmployeeOftheMonth");
                     if (!Directory.Exists(uploadsFolder))
                         Directory.CreateDirectory(uploadsFolder);
 
-                   
+
                     uploadedFileName = $"{Guid.NewGuid()}{Path.GetExtension(dto.photo.FileName)}";
                     string filePath = Path.Combine(uploadsFolder, uploadedFileName);
 
@@ -445,7 +450,7 @@ namespace ModuleManagementBackend.BAL.Services
                     createBy = dto.CreatedBy,
                     createDate = DateTime.Now,
                     photo = uploadedFileName,
-                    status = 0 
+                    status = 0
                 };
 
                 context.tblEmployeeOfTheMonths.Add(newEntry);

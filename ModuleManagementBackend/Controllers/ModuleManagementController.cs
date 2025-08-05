@@ -16,7 +16,7 @@ namespace ModuleManagementBackend.API.Controllers
         private readonly IModuleManagementService managementService;
         private readonly IHttpContextAccessor httpContext;
 
-        public ModuleManagementController(IModuleManagementService managementService,IHttpContextAccessor httpContext)
+        public ModuleManagementController(IModuleManagementService managementService, IHttpContextAccessor httpContext)
         {
             this.managementService=managementService;
             this.httpContext=httpContext;
@@ -49,9 +49,48 @@ namespace ModuleManagementBackend.API.Controllers
         [HttpPut("ModuleMangement/UpdateDfccilDiractory")]
         public async Task<ResponseModel> UpdateDfccilDiractory([FromBody] UpdateEmployeeDto Employee)
         {
-           // httpContext.HttpContext.Items.TryGetValue("UserName", out var userName);
+            // httpContext.HttpContext.Items.TryGetValue("UserName", out var userName);
             return await managementService.UpdateDfccilDirectory(Employee);
         }
 
+        [HttpGet("GetAllEmployeeOfTheMonth")]
+        public async Task<IActionResult> GetAllEmployeeOfTheMonth()
+        {
+            var response = await managementService.GetAllEmployeeOfTheMonth();
+
+            if (response.StatusCode == System.Net.HttpStatusCode.OK)
+                return Ok(response);
+
+            return StatusCode((int)response.StatusCode, response);
+        }
+
+        [HttpGet("GetCurrentEmployeeOfTheMonth")]
+        public async Task<IActionResult> GetCurrentEmployeeOfTheMonth()
+        {
+            var response = await managementService.GetCurrentEmployeeOfTheMonth();
+
+            if (response.StatusCode == System.Net.HttpStatusCode.OK)
+                return Ok(response);
+
+            if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                return NotFound(response);
+
+            return StatusCode((int)response.StatusCode, response);
+        }
+
+        [HttpPost("AddEmployeeOfTheMonth")]
+        public async Task<IActionResult> AddEmployeeOfTheMonth([FromForm] EmployeeOfTheMonthDto dto)
+        {
+            var response = await managementService.AddEmployeeOfTheMonth(dto);
+
+            if (response.StatusCode == System.Net.HttpStatusCode.OK)
+                return Ok(response);
+
+            if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                return NotFound(response);
+
+            return StatusCode((int)response.StatusCode, response);
+        }
     }
+
 }
