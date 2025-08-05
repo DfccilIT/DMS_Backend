@@ -1,4 +1,5 @@
-﻿using ModuleManagementBackend.Model.Common;
+﻿using ModuleManagementBackend.DAL.Models;
+using ModuleManagementBackend.Model.Common;
 using ModuleManagementBackend.Model.DTOs.EditEmployeeDTO;
 using System;
 using System.Collections.Generic;
@@ -16,6 +17,10 @@ namespace ModuleManagementBackend.BAL.IServices
         Task<ResponseModel> ProcessEditReportingOfficerRequest(AprooveEmployeeReportDto request);
         Task<ResponseModel> GetDfccilDirectory(string? EmpCode = null);
         Task<ResponseModel> UpdateDfccilDirectory(UpdateEmployeeDto updateDto);
+       Task<ResponseModel> GetAllEmployeeOfTheMonth();
+       Task<ResponseModel> GetCurrentEmployeeOfTheMonth();
+       Task<ResponseModel> AddEmployeeOfTheMonth(EmployeeOfTheMonthDto dto);
+
 
     }
 }

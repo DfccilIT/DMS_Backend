@@ -324,11 +324,13 @@ namespace ModuleManagementBackend.BAL.Services
         public async Task<ResponseModel> GetAllEmployeeOfTheMonth()
         {
             ResponseModel response = new ResponseModel();
-
+            var currentDate = DateTime.Now;
+            var currentMonth = currentDate.Month;
+            var currentYear = currentDate.Year;
             try
             {
                 var records = await context.tblEmployeeOfTheMonths
-                    .Where(x => x.status == 0)
+                    .Where(x => x.status == 0 && x.yr!=currentYear && x.mnth !=currentMonth)
                     .OrderByDescending(x => x.yr)
                     .ThenByDescending(x => x.mnth)
                     .Select(x => new
