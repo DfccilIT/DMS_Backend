@@ -8,6 +8,7 @@ using ModuleManagementBackend.Model.Common;
 using ModuleManagementBackend.Model.DTOs.EditEmployeeDTO;
 using System.Data;
 using System.Net;
+using System.Runtime.InteropServices;
 
 namespace ModuleManagementBackend.BAL.Services
 {
@@ -23,7 +24,40 @@ namespace ModuleManagementBackend.BAL.Services
             this.dapper=dapper;
             this.httpContext=httpContext;
         }
+        
+        public async Task<ResponseModel> GetAllEditEmployeeRequests(string? employeeCode = null, string? location = null, string? userName = null)
+        {
+           
 
+                ResponseModel responseModel = new ResponseModel();
+                var query = context.EditEmployeeDetails.Where(e => e.status == 99);
+
+               
+                if (!string.IsNullOrWhiteSpace(employeeCode))
+                {
+                    query = query.Where(e => e.EmployeeCode == employeeCode);
+                }
+
+                if (!string.IsNullOrWhiteSpace(location))
+                {
+                    query = query.Where(e => e.Location != null && e.Location.Contains(location));
+                }
+
+                if (!string.IsNullOrWhiteSpace(userName))
+                {
+                    query = query.Where(e => e.UserName != null && e.UserName.Contains(userName));
+                }
+
+                var result = await query.ToListAsync();
+
+
+                responseModel.Message="Data fetched successfully";
+                responseModel.StatusCode=System.Net.HttpStatusCode.OK;
+                responseModel.Data = result;
+                responseModel.TotalRecords= result.Count;
+               return responseModel;
+           
+        }
         public async Task<ResponseModel> ProcessEditEmployeeRequest(AprooveEmployeeReportDto request)
         {
             var response = new ResponseModel();
@@ -325,13 +359,11 @@ namespace ModuleManagementBackend.BAL.Services
         public async Task<ResponseModel> GetAllEmployeeOfTheMonth()
         {
             ResponseModel response = new ResponseModel();
-            var currentDate = DateTime.Now;
-            var currentMonth = currentDate.Month;
-            var currentYear = currentDate.Year;
+           
             try
             {
                 var records = await context.tblEmployeeOfTheMonths
-                    .Where(x => x.status == 9 && x.yr!=currentYear && x.mnth !=currentMonth)
+                    //.Where(x => x.status == 9)
                     .OrderByDescending(x => x.yr)
                     .ThenByDescending(x => x.mnth)
                     .Select(x => new
@@ -342,12 +374,12 @@ namespace ModuleManagementBackend.BAL.Services
                         Department = x.fkEmployeeMasterAuto.DeptDFCCIL,
                         PhotoUrl = x.photo != null
             ? $"{httpContext.HttpContext.Request.Scheme}://{httpContext.HttpContext.Request.Host}/EmployeeOfTheMonth/{x.photo}"
-            : null,
+            : $"{httpContext.HttpContext.Request.Scheme}://{httpContext.HttpContext.Request.Host}/Images/Employees/{x.fkEmployeeMasterAuto.Photo}",
                         Month = x.mnth,
                         Year = x.yr,
                         x.createDate,
                         x.createBy
-                    })
+                    }).Take(5)
                     .ToListAsync();
 
                 response.Message = "Employee of the Month records fetched successfully.";
@@ -381,7 +413,7 @@ namespace ModuleManagementBackend.BAL.Services
                         Department = x.fkEmployeeMasterAuto.DeptDFCCIL,
                         PhotoUrl = x.photo != null
             ? $"{httpContext.HttpContext.Request.Scheme}://{httpContext.HttpContext.Request.Host}/EmployeeOfTheMonth/{x.photo}"
-            : null,
+            : $"{httpContext.HttpContext.Request.Scheme}://{httpContext.HttpContext.Request.Host}/Images/Employees/{x.fkEmployeeMasterAuto.Photo}",
                         Month = x.mnth,
                         Year = x.yr,
                         x.createDate,
@@ -411,63 +443,104 @@ namespace ModuleManagementBackend.BAL.Services
         }
         public async Task<ResponseModel> AddEmployeeOfTheMonth(EmployeeOfTheMonthDto dto)
         {
-            ResponseModel response = new ResponseModel();
-            var employee = await context.MstEmployeeMasters
-                .FirstOrDefaultAsync(e => e.EmployeeCode == dto.EmpCode && e.Status == 0);
-            if (employee == null)
-            {
-                response.Message = "No Employee Found";
-                response.StatusCode = System.Net.HttpStatusCode.NotFound;
-                return response;
-
-            }
+            var response = new ResponseModel();
 
             try
             {
-                string uploadedFileName = null;
 
-                if (dto.photo != null && dto.photo.Length > 0)
+                if (dto.Month < 1 || dto.Month > 12)
                 {
-                    string uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "EmployeeOftheMonth");
-                    if (!Directory.Exists(uploadsFolder))
-                        Directory.CreateDirectory(uploadsFolder);
+                    response.Message = "Invalid month. Please provide a month between 1 and 12.";
+                    response.StatusCode = HttpStatusCode.BadRequest;
+                    return response;
+                }
+                var employee = await context.MstEmployeeMasters
+                    .FirstOrDefaultAsync(e => e.EmployeeCode == dto.EmpCode && e.Status == 0);
 
-
-                    uploadedFileName = $"{Guid.NewGuid()}{Path.GetExtension(dto.photo.FileName)}";
-                    string filePath = Path.Combine(uploadsFolder, uploadedFileName);
-
-                    using (var stream = new FileStream(filePath, FileMode.Create))
+                if (employee == null)
+                {
+                    return new ResponseModel
                     {
-                        await dto.photo.CopyToAsync(stream);
-                    }
+                        Message = "No Employee Found",
+                        StatusCode = HttpStatusCode.NotFound
+                    };
                 }
 
-                var newEntry = new tblEmployeeOfTheMonth
+                
+                var existingRecord = await context.tblEmployeeOfTheMonths
+                    .FirstOrDefaultAsync(x => x.fkEmployeeMasterAutoId == employee.EmployeeMasterAutoId &&
+                                              x.mnth == dto.Month && x.yr == dto.Year && x.status==0);
+
+               
+                if (existingRecord != null)
                 {
-                    fkEmployeeMasterAutoId = employee.EmployeeMasterAutoId,
-                    mnth = dto.Month,
-                    yr = dto.Year,
-                    createBy = dto.CreatedBy,
-                    createDate = DateTime.Now,
-                    photo = uploadedFileName,
-                    status = 0
-                };
+                    existingRecord.fkEmployeeMasterAutoId = employee.EmployeeMasterAutoId;
+                    if(dto.photo != null)
+                    {
+                        existingRecord.photo = await UploadPhotoIfAvailable(dto.photo);
+                    }
+                    context.SaveChanges();
+                    response.Message = "Employee of the Month record updated successfully.";
+                    response.StatusCode = HttpStatusCode.OK;
+                    response.Data = existingRecord;
+                    return response;
+                }
+                else
+                {
+                    
 
-                context.tblEmployeeOfTheMonths.Add(newEntry);
-                await context.SaveChangesAsync();
+                    string uploadedFileName = await UploadPhotoIfAvailable(dto.photo);
 
-                response.Message = "Employee of the Month added successfully.";
-                response.StatusCode = System.Net.HttpStatusCode.OK;
-                response.Data = newEntry;
 
-                return response;
+                    var newEntry = new tblEmployeeOfTheMonth
+                    {
+                        fkEmployeeMasterAutoId = employee.EmployeeMasterAutoId,
+                        mnth = dto.Month,
+                        yr = dto.Year,
+                        createBy = dto.CreatedBy,
+                        createDate = DateTime.Now,
+                        photo = uploadedFileName,
+                        status = 0
+                    };
+
+                    context.tblEmployeeOfTheMonths.Add(newEntry);
+                    await context.SaveChangesAsync();
+
+                    response.Message = "Employee of the Month added successfully.";
+                    response.StatusCode = HttpStatusCode.OK;
+                    response.Data = newEntry;
+                }
+
+                    
             }
             catch (Exception ex)
             {
                 response.Message = $"An error occurred: {ex.Message}";
-                response.StatusCode = System.Net.HttpStatusCode.InternalServerError;
-                return response;
+                response.StatusCode = HttpStatusCode.InternalServerError;
             }
+
+            return response;
+        }
+
+        private async Task<string> UploadPhotoIfAvailable(IFormFile photo)
+        {
+            if (photo == null || photo.Length == 0)
+                return null;
+
+            string uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "EmployeeOftheMonth");
+
+            if (!Directory.Exists(uploadsFolder))
+                Directory.CreateDirectory(uploadsFolder);
+
+            string fileName = $"{Guid.NewGuid()}{Path.GetExtension(photo.FileName)}";
+            string filePath = Path.Combine(uploadsFolder, fileName);
+
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await photo.CopyToAsync(stream);
+            }
+
+            return fileName;
         }
 
         private async Task ApproveKraReportingOfficer(long employeeAutoId, string reportingOfficerEmpCode)

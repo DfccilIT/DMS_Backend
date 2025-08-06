@@ -22,6 +22,12 @@ namespace ModuleManagementBackend.API.Controllers
             this.httpContext=httpContext;
         }
 
+        [HttpGet("ModuleMangement/GetAllEditEmployeeRequest")]
+        public async Task<ResponseModel> GetAllEditEmployeeRequest(string? employeeCode = null, string? location = null, string? userName = null)
+        {
+            return await managementService.GetAllEditEmployeeRequests(employeeCode, location, userName);
+        }
+
         [HttpPut("ModuleMangement/ProceedEditEmployeeRequest")]
         public async Task<ResponseModel> ProceedEditEmployeeRequest([FromBody] AprooveEmployeeReportDto aprooveEmployee)
         {
@@ -54,42 +60,27 @@ namespace ModuleManagementBackend.API.Controllers
         }
 
         [HttpGet("GetAllEmployeeOfTheMonth")]
-        public async Task<IActionResult> GetAllEmployeeOfTheMonth()
+        public async Task<ResponseModel> GetAllEmployeeOfTheMonth()
         {
             var response = await managementService.GetAllEmployeeOfTheMonth();
 
-            if (response.StatusCode == System.Net.HttpStatusCode.OK)
-                return Ok(response);
-
-            return StatusCode((int)response.StatusCode, response);
+            return response;
         }
 
         [HttpGet("GetCurrentEmployeeOfTheMonth")]
-        public async Task<IActionResult> GetCurrentEmployeeOfTheMonth()
+        public async Task<ResponseModel> GetCurrentEmployeeOfTheMonth()
         {
             var response = await managementService.GetCurrentEmployeeOfTheMonth();
 
-            if (response.StatusCode == System.Net.HttpStatusCode.OK)
-                return Ok(response);
-
-            if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
-                return NotFound(response);
-
-            return StatusCode((int)response.StatusCode, response);
+            return response;
         }
 
         [HttpPost("AddEmployeeOfTheMonth")]
-        public async Task<IActionResult> AddEmployeeOfTheMonth([FromForm] EmployeeOfTheMonthDto dto)
+        public async Task<ResponseModel> AddEmployeeOfTheMonth([FromForm] EmployeeOfTheMonthDto dto)
         {
             var response = await managementService.AddEmployeeOfTheMonth(dto);
 
-            if (response.StatusCode == System.Net.HttpStatusCode.OK)
-                return Ok(response);
-
-            if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
-                return NotFound(response);
-
-            return StatusCode((int)response.StatusCode, response);
+            return  response;
         }
     }
 

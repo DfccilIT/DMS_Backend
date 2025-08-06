@@ -1,25 +1,19 @@
-﻿using ModuleManagementBackend.DAL.Models;
-using ModuleManagementBackend.Model.Common;
+﻿using ModuleManagementBackend.Model.Common;
 using ModuleManagementBackend.Model.DTOs.EditEmployeeDTO;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ModuleManagementBackend.BAL.IServices
 {
     public interface IModuleManagementService
     {
-
+        Task<ResponseModel> GetAllEditEmployeeRequests(string? employeeCode = null, string? location = null, string? userName = null);
         Task<ResponseModel> ProcessEditEmployeeRequest(AprooveEmployeeReportDto request);
         Task<ResponseModel> GetAllReportingOfficerRequest(string? employeeCode = null, string? location = null, string? userName = null);
         Task<ResponseModel> ProcessEditReportingOfficerRequest(AprooveEmployeeReportDto request);
         Task<ResponseModel> GetDfccilDirectory(string? EmpCode = null);
         Task<ResponseModel> UpdateDfccilDirectory(UpdateEmployeeDto updateDto);
-       Task<ResponseModel> GetAllEmployeeOfTheMonth();
-       Task<ResponseModel> GetCurrentEmployeeOfTheMonth();
-       Task<ResponseModel> AddEmployeeOfTheMonth(EmployeeOfTheMonthDto dto);
+        Task<ResponseModel> GetAllEmployeeOfTheMonth();
+        Task<ResponseModel> GetCurrentEmployeeOfTheMonth();
+        Task<ResponseModel> AddEmployeeOfTheMonth(EmployeeOfTheMonthDto dto);
 
 
     }
