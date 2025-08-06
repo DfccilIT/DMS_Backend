@@ -8,9 +8,11 @@ using ModuleManagementBackend.Model.DTOs.EditEmployeeDTO;
 namespace ModuleManagementBackend.API.Controllers
 {
 
-    [AllowAnonymous]
+  
     [Route("api/[controller]")]
     [ApiController]
+
+    [AllowAnonymous]
     public class ModuleManagementController : ControllerBase
     {
         private readonly IModuleManagementService managementService;

@@ -468,8 +468,7 @@ namespace ModuleManagementBackend.BAL.Services
 
                 
                 var existingRecord = await context.tblEmployeeOfTheMonths
-                    .FirstOrDefaultAsync(x => x.fkEmployeeMasterAutoId == employee.EmployeeMasterAutoId &&
-                                              x.mnth == dto.Month && x.yr == dto.Year && x.status==0);
+                    .FirstOrDefaultAsync(x => x.mnth == dto.Month && x.yr == dto.Year && x.status==0);
 
                
                 if (existingRecord != null)
@@ -482,7 +481,7 @@ namespace ModuleManagementBackend.BAL.Services
                     context.SaveChanges();
                     response.Message = "Employee of the Month record updated successfully.";
                     response.StatusCode = HttpStatusCode.OK;
-                    response.Data = existingRecord;
+                    response.Data = true;
                     return response;
                 }
                 else
