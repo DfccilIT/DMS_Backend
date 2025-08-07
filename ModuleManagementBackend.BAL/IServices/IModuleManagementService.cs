@@ -16,5 +16,21 @@ namespace ModuleManagementBackend.BAL.IServices
         Task<ResponseModel> AddEmployeeOfTheMonth(EmployeeOfTheMonthDto dto);
 
 
+        #region NOTICE BOARD
+
+        Task<ResponseModel> GetAllNotices();
+        Task<ResponseModel> AddNotice(NoticeBoardDto dto);
+        Task<ResponseModel> UpdateNotice(int id, NoticeBoardDto dto);
+        Task<ResponseModel> DeleteNotice(int id);
+
+        #endregion
+
+        #region DEPENDENT
+
+        Task<ResponseModel> AddDependentsAsync(List<AddDependentDto> dependents, string loginUserEmpCode);
+        Task<ResponseModel> ProceedDependentsAsync(AprooveEmployeeReportDto request, string loginUserEmpCode);
+        Task<ResponseModel> GetAllDependentsRequestByEmpCodeAsync();
+        Task<ResponseModel> GetDependentsByEmpCodeAsync(string empCode);
+        #endregion
     }
 }

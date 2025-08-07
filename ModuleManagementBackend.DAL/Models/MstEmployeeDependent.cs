@@ -14,6 +14,11 @@ namespace ModuleManagementBackend.DAL.Models
         public int Age { get; set; }
         public int? status { get; set; }
         public string Gender { get; set; }
+        public string remarks { get; set; }
+        public DateTime? createdDate { get; set; }
+        public string createdBy { get; set; }
+        public DateTime? updatedDate { get; set; }
+        public string updatedBy { get; set; }
 
         public virtual MstEmployeeMaster fkEmployeeMasterAuto { get; set; }
     }

@@ -113,7 +113,7 @@ namespace ModuleManagementBackend.API.ActionFilter
 
                 // Check if token has SSO issuer
                 var issuer = jwtToken.Claims.FirstOrDefault(x => x.Type == "iss")?.Value;
-                var expectedIssuer = "https://localhost:7167"; // Your SSO URL
+                var expectedIssuer = "https://app2.dfccil.com"; // Your SSO URL
 
                 return issuer == expectedIssuer;
             }

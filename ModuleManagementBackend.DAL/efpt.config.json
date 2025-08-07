@@ -44,6 +44,10 @@
          "ObjectType": 0
       },
       {
+         "Name": "[dbo].[tblNoticeBoard]",
+         "ObjectType": 0
+      },
+      {
          "Name": "[dbo].[todoList]",
          "ObjectType": 0
       },

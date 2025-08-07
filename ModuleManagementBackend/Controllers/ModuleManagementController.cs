@@ -84,6 +84,41 @@ namespace ModuleManagementBackend.API.Controllers
 
             return  response;
         }
+
+
+        #region NOTICE BOARD
+
+        [HttpGet("GetAllNoticeBoard")]
+        public async Task<IActionResult> GetAllNoticeBoard()
+        {
+            var response = await managementService.GetAllNotices();
+            return StatusCode((int)response.StatusCode, response);
+        }
+
+
+
+        [HttpPost("CreateNoticeBoard")]
+        public async Task<IActionResult> CreateNoticeBoard([FromBody] NoticeBoardDto dto)
+        {
+            var response = await managementService.AddNotice(dto);
+            return StatusCode((int)response.StatusCode, response);
+        }
+
+        [HttpPut("UpdateNoticeBoard/{id}")]
+        public async Task<IActionResult> UpdateNoticeBoard(int id, [FromBody] NoticeBoardDto dto)
+        {
+            var response = await managementService.UpdateNotice(id, dto);
+            return StatusCode((int)response.StatusCode, response);
+        }
+
+        [HttpDelete("DeleteNoticeBoard/{id}")]
+        public async Task<IActionResult> DeleteNoticeBoard(int id)
+        {
+            var response = await managementService.DeleteNotice(id);
+            return StatusCode((int)response.StatusCode, response);
+        }
+
+        #endregion
     }
 
 }

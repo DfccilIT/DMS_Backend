@@ -32,4 +32,25 @@ namespace ModuleManagementBackend.Model.DTOs.EditEmployeeDTO
         public string? CreatedBy { get; set; }
         public IFormFile? photo { get; set; } 
     }
+
+    public class NoticeBoardDto
+    {
+        public string Msg { get; set; }
+        public string Doc { get; set; }
+        public int? Status { get; set; }
+        public string CreateBy { get; set; }
+        public string Subject { get; set; }
+        public string Description { get; set; }
+    }
+
+    public class AddDependentDto
+    {
+        public int pkDependentId { get; set; }       
+        public string EmployeeCode { get; set; }     
+        public string Relation { get; set; }
+        public string DName { get; set; }
+        public string Gender { get; set; }
+        public int Age { get; set; }
+        public int? status { get; set; }
+    }
 }

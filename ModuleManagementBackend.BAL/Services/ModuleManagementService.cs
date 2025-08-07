@@ -24,39 +24,96 @@ namespace ModuleManagementBackend.BAL.Services
             this.dapper=dapper;
             this.httpContext=httpContext;
         }
-        
+
         public async Task<ResponseModel> GetAllEditEmployeeRequests(string? employeeCode = null, string? location = null, string? userName = null)
         {
-           
 
-                ResponseModel responseModel = new ResponseModel();
-                var query = context.EditEmployeeDetails.Where(e => e.status == 99);
 
-               
-                if (!string.IsNullOrWhiteSpace(employeeCode))
+            ResponseModel responseModel = new ResponseModel();
+            var query = context.EditEmployeeDetails
+             .Join(context.MstEmployeeMasters,
+                   ee => ee.EmployeeCode,
+                   mm => mm.EmployeeCode,
+                   (ee, mm) => new { ee, mm })
+
+
+                .Where(e => e.ee.status == 99 && e.ee.TableName=="P");
+
+
+            if (!string.IsNullOrWhiteSpace(employeeCode))
+            {
+                query = query.Where(e => e.ee.EmployeeCode == employeeCode);
+            }
+
+            if (!string.IsNullOrWhiteSpace(location))
+            {
+                query = query.Where(e => e.ee.Location != null && e.ee.Location.Contains(location));
+            }
+
+            if (!string.IsNullOrWhiteSpace(userName))
+            {
+                query = query.Where(e => e.ee.UserName != null && e.ee.UserName.Contains(userName));
+            }
+
+            var result = await query.Select(x => new
+            {
+                RequestId = x.ee.EdtEmpDetID,
+                OldRecored = new
                 {
-                    query = query.Where(e => e.EmployeeCode == employeeCode);
-                }
+                    x.mm.EmployeeCode,
+                    x.mm.UserName,
+                    x.mm.Gender,
+                    Designation = x.mm.Post,
+                    x.mm.PositionGrade,
+                    Department = x.mm.DeptDFCCIL,
+                    SubDepartment = x.mm.SubDeptDF,
+                    x.mm.DOB,
+                    DateOfAnniversary = x.mm.AnniversaryDate,
+                    DateOfJoining = x.mm.DOJDFCCIL,
+                    x.mm.Location,
+                    SubArea = x.mm.PersonnelSubArea,
+                    x.mm.Mobile,
+                    x.mm.emailAddress,
+                    x.mm.PersonalEmailAddress,
+                    x.mm.TOemploy,
+                    x.mm.AboutUs,
+                    x.mm.Photo,
+                    x.mm.ReportingOfficer,
+                    ExtensionNo = x.mm.ExtnNo,
 
-                if (!string.IsNullOrWhiteSpace(location))
+                },
+                NewRecords = new
                 {
-                    query = query.Where(e => e.Location != null && e.Location.Contains(location));
-                }
+                    x.ee.EmployeeCode,
+                    x.ee.UserName,
+                    x.ee.Gender,
+                    x.ee.Designation,
+                    x.ee.PositionGrade,
+                    x.ee.Department,
+                    x.ee.SubDepartment,
+                    x.ee.DOB,
+                    x.ee.DateOfAnniversary,
+                    x.ee.DateOfJoining,
+                    x.ee.Location,
+                    x.ee.SubArea,
+                    x.ee.Mobile,
+                    x.ee.Email,
+                    x.ee.PersonalEmailId,
+                    x.ee.Toemploy,
+                    x.ee.AboutUs,
+                    x.ee.Photo,
+                    x.ee.ReportingOfficer,
+                    x.ee.ExtensionNo,
+                },
+            }).ToListAsync();
 
-                if (!string.IsNullOrWhiteSpace(userName))
-                {
-                    query = query.Where(e => e.UserName != null && e.UserName.Contains(userName));
-                }
 
-                var result = await query.ToListAsync();
+            responseModel.Message="Data fetched successfully";
+            responseModel.StatusCode=System.Net.HttpStatusCode.OK;
+            responseModel.Data = result;
+            responseModel.TotalRecords= result.Count;
+            return responseModel;
 
-
-                responseModel.Message="Data fetched successfully";
-                responseModel.StatusCode=System.Net.HttpStatusCode.OK;
-                responseModel.Data = result;
-                responseModel.TotalRecords= result.Count;
-               return responseModel;
-           
         }
         public async Task<ResponseModel> ProcessEditEmployeeRequest(AprooveEmployeeReportDto request)
         {
@@ -359,11 +416,11 @@ namespace ModuleManagementBackend.BAL.Services
         public async Task<ResponseModel> GetAllEmployeeOfTheMonth()
         {
             ResponseModel response = new ResponseModel();
-           
+
             try
             {
                 var records = await context.tblEmployeeOfTheMonths
-                    //.Where(x => x.status == 9)
+                    .Where(x => x.status == 0)
                     .OrderByDescending(x => x.yr)
                     .ThenByDescending(x => x.mnth)
                     .Select(x => new
@@ -466,15 +523,15 @@ namespace ModuleManagementBackend.BAL.Services
                     };
                 }
 
-                
+
                 var existingRecord = await context.tblEmployeeOfTheMonths
                     .FirstOrDefaultAsync(x => x.mnth == dto.Month && x.yr == dto.Year && x.status==0);
 
-               
+
                 if (existingRecord != null)
                 {
                     existingRecord.fkEmployeeMasterAutoId = employee.EmployeeMasterAutoId;
-                    if(dto.photo != null)
+                    if (dto.photo != null)
                     {
                         existingRecord.photo = await UploadPhotoIfAvailable(dto.photo);
                     }
@@ -486,7 +543,7 @@ namespace ModuleManagementBackend.BAL.Services
                 }
                 else
                 {
-                    
+
 
                     string uploadedFileName = await UploadPhotoIfAvailable(dto.photo);
 
@@ -510,7 +567,7 @@ namespace ModuleManagementBackend.BAL.Services
                     response.Data = newEntry;
                 }
 
-                    
+
             }
             catch (Exception ex)
             {
@@ -521,6 +578,418 @@ namespace ModuleManagementBackend.BAL.Services
             return response;
         }
 
+        #region Notice Board
+        public async Task<ResponseModel> GetAllNotices()
+        {
+            var response = new ResponseModel();
+            try
+            {
+                var records = await context.tblNoticeBoards
+                    .Where(n => n.status == 0)
+                    .OrderByDescending(n => n.createDate)
+                    .ToListAsync();
+
+                response.Message = "Notices fetched successfully.";
+                response.StatusCode = HttpStatusCode.OK;
+                response.Data = records;
+                response.TotalRecords = records.Count;
+            }
+            catch (Exception ex)
+            {
+                response.Message = $"Error: {ex.Message}";
+                response.StatusCode = HttpStatusCode.InternalServerError;
+            }
+
+            return response;
+        }
+
+        public async Task<ResponseModel> AddNotice(NoticeBoardDto dto)
+        {
+            var response = new ResponseModel();
+            try
+            {
+                var notice = new tblNoticeBoard
+                {
+                    msg = dto.Msg,
+                    doc = dto.Doc,
+                    status = dto.Status ?? 0,
+                    createBy = dto.CreateBy,
+                    createDate = DateTime.Now,
+                    subject = dto.Subject,
+                    description = dto.Description
+                };
+
+                await context.tblNoticeBoards.AddAsync(notice);
+                await context.SaveChangesAsync();
+
+                response.Message = "Notice added successfully.";
+                response.StatusCode = HttpStatusCode.OK;
+                response.Data = notice;
+            }
+            catch (Exception ex)
+            {
+                response.Message = $"Error: {ex.Message}";
+                response.StatusCode = HttpStatusCode.InternalServerError;
+            }
+
+            return response;
+        }
+
+        public async Task<ResponseModel> UpdateNotice(int id, NoticeBoardDto dto)
+        {
+            var response = new ResponseModel();
+            try
+            {
+                var notice = await context.tblNoticeBoards.FindAsync(id);
+
+                if (notice == null)
+                {
+                    response.Message = "Notice not found.";
+                    response.StatusCode = HttpStatusCode.NotFound;
+                    return response;
+                }
+
+                notice.msg = dto.Msg;
+                notice.doc = dto.Doc;
+                notice.status = dto.Status;
+                notice.subject = dto.Subject;
+                notice.description = dto.Description;
+
+                await context.SaveChangesAsync();
+
+                response.Message = "Notice updated successfully.";
+                response.StatusCode = HttpStatusCode.OK;
+                response.Data = notice;
+            }
+            catch (Exception ex)
+            {
+                response.Message = $"Error: {ex.Message}";
+                response.StatusCode = HttpStatusCode.InternalServerError;
+            }
+
+            return response;
+        }
+
+        public async Task<ResponseModel> DeleteNotice(int id)
+        {
+            var response = new ResponseModel();
+            try
+            {
+                var notice = await context.tblNoticeBoards.FindAsync(id);
+
+                if (notice == null)
+                {
+                    response.Message = "Notice not found.";
+                    response.StatusCode = HttpStatusCode.NotFound;
+                    return response;
+                }
+
+
+                notice.status = 9;
+                await context.SaveChangesAsync();
+
+                response.Message = "Notice deleted successfully.";
+                response.StatusCode = HttpStatusCode.OK;
+                response.Data = notice;
+            }
+            catch (Exception ex)
+            {
+                response.Message = $"Error: {ex.Message}";
+                response.StatusCode = HttpStatusCode.InternalServerError;
+            }
+
+            return response;
+        }
+
+        #endregion
+
+        #region Dependent Methods
+
+        public async Task<ResponseModel> AddDependentsAsync(List<AddDependentDto> dependents, string loginUserEmpCode)
+        {
+            var response = new ResponseModel();
+
+            if (dependents == null || !dependents.Any())
+            {
+                response.Message = "No dependent data provided.";
+                response.StatusCode = HttpStatusCode.BadRequest;
+                return response;
+            }
+
+            try
+            {
+                var firstDependent = dependents.FirstOrDefault();
+                if (firstDependent == null || string.IsNullOrWhiteSpace(firstDependent.EmployeeCode))
+                {
+                    response.Message = "EmployeeCode is required.";
+                    response.StatusCode = HttpStatusCode.BadRequest;
+                    return response;
+                }
+
+                string empCode = firstDependent.EmployeeCode.Trim();
+
+                if (string.IsNullOrWhiteSpace(empCode))
+                {
+                    response.Message = "EmployeeCode is required.";
+                    response.StatusCode = HttpStatusCode.BadRequest;
+                    return response;
+                }
+
+                var employee = context.MstEmployeeMasters
+                    .FirstOrDefault(e => e.EmployeeCode == empCode && e.Status == 0);
+
+                if (employee == null)
+                {
+                    response.Message = "Employee not found or inactive.";
+                    response.StatusCode = HttpStatusCode.NotFound;
+                    return response;
+                }
+
+                long fkEmployeeMasterAutoId = employee.EmployeeMasterAutoId;
+
+                foreach (var dto in dependents)
+                {
+                    if (dto.pkDependentId > 0)
+                    {
+                        var existing = await context.MstEmployeeDependents.FindAsync(dto.pkDependentId);
+                        if (existing != null)
+                        {
+                            existing.Relation = dto.Relation ?? existing.Relation;
+                            existing.DName = dto.DName ?? existing.DName;
+                            existing.Gender = dto.Gender ?? existing.Gender;
+                            if (dto.Age > 0) existing.Age = dto.Age;
+                            existing.status = 99;
+                            existing.updatedBy = loginUserEmpCode;
+                            existing.updatedDate = DateTime.Now;
+
+                            context.SaveChanges();
+                        }
+                    }
+                    else
+                    {
+                        if (string.IsNullOrWhiteSpace(dto.Relation) ||
+                            string.IsNullOrWhiteSpace(dto.DName) ||
+                            string.IsNullOrWhiteSpace(dto.Gender) ||
+                            dto.Age <= 0)
+                        {
+                            response.Message = $"Validation failed for dependent: {dto?.DName}";
+                            response.StatusCode = HttpStatusCode.BadRequest;
+                            return response;
+                        }
+
+                        bool exists = context.MstEmployeeDependents.Any(x =>
+                            x.fkEmployeeMasterAutoId == fkEmployeeMasterAutoId &&
+                            x.DName.ToLower() == dto.DName.Trim().ToLower() &&
+                            x.Relation.ToLower() == dto.Relation.Trim().ToLower());
+
+                        if (exists)
+                        {
+                            response.Message = $"Dependent '{dto.DName}' with relation '{dto.Relation}' already exists.";
+                            response.StatusCode = HttpStatusCode.Conflict;
+                            return response;
+                        }
+
+                        var newDependent = new MstEmployeeDependent
+                        {
+                            fkEmployeeMasterAutoId = fkEmployeeMasterAutoId,
+                            Relation = dto.Relation.Trim(),
+                            DName = dto.DName.Trim(),
+                            Gender = dto.Gender.Trim(),
+                            Age = dto.Age,
+                            status = 99,
+                            createdBy= loginUserEmpCode,
+                            createdDate = DateTime.Now,
+                        };
+
+                        await context.MstEmployeeDependents.AddAsync(newDependent);
+                    }
+                }
+
+                await context.SaveChangesAsync();
+
+                response.Message = "Dependents processed successfully.";
+                response.StatusCode = HttpStatusCode.OK;
+            }
+            catch (Exception ex)
+            {
+                response.Message = "An error occurred: " + ex.Message;
+                response.StatusCode = HttpStatusCode.InternalServerError;
+            }
+
+            return response;
+        }
+
+        public async Task<ResponseModel> ProceedDependentsAsync(AprooveEmployeeReportDto request, string LoginUserEmpCode)
+        {
+            var response = new ResponseModel();
+
+            try
+            {
+                string employeeCode = request.EmployeeCode;
+                bool isApproved = request.IsApproved;
+                string remarks = request.Remarks;
+
+                if (string.IsNullOrWhiteSpace(employeeCode))
+                {
+                    response.Message = "EmployeeCode is required.";
+                    response.StatusCode = HttpStatusCode.BadRequest;
+                    return response;
+                }
+
+                if (!isApproved)
+                {
+                    response.Message = "IsApproved is mandatory.";
+                    response.StatusCode = HttpStatusCode.BadRequest;
+                    return response;
+                }
+
+                if (isApproved == false && string.IsNullOrWhiteSpace(remarks))
+                {
+                    response.Message = "Remarks are mandatory when rejecting a request.";
+                    response.StatusCode = HttpStatusCode.BadRequest;
+                    return response;
+                }
+                var employeeCodeTrimmed = employeeCode.Trim();
+                var employee = context.MstEmployeeMasters
+                    .FirstOrDefault(e => e.EmployeeCode.Trim() == employeeCodeTrimmed && e.Status == 0);
+                if (employee == null)
+                {
+                    response.Message = "Employee not found or inactive.";
+                    response.StatusCode = HttpStatusCode.NotFound;
+                    return response;
+                }
+
+                var editRecord = await context.MstEmployeeDependents
+                .FirstOrDefaultAsync(e => e.fkEmployeeMasterAutoId == employee.EmployeeMasterAutoId && e.status == 99 );
+
+                if (editRecord == null)
+                {
+                    response.Message = "No pending edit request found for this employee.";
+                    response.StatusCode = HttpStatusCode.NotFound;
+                    return response;
+                }
+
+                if (isApproved)
+                {
+                    editRecord.updatedDate=DateTime.Now.Date;
+                    editRecord.updatedBy =LoginUserEmpCode;
+                    editRecord.status = 0;
+                    context.SaveChanges();
+
+
+                    response.Message = "Approved successfully.";
+                    response.StatusCode = HttpStatusCode.OK;
+                    response.Data = new { success = true, ApprovedSuccessfully = true };
+                    return response;
+                }
+                else
+                {
+                    editRecord.updatedDate=DateTime.Now.Date;
+                    editRecord.updatedBy =LoginUserEmpCode;
+                    editRecord.remarks = remarks;
+                    editRecord.status = 9;
+                    context.SaveChanges();
+
+                    response.Message = "Rejected successfully.";
+                    response.StatusCode = HttpStatusCode.OK;
+                    response.Data = new { success = true, RejectedSuccessfully = true };
+                    return response;
+                }
+            }
+            catch (Exception ex)
+            {
+                response.Message = $"An error occurred: {ex.Message}";
+                response.StatusCode = HttpStatusCode.InternalServerError;
+                return response;
+            }
+        }
+
+        public async Task<ResponseModel> GetAllDependentsRequestByEmpCodeAsync()
+        {
+            var response = new ResponseModel();
+
+            try
+            {
+                var dependents = await context.MstEmployeeDependents
+                    .Where(d => d.status == 99)
+                    .Select(d => new
+                    {
+                        d.pkDependentId,
+                        d.DName,
+                        d.Relation,
+                        d.Gender,
+                        d.Age,
+                        d.status
+                    })
+                    .ToListAsync();
+
+                response.Message = "Dependents Requests fetched successfully.";
+                response.StatusCode = HttpStatusCode.OK;
+                response.Data = dependents;
+                response.TotalRecords = dependents.Count;
+            }
+            catch (Exception ex)
+            {
+                response.Message = "An error occurred: " + ex.Message;
+                response.StatusCode = HttpStatusCode.InternalServerError;
+            }
+
+            return response;
+        }
+
+        public async Task<ResponseModel> GetDependentsByEmpCodeAsync(string empCode)
+        {
+            var response = new ResponseModel();
+
+            if (string.IsNullOrWhiteSpace(empCode))
+            {
+                response.Message = "EmployeeCode is required.";
+                response.StatusCode = HttpStatusCode.BadRequest;
+                return response;
+            }
+
+            try
+            {
+                var employee = context.MstEmployeeMasters
+                    .FirstOrDefault(e => e.EmployeeCode == empCode && e.Status == 0);
+
+                if (employee == null)
+                {
+                    response.Message = "Employee not found or inactive.";
+                    response.StatusCode = HttpStatusCode.NotFound;
+                    return response;
+                }
+
+                long fkEmployeeMasterAutoId = employee.EmployeeMasterAutoId;
+
+                var dependents = await context.MstEmployeeDependents
+                    .Where(d => d.fkEmployeeMasterAutoId == fkEmployeeMasterAutoId && d.status==99)
+                    .Select(d => new
+                    {
+                        d.pkDependentId,
+                        d.DName,
+                        d.Relation,
+                        d.Gender,
+                        d.Age,
+                        d.status
+                    })
+                    .ToListAsync();
+
+                response.Message = "Dependents fetched successfully.";
+                response.StatusCode = HttpStatusCode.OK;
+                response.Data = dependents;
+                response.TotalRecords = dependents.Count;
+            }
+            catch (Exception ex)
+            {
+                response.Message = "An error occurred: " + ex.Message;
+                response.StatusCode = HttpStatusCode.InternalServerError;
+            }
+
+            return response;
+        }
+
+        #endregion
         private async Task<string> UploadPhotoIfAvailable(IFormFile photo)
         {
             if (photo == null || photo.Length == 0)

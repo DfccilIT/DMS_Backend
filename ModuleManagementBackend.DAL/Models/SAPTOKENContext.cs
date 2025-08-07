@@ -26,6 +26,7 @@ namespace ModuleManagementBackend.DAL.Models
         public virtual DbSet<kraUser> kraUsers { get; set; }
         public virtual DbSet<mstPositionGreade> mstPositionGreades { get; set; }
         public virtual DbSet<tblEmployeeOfTheMonth> tblEmployeeOfTheMonths { get; set; }
+        public virtual DbSet<tblNoticeBoard> tblNoticeBoards { get; set; }
         public virtual DbSet<todoList> todoLists { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -128,7 +129,21 @@ namespace ModuleManagementBackend.DAL.Models
                     .IsRequired()
                     .HasMaxLength(100);
 
+                entity.Property(e => e.createdBy)
+                    .HasMaxLength(200)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.createdDate).HasColumnType("date");
+
+                entity.Property(e => e.remarks).IsUnicode(false);
+
                 entity.Property(e => e.status).HasDefaultValueSql("((0))");
+
+                entity.Property(e => e.updatedBy)
+                    .HasMaxLength(200)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.updatedDate).HasColumnType("date");
 
                 entity.HasOne(d => d.fkEmployeeMasterAuto)
                     .WithMany(p => p.MstEmployeeDependents)
@@ -333,6 +348,26 @@ namespace ModuleManagementBackend.DAL.Models
                     .WithMany(p => p.tblEmployeeOfTheMonths)
                     .HasForeignKey(d => d.fkEmployeeMasterAutoId)
                     .HasConstraintName("FK__tblEmploy__fkEmp__0AD36B5C");
+            });
+
+            modelBuilder.Entity<tblNoticeBoard>(entity =>
+            {
+                entity.HasKey(e => e.pkNoticeId)
+                    .HasName("PK__tblNotic__E43BA6DFE6F8A2A4");
+
+                entity.ToTable("tblNoticeBoard");
+
+                entity.Property(e => e.createBy).HasMaxLength(100);
+
+                entity.Property(e => e.createDate).HasColumnType("datetime");
+
+                entity.Property(e => e.description).IsUnicode(false);
+
+                entity.Property(e => e.status).HasDefaultValueSql("((0))");
+
+                entity.Property(e => e.subject)
+                    .HasMaxLength(5000)
+                    .IsUnicode(false);
             });
 
             modelBuilder.Entity<todoList>(entity =>
