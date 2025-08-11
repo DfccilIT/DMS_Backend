@@ -9,6 +9,7 @@ namespace ModuleManagementBackend.DAL.Models
     {
         public MstEmployeeMaster()
         {
+            MstContractEmployeeMasters = new HashSet<MstContractEmployeeMaster>();
             MstEmployeeDependents = new HashSet<MstEmployeeDependent>();
             kraUsers = new HashSet<kraUser>();
             tblEmployeeOfTheMonths = new HashSet<tblEmployeeOfTheMonth>();
@@ -76,6 +77,7 @@ namespace ModuleManagementBackend.DAL.Models
         public string ReportingOfficer { get; set; }
         public string PAN { get; set; }
 
+        public virtual ICollection<MstContractEmployeeMaster> MstContractEmployeeMasters { get; set; }
         public virtual ICollection<MstEmployeeDependent> MstEmployeeDependents { get; set; }
         public virtual ICollection<kraUser> kraUsers { get; set; }
         public virtual ICollection<tblEmployeeOfTheMonth> tblEmployeeOfTheMonths { get; set; }

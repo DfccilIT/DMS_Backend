@@ -1,6 +1,7 @@
 ﻿using Dapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using ModuleManagementBackend.BAL.IServices;
 using ModuleManagementBackend.DAL.DapperServices;
 using ModuleManagementBackend.DAL.Models;
@@ -8,7 +9,8 @@ using ModuleManagementBackend.Model.Common;
 using ModuleManagementBackend.Model.DTOs.EditEmployeeDTO;
 using System.Data;
 using System.Net;
-using System.Runtime.InteropServices;
+using System.Security.Cryptography;
+using System.Text.RegularExpressions;
 
 namespace ModuleManagementBackend.BAL.Services
 {
@@ -17,12 +19,14 @@ namespace ModuleManagementBackend.BAL.Services
         private readonly SAPTOKENContext context;
         private readonly IDapperService dapper;
         private readonly IHttpContextAccessor httpContext;
+        private readonly IConfiguration configuration;
 
-        public ModuleManagementService(SAPTOKENContext context, IDapperService dapper, IHttpContextAccessor httpContext)
+        public ModuleManagementService(SAPTOKENContext context, IDapperService dapper, IHttpContextAccessor httpContext, IConfiguration configuration)
         {
             this.context=context;
             this.dapper=dapper;
             this.httpContext=httpContext;
+            this.configuration=configuration;
         }
 
         public async Task<ResponseModel> GetAllEditEmployeeRequests(string? employeeCode = null, string? location = null, string? userName = null)
@@ -132,12 +136,7 @@ namespace ModuleManagementBackend.BAL.Services
                     return response;
                 }
 
-                if (!isApproved)
-                {
-                    response.Message = "IsApproved is mandatory.";
-                    response.StatusCode = HttpStatusCode.BadRequest;
-                    return response;
-                }
+
 
                 if (isApproved == false && string.IsNullOrWhiteSpace(remarks))
                 {
@@ -229,23 +228,82 @@ namespace ModuleManagementBackend.BAL.Services
             ResponseModel responseModel = new ResponseModel();
             try
             {
-                var query = context.EditEmployeeDetails.Where(e => e.status == 99 && e.TableName == "R");
+
+                var query = context.EditEmployeeDetails
+            .Join(context.MstEmployeeMasters,
+                  ee => ee.EmployeeCode,
+                  mm => mm.EmployeeCode,
+                  (ee, mm) => new { ee, mm })
+
+
+               .Where(e => e.ee.status == 99 && e.ee.TableName=="R");
                 if (!string.IsNullOrWhiteSpace(employeeCode))
                 {
-                    query = query.Where(e => e.EmployeeCode == employeeCode);
+                    query = query.Where(e => e.ee.EmployeeCode == employeeCode);
                 }
 
                 if (!string.IsNullOrWhiteSpace(location))
                 {
-                    query = query.Where(e => e.Location != null && e.Location.Contains(location));
+                    query = query.Where(e => e.ee.Location != null && e.ee.Location.Contains(location));
                 }
 
                 if (!string.IsNullOrWhiteSpace(userName))
                 {
-                    query = query.Where(e => e.UserName != null && e.UserName.Contains(userName));
+                    query = query.Where(e => e.ee.UserName != null && e.ee.UserName.Contains(userName));
                 }
 
-                var result = await query.ToListAsync();
+                var result = await query.Select(x => new
+                {
+                    RequestId = x.ee.EdtEmpDetID,
+                    OldRecored = new
+                    {
+                        x.mm.EmployeeCode,
+                        x.mm.UserName,
+                        x.mm.Gender,
+                        Designation = x.mm.Post,
+                        x.mm.PositionGrade,
+                        Department = x.mm.DeptDFCCIL,
+                        SubDepartment = x.mm.SubDeptDF,
+                        x.mm.DOB,
+                        DateOfAnniversary = x.mm.AnniversaryDate,
+                        DateOfJoining = x.mm.DOJDFCCIL,
+                        x.mm.Location,
+                        SubArea = x.mm.PersonnelSubArea,
+                        x.mm.Mobile,
+                        x.mm.emailAddress,
+                        x.mm.PersonalEmailAddress,
+                        x.mm.TOemploy,
+                        x.mm.AboutUs,
+                        x.mm.Photo,
+                        x.mm.ReportingOfficer,
+                        ExtensionNo = x.mm.ExtnNo,
+
+                    },
+                    NewRecords = new
+                    {
+                        x.ee.EmployeeCode,
+                        x.ee.UserName,
+                        x.ee.Gender,
+                        x.ee.Designation,
+                        x.ee.PositionGrade,
+                        x.ee.Department,
+                        x.ee.SubDepartment,
+                        x.ee.DOB,
+                        x.ee.DateOfAnniversary,
+                        x.ee.DateOfJoining,
+                        x.ee.Location,
+                        x.ee.SubArea,
+                        x.ee.Mobile,
+                        x.ee.Email,
+                        x.ee.PersonalEmailId,
+                        x.ee.Toemploy,
+                        x.ee.AboutUs,
+                        x.ee.Photo,
+                        x.ee.ReportingOfficer,
+                        x.ee.ExtensionNo,
+                    },
+                }).ToListAsync();
+
 
 
                 responseModel.Message="Data fetched successfully";
@@ -564,7 +622,7 @@ namespace ModuleManagementBackend.BAL.Services
 
                     response.Message = "Employee of the Month added successfully.";
                     response.StatusCode = HttpStatusCode.OK;
-                    response.Data = newEntry;
+                    response.Data = newEntry.pkId;
                 }
 
 
@@ -587,6 +645,20 @@ namespace ModuleManagementBackend.BAL.Services
                 var records = await context.tblNoticeBoards
                     .Where(n => n.status == 0)
                     .OrderByDescending(n => n.createDate)
+                    .Select(x => new
+                    {
+                        x.pkNoticeId,
+                        x.msg,
+                        x.doc,
+                        x.status,
+                        x.createBy,
+                        x.createDate,
+                        x.subject,
+                        x.description,
+                        DocUrl = x.doc != null
+                            ? $"{httpContext.HttpContext.Request.Scheme}://{httpContext.HttpContext.Request.Host}/NoticeBoard/{x.doc}"
+                            : null
+                    })
                     .ToListAsync();
 
                 response.Message = "Notices fetched successfully.";
@@ -602,17 +674,21 @@ namespace ModuleManagementBackend.BAL.Services
 
             return response;
         }
-
         public async Task<ResponseModel> AddNotice(NoticeBoardDto dto)
         {
             var response = new ResponseModel();
             try
             {
+                string fileName = string.Empty;
+                if (dto.Doc!=null && dto.Doc.Length>0)
+                {
+                    fileName=   await UploadNoticeDOCIfAvailable(dto.Doc);
+                }
                 var notice = new tblNoticeBoard
                 {
                     msg = dto.Msg,
-                    doc = dto.Doc,
-                    status = dto.Status ?? 0,
+                    doc = fileName,
+                    status = 0,
                     createBy = dto.CreateBy,
                     createDate = DateTime.Now,
                     subject = dto.Subject,
@@ -634,7 +710,6 @@ namespace ModuleManagementBackend.BAL.Services
 
             return response;
         }
-
         public async Task<ResponseModel> UpdateNotice(int id, NoticeBoardDto dto)
         {
             var response = new ResponseModel();
@@ -648,10 +723,11 @@ namespace ModuleManagementBackend.BAL.Services
                     response.StatusCode = HttpStatusCode.NotFound;
                     return response;
                 }
-
+                if (dto.Doc != null && dto.Doc.Length > 0)
+                {
+                    notice.doc = await UploadNoticeDOCIfAvailable(dto.Doc);
+                }
                 notice.msg = dto.Msg;
-                notice.doc = dto.Doc;
-                notice.status = dto.Status;
                 notice.subject = dto.Subject;
                 notice.description = dto.Description;
 
@@ -701,6 +777,44 @@ namespace ModuleManagementBackend.BAL.Services
             return response;
         }
 
+        public async Task<ResponseModel> GetAllArchiveNotices()
+        {
+            var response = new ResponseModel();
+            try
+            {
+                var records = await context.tblNoticeBoards
+                    .Where(n => n.status == 9)
+                    .OrderByDescending(n => n.createDate)
+                    .Select(x => new
+                    {
+                        x.pkNoticeId,
+                        x.msg,
+                        x.doc,
+                        x.status,
+                        x.createBy,
+                        x.createDate,
+                        x.subject,
+                        x.description,
+                        DocUrl = x.doc != null
+                            ? $"{httpContext.HttpContext.Request.Scheme}://{httpContext.HttpContext.Request.Host}/NoticeBoard/{x.doc}"
+                            : null
+                    })
+                    .ToListAsync();
+
+                response.Message = "Notices fetched successfully.";
+                response.StatusCode = HttpStatusCode.OK;
+                response.Data = records;
+                response.TotalRecords = records.Count;
+            }
+            catch (Exception ex)
+            {
+                response.Message = $"Error: {ex.Message}";
+                response.StatusCode = HttpStatusCode.InternalServerError;
+            }
+
+            return response;
+        }
+
         #endregion
 
         #region Dependent Methods
@@ -727,14 +841,6 @@ namespace ModuleManagementBackend.BAL.Services
                 }
 
                 string empCode = firstDependent.EmployeeCode.Trim();
-
-                if (string.IsNullOrWhiteSpace(empCode))
-                {
-                    response.Message = "EmployeeCode is required.";
-                    response.StatusCode = HttpStatusCode.BadRequest;
-                    return response;
-                }
-
                 var employee = context.MstEmployeeMasters
                     .FirstOrDefault(e => e.EmployeeCode == empCode && e.Status == 0);
 
@@ -749,28 +855,33 @@ namespace ModuleManagementBackend.BAL.Services
 
                 foreach (var dto in dependents)
                 {
-                    if (dto.pkDependentId > 0)
-                    {
-                        var existing = await context.MstEmployeeDependents.FindAsync(dto.pkDependentId);
-                        if (existing != null)
-                        {
-                            existing.Relation = dto.Relation ?? existing.Relation;
-                            existing.DName = dto.DName ?? existing.DName;
-                            existing.Gender = dto.Gender ?? existing.Gender;
-                            if (dto.Age > 0) existing.Age = dto.Age;
-                            existing.status = 99;
-                            existing.updatedBy = loginUserEmpCode;
-                            existing.updatedDate = DateTime.Now;
 
-                            context.SaveChanges();
-                        }
+                    var existing = await context.MstEmployeeDependents.FirstOrDefaultAsync(x => x.fkEmployeeMasterAutoId==fkEmployeeMasterAutoId && x.status==99);
+                    if (existing != null)
+                    {
+                        response.Message = "There is already a pending request for this employee.";
+                        response.StatusCode = HttpStatusCode.Conflict;
+                        return response;
+                        //existing.Relation = dto.Relation ?? existing.Relation;
+                        //existing.DName = dto.DName ?? existing.DName;
+                        //existing.Gender = dto.Gender ?? existing.Gender;
+                        //if (dto.Age > 0) existing.Age = dto.Age;
+
+                        //existing.status = 99;
+                        //existing.updatedBy = loginUserEmpCode;
+                        //existing.updatedDate = DateTime.Now.Date;
+                        //context.MstEmployeeDependents.Update(existing);
+                        //if (dto.DocumentFiles != null && dto.DocumentFiles.Any())
+                        //{
+                        //    await UploadDependentDOCIfAvailable(dto.DocumentFiles, existing.pkDependentId, loginUserEmpCode,"UPDATE");
+                        //}
                     }
                     else
                     {
                         if (string.IsNullOrWhiteSpace(dto.Relation) ||
-                            string.IsNullOrWhiteSpace(dto.DName) ||
-                            string.IsNullOrWhiteSpace(dto.Gender) ||
-                            dto.Age <= 0)
+                        string.IsNullOrWhiteSpace(dto.DName) ||
+                        string.IsNullOrWhiteSpace(dto.Gender) ||
+                        dto.Age <= 0)
                         {
                             response.Message = $"Validation failed for dependent: {dto?.DName}";
                             response.StatusCode = HttpStatusCode.BadRequest;
@@ -797,13 +908,22 @@ namespace ModuleManagementBackend.BAL.Services
                             Gender = dto.Gender.Trim(),
                             Age = dto.Age,
                             status = 99,
-                            createdBy= loginUserEmpCode,
-                            createdDate = DateTime.Now,
+                            createdBy = loginUserEmpCode,
+                            createdDate = DateTime.Now.Date
                         };
 
                         await context.MstEmployeeDependents.AddAsync(newDependent);
+                        await context.SaveChangesAsync();
+
+
+                        if (dto.DocumentFiles != null && dto.DocumentFiles.Any())
+                        {
+                            await UploadDependentDOCIfAvailable(dto.DocumentFiles, newDependent.pkDependentId, loginUserEmpCode);
+                        }
                     }
+
                 }
+
 
                 await context.SaveChangesAsync();
 
@@ -818,7 +938,6 @@ namespace ModuleManagementBackend.BAL.Services
 
             return response;
         }
-
         public async Task<ResponseModel> ProceedDependentsAsync(AprooveEmployeeReportDto request, string LoginUserEmpCode)
         {
             var response = new ResponseModel();
@@ -836,12 +955,6 @@ namespace ModuleManagementBackend.BAL.Services
                     return response;
                 }
 
-                if (!isApproved)
-                {
-                    response.Message = "IsApproved is mandatory.";
-                    response.StatusCode = HttpStatusCode.BadRequest;
-                    return response;
-                }
 
                 if (isApproved == false && string.IsNullOrWhiteSpace(remarks))
                 {
@@ -860,9 +973,9 @@ namespace ModuleManagementBackend.BAL.Services
                 }
 
                 var editRecord = await context.MstEmployeeDependents
-                .FirstOrDefaultAsync(e => e.fkEmployeeMasterAutoId == employee.EmployeeMasterAutoId && e.status == 99 );
+                .Where(e => e.fkEmployeeMasterAutoId == employee.EmployeeMasterAutoId && e.status == 99).ToListAsync();
 
-                if (editRecord == null)
+                if (editRecord.Count == 0)
                 {
                     response.Message = "No pending edit request found for this employee.";
                     response.StatusCode = HttpStatusCode.NotFound;
@@ -871,10 +984,14 @@ namespace ModuleManagementBackend.BAL.Services
 
                 if (isApproved)
                 {
-                    editRecord.updatedDate=DateTime.Now.Date;
-                    editRecord.updatedBy =LoginUserEmpCode;
-                    editRecord.status = 0;
-                    context.SaveChanges();
+                    foreach (var item in editRecord)
+                    {
+                        item.updatedDate=DateTime.Now.Date;
+                        item.updatedBy =LoginUserEmpCode;
+                        item.status = 0;
+                        context.SaveChanges();
+                    }
+                   
 
 
                     response.Message = "Approved successfully.";
@@ -884,11 +1001,15 @@ namespace ModuleManagementBackend.BAL.Services
                 }
                 else
                 {
-                    editRecord.updatedDate=DateTime.Now.Date;
-                    editRecord.updatedBy =LoginUserEmpCode;
-                    editRecord.remarks = remarks;
-                    editRecord.status = 9;
-                    context.SaveChanges();
+                    foreach (var item in editRecord)
+                    {
+                        item.updatedDate=DateTime.Now.Date;
+                        item.updatedBy =LoginUserEmpCode;
+                        item.remarks = remarks;
+                        item.status = 9;
+                        context.SaveChanges();
+                    }
+                    
 
                     response.Message = "Rejected successfully.";
                     response.StatusCode = HttpStatusCode.OK;
@@ -903,30 +1024,54 @@ namespace ModuleManagementBackend.BAL.Services
                 return response;
             }
         }
-
         public async Task<ResponseModel> GetAllDependentsRequestByEmpCodeAsync()
         {
             var response = new ResponseModel();
 
             try
             {
-                var dependents = await context.MstEmployeeDependents
-                    .Where(d => d.status == 99)
-                    .Select(d => new
+                var groupedDependents = await context.MstEmployeeDependents
+                    .Where(dep => dep.status == 99)
+                    .Join(context.MstEmployeeMasters,
+                        dep => dep.fkEmployeeMasterAutoId,
+                        emp => emp.EmployeeMasterAutoId,
+                        (dep, emp) => new
+                        {
+                            emp.EmployeeCode,
+                            dep.DName,
+                            dep.Relation,
+                            dep.Gender,
+                            dep.Age,
+                            dep.status,
+                            dep.EmployeeDependentDocuments
+                        })
+                    .GroupBy(x => x.EmployeeCode)
+                    .Select(g => new
                     {
-                        d.pkDependentId,
-                        d.DName,
-                        d.Relation,
-                        d.Gender,
-                        d.Age,
-                        d.status
+                        EmployeeCode = g.Key,
+                        Dependents = g.Select(d => new
+                        {
+                            d.DName,
+                            d.Relation,
+                            d.Gender,
+                            d.Age,
+                            d.status,
+                            DocumentList = d.EmployeeDependentDocuments.Select(doc => new
+                            {
+                                doc.DocumentId,
+                                filePath = $"{httpContext.HttpContext.Request.Scheme}://{httpContext.HttpContext.Request.Host}/DependentDocuments/{doc.DocumentName}",
+                                doc.DocumentName,
+                                doc.DocumentType,
+                                doc.Remarks
+                            }).ToList()
+                        }).ToList()
                     })
                     .ToListAsync();
 
-                response.Message = "Dependents Requests fetched successfully.";
+                response.Message = "Grouped dependents fetched successfully.";
                 response.StatusCode = HttpStatusCode.OK;
-                response.Data = dependents;
-                response.TotalRecords = dependents.Count;
+                response.Data = groupedDependents;
+                response.TotalRecords = groupedDependents.Count;
             }
             catch (Exception ex)
             {
@@ -963,15 +1108,32 @@ namespace ModuleManagementBackend.BAL.Services
                 long fkEmployeeMasterAutoId = employee.EmployeeMasterAutoId;
 
                 var dependents = await context.MstEmployeeDependents
-                    .Where(d => d.fkEmployeeMasterAutoId == fkEmployeeMasterAutoId && d.status==99)
+                    .Join(context.MstEmployeeMasters,
+                    MD => MD.fkEmployeeMasterAutoId,
+                    MM => MM.EmployeeMasterAutoId,
+                    (MD, MM) => new
+                    {
+                        MD,
+                        MM
+                    })
+                    .Where(d => d.MD.fkEmployeeMasterAutoId == fkEmployeeMasterAutoId && d.MD.status==99)
                     .Select(d => new
                     {
-                        d.pkDependentId,
-                        d.DName,
-                        d.Relation,
-                        d.Gender,
-                        d.Age,
-                        d.status
+                        d.MD.pkDependentId,
+                        d.MM.EmployeeCode,
+                        d.MD.DName,
+                        d.MD.Relation,
+                        d.MD.Gender,
+                        d.MD.Age,
+                        d.MD.status,
+                        DocumentList = d.MD.EmployeeDependentDocuments.Select(x => new
+                        {
+                            x.DocumentId,
+                            filePath = $"{httpContext.HttpContext.Request.Scheme}://{httpContext.HttpContext.Request.Host}/DependentDocuments/{x.DocumentName}",
+                            x.DocumentName,
+                            x.DocumentType,
+                            x.Remarks
+                        }).ToList()
                     })
                     .ToListAsync();
 
@@ -990,6 +1152,188 @@ namespace ModuleManagementBackend.BAL.Services
         }
 
         #endregion
+
+        #region Aprrove Contractual Employee 
+
+        public async Task<ResponseModel> ProcessEditContractualEmployeeRequest(AprooveContractualEmployeeDto request, string LoginUserId)
+        {
+            var response = new ResponseModel();
+
+            try
+            {
+                if (!request.IsApproved && string.IsNullOrWhiteSpace(request.Remarks))
+                {
+                    response.Message = "Remarks are mandatory when rejecting a request.";
+                    response.StatusCode = HttpStatusCode.BadRequest;
+                    return response;
+                }
+
+                var existingEmployee = await context.RegisterContractEmployees
+                    .FirstOrDefaultAsync(e => e.ContEmpID == request.ContraualEmployeeRequestId && e.Status == 8);
+
+                if (existingEmployee == null)
+                {
+                    response.Message = "Employee Request not found or inactive.";
+                    response.StatusCode = HttpStatusCode.NotFound;
+                    return response;
+                }
+                string basePath= string.Empty;
+                if (configuration["DeploymentModes"]=="DFCCIL_UAT")
+                {
+                     basePath = configuration["ContractEmployeeDocumentPathUat"] ?? string.Empty;
+                }
+                else
+                {
+                    basePath = configuration["ContractEmployeeDocumentPathProd"] ?? string.Empty;
+                }
+                    
+                var oldFileName = existingEmployee.AppointmentDoc ?? string.Empty;
+                var oldFilePath = Path.Combine(basePath, oldFileName);
+
+                if (request.IsApproved)
+                {
+                    
+                    var latestEmpCode = context.MstEmployeeMasters
+                        .Where(x => x.TOemploy.ToLower().Contains("contract"))
+                        .OrderByDescending(x => x.EmployeeCode)
+                        .Select(x => x.EmployeeCode)
+                        .FirstOrDefault();
+
+                    var newEmpCode = (Convert.ToInt32(latestEmpCode) + 1).ToString();
+
+                    
+                    existingEmployee.Status = 0;
+                    existingEmployee.UpdatedBy = LoginUserId;
+                    existingEmployee.UpdatedDate = DateTime.Now;
+
+                   
+                    var mstEmployee = new MstEmployeeMaster
+                    {
+                        EmployeeCode = newEmpCode,
+                        UserName = existingEmployee.UserName,
+                        DeptDFCCIL = existingEmployee.DeptDFCCIL,
+                        Location = existingEmployee.Location,
+                        PersonalMobile = existingEmployee.Mobile,
+                        emailAddress = existingEmployee.emailAddress,
+                        TOemploy = existingEmployee.TOemploy,
+                        Gender = existingEmployee.Gender,
+                        DOB = existingEmployee.DOB,
+                        DOJDFCCIL = existingEmployee.DOJDFCCIL,
+                        Status = 0,
+                        Modify_Date = DateTime.Now,
+                        Modify_By = LoginUserId
+                    };
+
+                    context.MstEmployeeMasters.Add(mstEmployee);
+                    await context.SaveChangesAsync();
+
+                   
+                    var mstContract = new MstContractEmployeeMaster
+                    {
+                        fkEmployeeMasterAutoId = mstEmployee.EmployeeMasterAutoId,
+                        fkContractid = existingEmployee.fkContractid,
+                        status = 0,
+                        Remarks = existingEmployee.remarks,
+                        OfficeOrder = oldFileName
+                    };
+
+                    
+                    if (File.Exists(oldFilePath))
+                    {
+                        var newFileName = Regex.Replace(oldFileName, @"_(\d+)(\.pdf)$", $"_{newEmpCode}$2");
+                        var newFilePath = Path.Combine(basePath, newFileName);
+
+                        File.Move(oldFilePath, newFilePath);
+
+                        mstContract.OfficeOrder = newFileName;
+                        existingEmployee.AppointmentDoc = newFileName;
+                        Console.WriteLine("File renamed successfully.");
+                    }
+
+                    context.MstContractEmployeeMasters.Add(mstContract);
+                }
+                else
+                {
+                    
+                    existingEmployee.Status = 9;
+                    existingEmployee.remarks = request.Remarks;
+
+                    var mstContract = new MstContractEmployeeMaster
+                    {
+                        fkEmployeeMasterAutoId = existingEmployee.ContEmpID,
+                        fkContractid = existingEmployee.fkContractid,
+                        status = 9,
+                        Remarks = existingEmployee.remarks,
+                        OfficeOrder = existingEmployee.AppointmentDoc
+                    };
+
+                    context.MstContractEmployeeMasters.Add(mstContract);
+
+                    if (File.Exists(oldFilePath))
+                    {
+                        File.Delete(oldFilePath);
+                        Console.WriteLine("File deleted successfully.");
+                    }
+                }
+
+                await context.SaveChangesAsync();
+
+                response.Message = $"Request {(request.IsApproved ? "Approved" : "Rejected")} Successfully.";
+                response.StatusCode = HttpStatusCode.OK;
+                return response;
+            }
+            catch (Exception ex)
+            {
+                response.Message = $"An error occurred: {ex.Message}";
+                response.StatusCode = HttpStatusCode.InternalServerError;
+                return response;
+            }
+        }
+
+
+        public async Task<ResponseModel> GetAllContractualEmployeeEditRequestsAsync()
+        {
+            var response = new ResponseModel();
+
+            try
+            {
+                var requests = await context.RegisterContractEmployees
+                    .Where(e => e.Status == 8)
+                    .Select(e => new
+                    {
+                        e.ContEmpID,
+                        e.UserName,
+                        e.DeptDFCCIL,
+                        e.Location,
+                        e.Mobile,
+                        e.emailAddress,
+                        e.TOemploy,
+                        e.Gender,
+                        e.DOB,
+                        e.DOJDFCCIL,
+                        e.Status,
+                        e.CreateDate,
+                        e.UpdatedDate,
+                        e.UpdatedBy
+                    })
+                    .ToListAsync();
+
+                response.Message = "Edit requests fetched successfully.";
+                response.StatusCode = HttpStatusCode.OK;
+                response.Data = requests;
+                response.TotalRecords = requests.Count;
+            }
+            catch (Exception ex)
+            {
+                response.Message = $"An error occurred: {ex.Message}";
+                response.StatusCode = HttpStatusCode.InternalServerError;
+            }
+
+            return response;
+        }
+
+        #endregion
+
         private async Task<string> UploadPhotoIfAvailable(IFormFile photo)
         {
             if (photo == null || photo.Length == 0)
@@ -1009,6 +1353,83 @@ namespace ModuleManagementBackend.BAL.Services
             }
 
             return fileName;
+        }
+        public async Task<string> UploadNoticeDOCIfAvailable(IFormFile doc)
+        {
+            if (doc == null || doc.Length == 0)
+                return null;
+
+            string uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "NoticeBoard");
+
+            if (!Directory.Exists(uploadsFolder))
+                Directory.CreateDirectory(uploadsFolder);
+
+            string fileName = $"{Guid.NewGuid()}{Path.GetExtension(doc.FileName)}";
+            string filePath = Path.Combine(uploadsFolder, fileName);
+
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await doc.CopyToAsync(stream);
+            }
+
+            return fileName;
+        }
+
+        public async Task UploadDependentDOCIfAvailable(List<DependtentsDocuments> docs, long fkMstDependentId, string loginUserId, string Flag = "")
+        {
+            if (docs == null || !docs.Any())
+                return;
+
+            var validDocs = docs
+                .Where(d => d.DocumentFile != null && d.DocumentFile.Length > 0)
+                .ToList();
+
+            if (!validDocs.Any())
+                return;
+
+            string uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "DependentDocuments");
+            Directory.CreateDirectory(uploadsFolder);
+
+            var documentEntities = new List<EmployeeDependentDocument>();
+
+            foreach (var doc in validDocs)
+            {
+                string extension = Path.GetExtension(doc?.DocumentFile?.FileName);
+                if (string.IsNullOrWhiteSpace(extension))
+                    continue;
+
+                string fileName = $"{Guid.NewGuid()}{extension}";
+                string filePath = Path.Combine(uploadsFolder, fileName);
+
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await doc?.DocumentFile?.CopyToAsync(stream);
+                }
+                if (Flag=="UPDATE")
+                {
+                    var existingDoc = await context.EmployeeDependentDocuments
+                        .Where(x => x.fkDependentId == fkMstDependentId).ToListAsync();
+                    existingDoc.ForEach(x => x.Status=9);
+                    context.EmployeeDependentDocuments.UpdateRange(existingDoc);
+                }
+                documentEntities.Add(new EmployeeDependentDocument
+                {
+                    fkDependentId = fkMstDependentId,
+                    DocumentName = fileName,
+                    DocumentType = doc.DocumentType?.Trim(),
+                    FilePath = filePath,
+                    UploadedBy = loginUserId,
+                    UploadedDate = DateTime.Now.Date,
+                    Remarks = doc.Remarks?.Trim(),
+                    Status = 0
+                });
+            }
+
+            if (documentEntities.Any())
+            {
+                await context.EmployeeDependentDocuments.AddRangeAsync(documentEntities);
+                await context.SaveChangesAsync();
+            }
         }
 
         private async Task ApproveKraReportingOfficer(long employeeAutoId, string reportingOfficerEmpCode)

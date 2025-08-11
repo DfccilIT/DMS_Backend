@@ -18,15 +18,15 @@ namespace ModuleManagementBackend.DAL.DapperServices
             var connectstring = "";
             if (Environment == "DFCCIL")
             {
-                connectstring = configuration.GetConnectionString("ModuleManagementCSProd");
+                connectstring = configuration.GetConnectionString("SapTokenCSProd");
             }
             else if (Environment == "DFCCIL_UAT")
             {
-                connectstring = configuration.GetConnectionString("ModuleManagementCSUat");
+                connectstring = configuration.GetConnectionString("SapTokenCSUat");
             }
             else
             {
-                connectstring = configuration.GetConnectionString("ModuleManagementCSLocal");
+                connectstring = configuration.GetConnectionString("SapTokenCSLocal");
             }
 
             Connectionstring = connectstring;

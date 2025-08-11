@@ -22,6 +22,7 @@ namespace ModuleManagementBackend.BAL.IServices
         Task<ResponseModel> AddNotice(NoticeBoardDto dto);
         Task<ResponseModel> UpdateNotice(int id, NoticeBoardDto dto);
         Task<ResponseModel> DeleteNotice(int id);
+        Task<ResponseModel> GetAllArchiveNotices();
 
         #endregion
 
@@ -32,5 +33,8 @@ namespace ModuleManagementBackend.BAL.IServices
         Task<ResponseModel> GetAllDependentsRequestByEmpCodeAsync();
         Task<ResponseModel> GetDependentsByEmpCodeAsync(string empCode);
         #endregion
+
+        Task<ResponseModel> GetAllContractualEmployeeEditRequestsAsync();
+        Task<ResponseModel> ProcessEditContractualEmployeeRequest(AprooveContractualEmployeeDto request, string LoginUserId);
     }
 }

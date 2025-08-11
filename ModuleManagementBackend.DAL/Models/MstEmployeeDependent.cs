@@ -7,6 +7,11 @@ namespace ModuleManagementBackend.DAL.Models
 {
     public partial class MstEmployeeDependent
     {
+        public MstEmployeeDependent()
+        {
+            EmployeeDependentDocuments = new HashSet<EmployeeDependentDocument>();
+        }
+
         public long pkDependentId { get; set; }
         public long? fkEmployeeMasterAutoId { get; set; }
         public string DName { get; set; }
@@ -21,5 +26,6 @@ namespace ModuleManagementBackend.DAL.Models
         public string updatedBy { get; set; }
 
         public virtual MstEmployeeMaster fkEmployeeMasterAuto { get; set; }
+        public virtual ICollection<EmployeeDependentDocument> EmployeeDependentDocuments { get; set; }
     }
 }

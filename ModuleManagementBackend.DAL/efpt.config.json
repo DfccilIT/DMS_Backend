@@ -20,6 +20,18 @@
          "ObjectType": 0
       },
       {
+         "Name": "[dbo].[EmployeeDependentDocuments]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[MstContractEmployeeMaster]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[MstContractMaster]",
+         "ObjectType": 0
+      },
+      {
          "Name": "[dbo].[MstDepartment]",
          "ObjectType": 0
       },
@@ -37,6 +49,10 @@
       },
       {
          "Name": "[dbo].[MstUnit]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[RegisterContractEmployees]",
          "ObjectType": 0
       },
       {

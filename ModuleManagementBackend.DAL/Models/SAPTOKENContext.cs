@@ -19,10 +19,14 @@ namespace ModuleManagementBackend.DAL.Models
         }
 
         public virtual DbSet<EditEmployeeDetail> EditEmployeeDetails { get; set; }
+        public virtual DbSet<EmployeeDependentDocument> EmployeeDependentDocuments { get; set; }
+        public virtual DbSet<MstContractEmployeeMaster> MstContractEmployeeMasters { get; set; }
+        public virtual DbSet<MstContractMaster> MstContractMasters { get; set; }
         public virtual DbSet<MstDepartment> MstDepartments { get; set; }
         public virtual DbSet<MstEmployeeDependent> MstEmployeeDependents { get; set; }
         public virtual DbSet<MstEmployeeMaster> MstEmployeeMasters { get; set; }
         public virtual DbSet<MstUnit> MstUnits { get; set; }
+        public virtual DbSet<RegisterContractEmployee> RegisterContractEmployees { get; set; }
         public virtual DbSet<kraUser> kraUsers { get; set; }
         public virtual DbSet<mstPositionGreade> mstPositionGreades { get; set; }
         public virtual DbSet<tblEmployeeOfTheMonth> tblEmployeeOfTheMonths { get; set; }
@@ -91,6 +95,80 @@ namespace ModuleManagementBackend.DAL.Models
                 entity.Property(e => e.remarks).HasMaxLength(100);
 
                 entity.Property(e => e.status).HasDefaultValueSql("((99))");
+            });
+
+            modelBuilder.Entity<EmployeeDependentDocument>(entity =>
+            {
+                entity.HasKey(e => e.DocumentId)
+                    .HasName("PK__Employee__1ABEEF0F35385D24");
+
+                entity.Property(e => e.DocumentName)
+                    .IsRequired()
+                    .HasMaxLength(255);
+
+                entity.Property(e => e.DocumentType).HasMaxLength(100);
+
+                entity.Property(e => e.FilePath).IsRequired();
+
+                entity.Property(e => e.Status).HasDefaultValueSql("((0))");
+
+                entity.Property(e => e.UploadedBy).HasMaxLength(100);
+
+                entity.Property(e => e.UploadedDate)
+                    .HasColumnType("date")
+                    .HasDefaultValueSql("(getdate())");
+
+                entity.HasOne(d => d.fkDependent)
+                    .WithMany(p => p.EmployeeDependentDocuments)
+                    .HasForeignKey(d => d.fkDependentId)
+                    .HasConstraintName("FK_EmployeeDependentDocuments_Dependent");
+            });
+
+            modelBuilder.Entity<MstContractEmployeeMaster>(entity =>
+            {
+                entity.HasKey(e => e.PkCntEmpMstId)
+                    .HasName("PK__MstContr__2FE6343DE8AE1113");
+
+                entity.ToTable("MstContractEmployeeMaster");
+
+                entity.Property(e => e.OfficeOrder)
+                    .HasMaxLength(255)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.Remarks).IsUnicode(false);
+
+                entity.HasOne(d => d.fkContract)
+                    .WithMany(p => p.MstContractEmployeeMasters)
+                    .HasForeignKey(d => d.fkContractid)
+                    .HasConstraintName("FK__MstContra__fkCon__53F837BE");
+
+                entity.HasOne(d => d.fkEmployeeMasterAuto)
+                    .WithMany(p => p.MstContractEmployeeMasters)
+                    .HasForeignKey(d => d.fkEmployeeMasterAutoId)
+                    .HasConstraintName("FK__MstContra__fkEmp__0EAEE938");
+            });
+
+            modelBuilder.Entity<MstContractMaster>(entity =>
+            {
+                entity.HasKey(e => e.PkContractid)
+                    .HasName("PK__MstContr__8DE93C070E0CBC70");
+
+                entity.ToTable("MstContractMaster");
+
+                entity.HasIndex(e => new { e.Contractor, e.DeptDfccil }, "UQ_Contractor_DeptDfccil")
+                    .IsUnique();
+
+                entity.Property(e => e.ContractDate)
+                    .HasMaxLength(255)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.Contractor)
+                    .HasMaxLength(255)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.DeptDfccil)
+                    .HasMaxLength(255)
+                    .IsUnicode(false);
             });
 
             modelBuilder.Entity<MstDepartment>(entity =>
@@ -302,6 +380,54 @@ namespace ModuleManagementBackend.DAL.Models
                 entity.Property(e => e.Status).HasDefaultValueSql("((0))");
 
                 entity.Property(e => e.UnitName).HasMaxLength(50);
+            });
+
+            modelBuilder.Entity<RegisterContractEmployee>(entity =>
+            {
+                entity.HasKey(e => e.ContEmpID)
+                    .HasName("PK__Register__8A770B2CF4D9E714");
+
+                entity.Property(e => e.CreateDate).HasColumnType("date");
+
+                entity.Property(e => e.DOB).HasColumnType("datetime");
+
+                entity.Property(e => e.DOJDFCCIL).HasColumnType("datetime");
+
+                entity.Property(e => e.DeptDFCCIL)
+                    .HasMaxLength(255)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.Gender).HasMaxLength(255);
+
+                entity.Property(e => e.Location).HasMaxLength(255);
+
+                entity.Property(e => e.Mobile).HasMaxLength(50);
+
+                entity.Property(e => e.TOemploy).HasMaxLength(255);
+
+                entity.Property(e => e.UpdatedBy)
+                    .HasMaxLength(200)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.UpdatedDate).HasColumnType("date");
+
+                entity.Property(e => e.UserName)
+                    .HasMaxLength(255)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.emailAddress).HasMaxLength(50);
+
+                entity.Property(e => e.remarks).IsUnicode(false);
+
+                entity.HasOne(d => d.ParentOrganzationNavigation)
+                    .WithMany(p => p.RegisterContractEmployeeParentOrganzationNavigations)
+                    .HasForeignKey(d => d.ParentOrganzation)
+                    .HasConstraintName("FK__RegisterC__Paren__127F7A1C");
+
+                entity.HasOne(d => d.fkContract)
+                    .WithMany(p => p.RegisterContractEmployeefkContracts)
+                    .HasForeignKey(d => d.fkContractid)
+                    .HasConstraintName("FK__RegisterC__fkCon__118B55E3");
             });
 
             modelBuilder.Entity<kraUser>(entity =>
