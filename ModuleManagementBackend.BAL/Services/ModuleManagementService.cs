@@ -181,18 +181,14 @@ namespace ModuleManagementBackend.BAL.Services
                     mstRecord.Post = editRecord.Designation;
                     mstRecord.PositionGrade = editRecord.PositionGrade;
                     mstRecord.DeptDFCCIL = editRecord.Department;
-                    mstRecord.SubDeptDF = editRecord.SubDepartment;
                     mstRecord.DOB = editRecord.DOB;
                     mstRecord.AnniversaryDate = editRecord.DateOfAnniversary;
                     mstRecord.DOJDFCCIL = editRecord.DateOfJoining;
                     mstRecord.Location = editRecord.Location;
-                    mstRecord.PersonnelSubArea = editRecord.SubArea;
                     mstRecord.Mobile = editRecord.Mobile;
                     mstRecord.emailAddress = editRecord.Email;
                     mstRecord.PersonalEmailAddress = editRecord.PersonalEmailId;
                     mstRecord.TOemploy = editRecord.Toemploy;
-                    mstRecord.AboutUs = editRecord.AboutUs;
-                    mstRecord.Photo = editRecord.Photo;
                     mstRecord.ExtnNo = editRecord.ExtensionNo;
 
 
