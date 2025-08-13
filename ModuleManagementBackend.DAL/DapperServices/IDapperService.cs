@@ -1,4 +1,5 @@
 ﻿using Dapper;
+using Microsoft.Data.SqlClient;
 using System.Data;
 using System.Data.Common;
 
@@ -12,5 +13,6 @@ namespace ModuleManagementBackend.DAL.DapperServices
         Task Update<T>(string sp, DynamicParameters parms, CommandType commandType = CommandType.StoredProcedure);
         DbConnection GetDbconnection();
         Task<int> ExecuteAsync(string storedProcedure, DynamicParameters parameters, CommandType commandType = CommandType.StoredProcedure);
+        SqlConnection GetConnection();
     }
 }

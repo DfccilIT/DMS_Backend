@@ -1,8 +1,9 @@
-﻿using System.Data;
-using System.Data.Common;
-using Dapper;
+﻿using Dapper;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
+using System.Data;
+using System.Data.Common;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace ModuleManagementBackend.DAL.DapperServices
 {
@@ -126,6 +127,14 @@ namespace ModuleManagementBackend.DAL.DapperServices
             using IDbConnection db = new SqlConnection(Connectionstring);
             return await db.ExecuteAsync(storedProcedure, parameters, commandType: commandType);
         }
+
+        public  SqlConnection GetConnection()
+        {
+            string connectionString = Connectionstring;
+            var connection = new SqlConnection(connectionString);
+            return connection;
+        }
+
 
     }
 }

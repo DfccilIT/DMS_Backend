@@ -8,7 +8,7 @@ namespace ModuleManagementBackend.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize]
+    
     public class UserController : BaseController
     {
 
@@ -388,6 +388,15 @@ namespace ModuleManagementBackend.API.Controllers
         {
             var response = new ResponseModel();
             response = await _userrepository.GetRoleById(roleId);
+            return response;
+
+        }
+        [AllowAnonymous]
+        [HttpGet("GetUserRoleUnitWise/{roleName}")]
+        public async Task<ResponseModel> GetUserRoleUnitWise(string? roleName="admin")
+        {
+            var response = new ResponseModel();
+            response = await _userrepository.GetAllRolesByUnit(roleName);
             return response;
 
         }

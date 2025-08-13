@@ -719,6 +719,28 @@ namespace ModuleManagementBackend.BAL.Services
             response.StatusCode = System.Net.HttpStatusCode.OK;
             return response;
         }
+        public async Task<ResponseModel> GetAllRolesByUnit( string role="admin")
+        {
+            var response = new ResponseModel();
 
+            var roles = await _dbContext.userRoleMappings.Where(x=>x.Role.RoleName.ToLower().Trim()==role.ToLower().Trim())
+                .GroupBy(y=>y.UnitId).
+                Select(g => new
+                {
+                    UnitId = g.Key,
+                    EmpCode=g.Select(x=>x.EmpCode),
+                    Roles = g.Select(x => new
+                    {
+                        RoleId = x.RoleMasterId,
+                        RoleName = x.Role.RoleName
+                    }).ToList()
+                })
+                .ToListAsync();
+
+            response.Data = roles;
+            response.Message = roles.Any() ? "Roles retrieved successfully." : "No roles found.";
+            response.StatusCode = System.Net.HttpStatusCode.OK;
+            return response;
+        }
     }
 }

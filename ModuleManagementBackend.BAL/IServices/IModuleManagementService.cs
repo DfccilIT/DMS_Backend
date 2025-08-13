@@ -35,6 +35,10 @@ namespace ModuleManagementBackend.BAL.IServices
         #endregion
 
         Task<ResponseModel> GetAllContractualEmployeeEditRequestsAsync();
+        Task<ResponseModel> GetAcceptOrRejectContractualEmployeeEditRequestsAsync(int status);
         Task<ResponseModel> ProcessEditContractualEmployeeRequest(AprooveContractualEmployeeDto request, string LoginUserId);
+
+        ResponseModel GetEmployeeProfile(string EmployeeCode);
+        ResponseModel GetEditEmployeeStatus(string EmployeeCode);
     }
 }

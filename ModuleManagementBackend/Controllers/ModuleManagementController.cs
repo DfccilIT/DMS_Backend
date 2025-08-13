@@ -1,8 +1,13 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Dapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ModuleManagementBackend.BAL.IServices;
+using ModuleManagementBackend.DAL.DapperServices;
 using ModuleManagementBackend.Model.Common;
 using ModuleManagementBackend.Model.DTOs.EditEmployeeDTO;
+using ModuleManagementBackend.Model.DTOs.GETEMPLOYEEDTO;
+using System.Data;
+using System.Net;
 using static ModuleManagementBackend.BAL.Services.AccountService;
 
 namespace ModuleManagementBackend.API.Controllers
@@ -17,14 +22,13 @@ namespace ModuleManagementBackend.API.Controllers
     {
         private readonly IModuleManagementService managementService;
         private readonly IHttpContextAccessor httpContext;
-       
+        private readonly IDapperService dapper;
 
-        public ModuleManagementController(IModuleManagementService managementService, IHttpContextAccessor httpContext)
+        public ModuleManagementController(IModuleManagementService managementService, IHttpContextAccessor httpContext, IDapperService dapper)
         {
             this.managementService=managementService;
             this.httpContext=httpContext;
-
-            
+            this.dapper=dapper;
         }
 
         private string LoginUserId
@@ -182,6 +186,11 @@ namespace ModuleManagementBackend.API.Controllers
         {
             return await managementService.GetAllContractualEmployeeEditRequestsAsync();
         }
+        [HttpGet("GetAcceptOrRejectContractualEmployeeRequests/{Status}")]
+        public async Task<ResponseModel> GetAcceptOrRejectContractualEmployeeRequests(int Status)
+        {
+            return await managementService.GetAcceptOrRejectContractualEmployeeEditRequestsAsync(Status);
+        }
         [HttpPut("ProcessContractualEmployeeRequest")]
 
         public async Task<ResponseModel> ProcessEditContractualEmployeeRequest([FromBody] AprooveContractualEmployeeDto request)
@@ -189,6 +198,71 @@ namespace ModuleManagementBackend.API.Controllers
             return await managementService.ProcessEditContractualEmployeeRequest(request, LoginUserId);
         }
         #endregion
+
+        //[HttpGet("GetEmployeeProfile/{empCode}")]
+        //public ResponseModel GetEmployeeProfile(string empCode)
+        //{
+        //    var response = managementService.GetEmployeeProfile(empCode);
+        //    return response;
+        //}
+        [HttpGet("GetEmployeeProfile/{empCode}")]
+        public async Task<IActionResult> GetEmployeeProfile(string empCode)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(empCode))
+                {
+                    return BadRequest(new { message = "Employee code is required" });
+                }
+
+                using var connection = dapper.GetConnection();
+
+                
+                using var multi = await connection.QueryMultipleAsync(
+                    "[dbo].[GetEmployeeOptimise]",
+                    new { EmployeeCode = empCode },
+                    commandType: CommandType.StoredProcedure
+                );
+
+                var employees = await multi.ReadAsync<EmployeeProfileDto>();
+                var units = await multi.ReadAsync<UnitDto>();
+
+                var employee = employees.ToList();
+
+                
+
+                var result = new
+                {
+                    employee = employee,
+                    units = units.ToList()
+                };
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+               
+                return StatusCode(500, new { message = "Error fetching employee profile", error = ex.Message });
+            }
+        }
+
+
+
+        [HttpGet]
+        [Route("GetEditEmployeeStatus/{EmployeeCode}")]
+        public ResponseModel GetEditEmployeeStatus(string EmployeeCode)
+        {
+            var response = managementService.GetEditEmployeeStatus(EmployeeCode);
+            if (response == null)
+            {
+                return new ResponseModel
+                {
+                    StatusCode = HttpStatusCode.NotFound,
+                    Message = "Employee not found"
+                };
+            }
+            return response;
+        }
     }
 
 }

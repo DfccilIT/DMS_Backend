@@ -21,5 +21,6 @@ namespace ModuleManagementBackend.BAL.IServices
         Task<ResponseModel> DeleteRole(int roleId, int EmpCode);
         Task<ResponseModel> GetAllRoles();
         Task<ResponseModel> GetRoleById(int roleId);
+        Task<ResponseModel> GetAllRolesByUnit(string role = "admin");
     }
 }
