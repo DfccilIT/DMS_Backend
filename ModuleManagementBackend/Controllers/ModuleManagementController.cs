@@ -65,6 +65,7 @@ namespace ModuleManagementBackend.API.Controllers
             return await managementService.ProcessEditReportingOfficerRequest(aprooveEmployee);
         }
 
+        [AllowAnonymous]
         [HttpGet("ModuleMangement/GetDfccilDirctory")]
         public async Task<ResponseModel> GetDfccilDirctory(string? employeeCode = null)
         {

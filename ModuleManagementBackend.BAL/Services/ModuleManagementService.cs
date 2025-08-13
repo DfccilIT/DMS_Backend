@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.Extensions.Configuration;
 using ModuleManagementBackend.BAL.IServices;
 using ModuleManagementBackend.DAL.DapperServices;
@@ -409,46 +410,74 @@ namespace ModuleManagementBackend.BAL.Services
             try
             {
 
-                var Employeemaster = await context.MstEmployeeMasters.
+                //var Employeemaster = await context.MstEmployeeMasters.
 
-                    Where(x => (x.EmployeeCode==EmpCode ||EmpCode==null) && x.Status==0).
-                    Join(context.mstPositionGreades, x => x.PositionGrade, y => y.PositionGrade, (x, y) =>
+                //    Where(x => (x.EmployeeCode==EmpCode ||EmpCode==null) && x.Status==0).
+                //    LeftJoin(context.mstPositionGreades, x => x.PositionGrade, y => y.PositionGrade, (x, y) =>
 
-                        new
+                //        new
+                //        {
+                //            x.EmployeeCode,
+                //            x.UserName,
+                //            x.Location,
+                //            x.PersonalMobile,
+                //            x.emailAddress,
+                //            x.ExtnNo,
+                //            x.GenericDesignation,
+                //            x.DeptDFCCIL,
+                //            y.PositionGrade,
+                //            y.PGOrder,
+                //            x.Mobile
+                //        }).
+
+                //      Select(x => new
+                //      {
+                //          EmpCode = x.EmployeeCode,
+                //          x.PositionGrade,
+                //          OfficalMobil = x.Mobile,
+                //          name = x.UserName,
+                //          unit = x.Location,
+                //          personalMobile = x.PersonalMobile,
+                //          Email = x.emailAddress,
+                //          extensionNo = x.ExtnNo,
+                //          designation = x.GenericDesignation,
+                //          Department = x.DeptDFCCIL,
+                //          PgOrder = x.PGOrder
+
+                //      }).OrderByDescending(x => x.PgOrder).ToListAsync();
+                var employeeMaster = await context.MstEmployeeMasters
+                    .Where(x => (EmpCode == null || x.EmployeeCode == EmpCode) && x.Status == 0)
+                    .GroupJoin(
+                        context.mstPositionGreades, 
+                        x => x.PositionGrade,      
+                        y => y.PositionGrade,      
+                        (x, y) => new { x, y }    
+                    )
+                    .SelectMany(
+                        xy => xy.y.DefaultIfEmpty(), 
+                        (xy, y) => new
                         {
-                            x.EmployeeCode,
-                            x.UserName,
-                            x.Location,
-                            x.PersonalMobile,
-                            x.emailAddress,
-                            x.ExtnNo,
-                            x.GenericDesignation,
-                            x.DeptDFCCIL,
-                            y.PositionGrade,
-                            y.PGOrder,
-                            x.Mobile
-                        }).
-
-                      Select(x => new
-                      {
-                          EmpCode = x.EmployeeCode,
-                          x.PositionGrade,
-                          OfficalMobil = x.Mobile,
-                          name = x.UserName,
-                          unit = x.Location,
-                          personalMobile = x.PersonalMobile,
-                          Email = x.emailAddress,
-                          extensionNo = x.ExtnNo,
-                          designation = x.GenericDesignation,
-                          Department = x.DeptDFCCIL,
-                          PgOrder = x.PGOrder
-
-                      }).OrderByDescending(x => x.PgOrder).ToListAsync();
+                            EmpCode = xy.x.EmployeeCode,
+                            PositionGrade = xy.x!= null ? xy.x.PositionGrade : null,
+                            OfficalMobile = xy.x.Mobile,
+                            name = xy.x.UserName,
+                            unit = xy.x.Location,
+                            personalMobile = xy.x.PersonalMobile,
+                            Email = xy.x.emailAddress,
+                            extensionNo = xy.x.ExtnNo,
+                            designation = xy.x.GenericDesignation,
+                            Department = xy.x.DeptDFCCIL,
+                            PgOrder = y != null ? y.PGOrder : null
+                        }
+                    )
+                    .OrderByDescending(x => x.PgOrder)
+                    .AsNoTracking() // avoid tracking overhead
+                    .ToListAsync();
 
                 responseModel.Message = "Directory fetched successfully.";
                 responseModel.StatusCode= System.Net.HttpStatusCode.OK;
-                responseModel.Data = Employeemaster;
-                responseModel.TotalRecords=Employeemaster.Count();
+                responseModel.Data = employeeMaster;
+                responseModel.TotalRecords=employeeMaster.Count();
 
                 return responseModel;
             }
