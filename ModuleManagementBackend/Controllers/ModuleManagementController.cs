@@ -199,12 +199,6 @@ namespace ModuleManagementBackend.API.Controllers
         }
         #endregion
 
-        //[HttpGet("GetEmployeeProfile/{empCode}")]
-        //public ResponseModel GetEmployeeProfile(string empCode)
-        //{
-        //    var response = managementService.GetEmployeeProfile(empCode);
-        //    return response;
-        //}
         [HttpGet("GetEmployeeProfile/{empCode}")]
         public async Task<IActionResult> GetEmployeeProfile(string empCode)
         {
@@ -217,7 +211,6 @@ namespace ModuleManagementBackend.API.Controllers
 
                 using var connection = dapper.GetConnection();
 
-                
                 using var multi = await connection.QueryMultipleAsync(
                     "[dbo].[GetEmployeeOptimise]",
                     new { EmployeeCode = empCode },
