@@ -10,6 +10,7 @@ using ModuleManagementBackend.Model.Common;
 using ModuleManagementBackend.Model.DTOs.EditEmployeeDTO;
 using System.Data;
 using System.Net;
+using System.Net.Mail;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
@@ -85,7 +86,7 @@ namespace ModuleManagementBackend.BAL.Services
                     x.mm.Mobile,
                     x.mm.emailAddress,
                     x.mm.PersonalEmailAddress,
-                    x.mm.TOemploy,
+                    TOemploy = x.mm.TOemploy,
                     x.mm.AboutUs,
                     x.mm.Photo,
                     x.mm.ReportingOfficer,
@@ -107,9 +108,9 @@ namespace ModuleManagementBackend.BAL.Services
                     x.ee.Location,
                     x.ee.SubArea,
                     x.ee.Mobile,
-                    x.ee.Email,
-                    x.ee.PersonalEmailId,
-                    x.ee.Toemploy,
+                    emailAddress = x.ee.Email,
+                    PersonalEmailAddress = x.ee.PersonalEmailId,
+                    TOemploy = x.ee.Toemploy,
                     x.ee.AboutUs,
                     x.ee.Photo,
                     x.ee.ReportingOfficer,
@@ -295,9 +296,9 @@ namespace ModuleManagementBackend.BAL.Services
                         x.ee.Location,
                         x.ee.SubArea,
                         x.ee.Mobile,
-                        x.ee.Email,
-                        x.ee.PersonalEmailId,
-                        x.ee.Toemploy,
+                        emailAddress = x.ee.Email,
+                        PersonalEmailAddress = x.ee.PersonalEmailId,
+                        TOemploy = x.ee.Toemploy,
                         x.ee.AboutUs,
                         x.ee.Photo,
                         x.ee.ReportingOfficer,
@@ -595,7 +596,7 @@ namespace ModuleManagementBackend.BAL.Services
                     existingRecord.fkEmployeeMasterAutoId = employee.EmployeeMasterAutoId;
                     if (dto.photo != null)
                     {
-                       var fileName= await UploadPhotoIfAvailable(dto.photo);
+                        var fileName = await UploadPhotoIfAvailable(dto.photo);
                         existingRecord.photo = fileName;
                     }
                     context.SaveChanges();
@@ -1297,7 +1298,7 @@ namespace ModuleManagementBackend.BAL.Services
         public async Task<ResponseModel> GetAllContractualEmployeeEditRequestsAsync()
         {
             var response = new ResponseModel();
-           
+
 
             try
             {
