@@ -409,7 +409,25 @@ namespace ModuleManagementBackend.BAL.Services
             try
             {
 
-                var Employeemaster = await context.MstEmployeeMasters.Where(x => (x.EmployeeCode==EmpCode ||EmpCode==null) && x.Status==0).
+                var Employeemaster = await context.MstEmployeeMasters.
+                    
+                    Where(x => (x.EmployeeCode==EmpCode ||EmpCode==null) && x.Status==0).
+                    Join(context.mstPositionGreades,x=> x.PositionGrade,y=>y.PositionGrade, (x, y) =>
+                    
+                        new 
+                        {
+                            x.EmployeeCode,
+                            x.UserName,
+                            x.Location,
+                            x.PersonalMobile,
+                            x.emailAddress,
+                            x.ExtnNo,
+                            x.GenericDesignation,
+                            x.DeptDFCCIL,
+                            y.PositionGrade,
+                            y.PGOrder
+                        }).
+                    
                       Select(x => new
                       {
                           EmpCode = x.EmployeeCode,
@@ -419,9 +437,10 @@ namespace ModuleManagementBackend.BAL.Services
                           Email = x.emailAddress,
                           extensionNo = x.ExtnNo,
                           designation = x.GenericDesignation,
-                          Department = x.DeptDFCCIL
+                          Department = x.DeptDFCCIL,
+                          PgOrder = x.PGOrder
 
-                      }).ToListAsync();
+                      }).OrderByDescending(x=>x.PgOrder).ToListAsync();
 
                 responseModel.Message = "Directory fetched successfully.";
                 responseModel.StatusCode= System.Net.HttpStatusCode.OK;
