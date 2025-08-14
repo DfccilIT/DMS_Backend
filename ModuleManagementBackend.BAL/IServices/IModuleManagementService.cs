@@ -5,7 +5,7 @@ namespace ModuleManagementBackend.BAL.IServices
 {
     public interface IModuleManagementService
     {
-        Task<ResponseModel> GetAllEditEmployeeRequests(string? employeeCode = null, string? location = null, string? userName = null);
+        Task<ResponseModel> GetAllEditEmployeeRequests(string? employeeCode = null, string? location = null, string? userName = null, string? empcode = null, string? autoId = null);
         Task<ResponseModel> ProcessEditEmployeeRequest(AprooveEmployeeReportDto request);
         Task<ResponseModel> GetAllReportingOfficerRequest(string? employeeCode = null, string? location = null, string? userName = null);
         Task<ResponseModel> ProcessEditReportingOfficerRequest(AprooveEmployeeReportDto request);

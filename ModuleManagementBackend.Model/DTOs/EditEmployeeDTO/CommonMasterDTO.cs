@@ -65,4 +65,15 @@ namespace ModuleManagementBackend.Model.DTOs.EditEmployeeDTO
         public string? DocumentType { get; set; }
         public string? Remarks { get; set; }
     }
+
+    public class ProfileCadre
+    {
+        public long EmployeeAutoId { get; set; }
+        public string Empcode { get; set; }
+
+        public string DeptName { get; set; }
+
+        public string PositionGrade { get; set; }
+    }
+
 }

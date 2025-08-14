@@ -4,6 +4,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Primitives;
 using ModuleManagementBackend.BAL.IServices;
 using ModuleManagementBackend.DAL.DapperServices;
 using ModuleManagementBackend.DAL.Models;
@@ -39,11 +40,15 @@ namespace ModuleManagementBackend.BAL.Services
     : (configuration["BasePathProd"] ?? string.Empty);
         }
 
-        public async Task<ResponseModel> GetAllEditEmployeeRequests(string? employeeCode = null, string? location = null, string? userName = null)
+        public async Task<ResponseModel> GetAllEditEmployeeRequests(string? employeeCode = null, string? location = null, string? userName = null,string?empcode=null,string? autoId=null)
         {
 
 
             ResponseModel responseModel = new ResponseModel();
+           
+    
+
+
             var query = context.EditEmployeeDetails
              .Join(context.MstEmployeeMasters,
                    ee => ee.EmployeeCode,
@@ -52,7 +57,7 @@ namespace ModuleManagementBackend.BAL.Services
 
 
                 .Where(e => e.ee.status == 99 && e.ee.TableName=="P");
-
+        
 
             if (!string.IsNullOrWhiteSpace(employeeCode))
             {
@@ -80,12 +85,12 @@ namespace ModuleManagementBackend.BAL.Services
                     Designation = x.mm.Post,
                     x.mm.PositionGrade,
                     Department = x.mm.DeptDFCCIL,
-                    SubDepartment = x.mm.SubDeptDF,
+                    //SubDepartment = x.mm.SubDeptDF,
                     x.mm.DOB,
                     DateOfAnniversary = x.mm.AnniversaryDate,
                     DateOfJoining = x.mm.DOJDFCCIL,
                     x.mm.Location,
-                    SubArea = x.mm.PersonnelSubArea,
+                    //SubArea = x.mm.PersonnelSubArea,
                     x.mm.Mobile,
                     x.mm.emailAddress,
                     x.mm.PersonalEmailAddress,
@@ -104,12 +109,12 @@ namespace ModuleManagementBackend.BAL.Services
                     x.ee.Designation,
                     x.ee.PositionGrade,
                     x.ee.Department,
-                    x.ee.SubDepartment,
+                    //x.ee.SubDepartment,
                     x.ee.DOB,
                     x.ee.DateOfAnniversary,
                     x.ee.DateOfJoining,
                     x.ee.Location,
-                    x.ee.SubArea,
+                    //x.ee.SubArea,
                     x.ee.Mobile,
                     emailAddress = x.ee.Email,
                     PersonalEmailAddress = x.ee.PersonalEmailId,
@@ -234,6 +239,7 @@ namespace ModuleManagementBackend.BAL.Services
             try
             {
 
+                
                 var query = context.EditEmployeeDetails
             .Join(context.MstEmployeeMasters,
                   ee => ee.EmployeeCode,
@@ -268,12 +274,10 @@ namespace ModuleManagementBackend.BAL.Services
                         Designation = x.mm.Post,
                         x.mm.PositionGrade,
                         Department = x.mm.DeptDFCCIL,
-                        SubDepartment = x.mm.SubDeptDF,
                         x.mm.DOB,
                         DateOfAnniversary = x.mm.AnniversaryDate,
                         DateOfJoining = x.mm.DOJDFCCIL,
                         x.mm.Location,
-                        SubArea = x.mm.PersonnelSubArea,
                         x.mm.Mobile,
                         x.mm.emailAddress,
                         x.mm.PersonalEmailAddress,
@@ -292,12 +296,10 @@ namespace ModuleManagementBackend.BAL.Services
                         x.ee.Designation,
                         x.ee.PositionGrade,
                         x.ee.Department,
-                        x.ee.SubDepartment,
                         x.ee.DOB,
                         x.ee.DateOfAnniversary,
                         x.ee.DateOfJoining,
                         x.ee.Location,
-                        x.ee.SubArea,
                         x.ee.Mobile,
                         emailAddress = x.ee.Email,
                         PersonalEmailAddress = x.ee.PersonalEmailId,
@@ -1920,6 +1922,8 @@ namespace ModuleManagementBackend.BAL.Services
             return response;
         }
         #endregion
+
+
 
     }
 }
