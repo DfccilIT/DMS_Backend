@@ -534,24 +534,33 @@ namespace ModuleManagementBackend.BAL.Services
             try
             {
                 var records = await context.tblEmployeeOfTheMonths
-                    .Where(x => x.status == 0)
-                    .OrderByDescending(x => x.yr)
-                    .ThenByDescending(x => x.mnth)
-                    .Select(x => new
-                    {
-                        unitName = x.fkEmployeeMasterAuto.Location,
-                        EMPCode = x.fkEmployeeMasterAuto.EmployeeCode,
-                        EmployeeName = x.fkEmployeeMasterAuto.UserName,
-                        Designation = x.fkEmployeeMasterAuto.GenericDesignation,
-                        Department = x.fkEmployeeMasterAuto.DeptDFCCIL,
-                        PhotoUrl = x.photo != null
-            ? $"{httpContext.HttpContext.Request.Scheme}://{httpContext.HttpContext.Request.Host}/EmployeeOfTheMonth/{x.photo}"
-            : $"{baseUrl}/Images/Employees/{x.fkEmployeeMasterAuto.Photo}",
-                        Month = x.mnth,
-                        Year = x.yr,
-                        x.createDate,
-                        x.createBy
-                    }).Take(5)
+                      .Where(x => x.status == 0)
+                      .OrderByDescending(x => x.yr)
+                      .ThenByDescending(x => x.mnth)
+                      .Select(e => new
+                      {
+                          Employee = e,
+                          Post = context.MstPosts
+                              .Where(p => p.Post.Trim().ToLower() == e.fkEmployeeMasterAuto.Post.Trim().ToLower())
+                              .FirstOrDefault()
+                      })
+                      .Select(x => new
+                      {
+                          unitName = x.Employee.fkEmployeeMasterAuto.Location,
+                          EMPCode = x.Employee.fkEmployeeMasterAuto.EmployeeCode,
+                          EmployeeName = x.Employee.fkEmployeeMasterAuto.UserName,
+                          Designation = x.Employee.fkEmployeeMasterAuto.Post,
+                          DesignationDescription = x.Post != null ? x.Post.Description : null,
+                          Department = x.Employee.fkEmployeeMasterAuto.DeptDFCCIL,
+                          PhotoUrl = x.Employee.photo != null
+                              ? $"{httpContext.HttpContext.Request.Scheme}://{httpContext.HttpContext.Request.Host}/EmployeeOfTheMonth/{x.Employee.photo}"
+                              : $"{baseUrl}/Images/Employees/{x.Employee.fkEmployeeMasterAuto.Photo}",
+                          Month = x.Employee.mnth,
+                          Year = x.Employee.yr,
+                          x.Employee.createDate,
+                          x.Employee.createBy
+                      })
+                      .Skip(1).Take(5)
                     .ToListAsync();
 
                 response.Message = "Employee of the Month records fetched successfully.";
@@ -570,9 +579,7 @@ namespace ModuleManagementBackend.BAL.Services
         public async Task<ResponseModel> GetCurrentEmployeeOfTheMonth()
         {
             ResponseModel response = new ResponseModel();
-            //var currentDate = DateTime.Now;
-            //var currentMonth = currentDate.Month;
-            //var currentYear = currentDate.Year;
+            
             try
             {
                 var records = await context.tblEmployeeOfTheMonths
