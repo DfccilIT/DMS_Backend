@@ -178,6 +178,14 @@ namespace ModuleManagementBackend.API.Controllers
             return response;
         }
 
+
+        [HttpPut("UpdateDependent/{DependentId}")]
+        public async Task<ResponseModel> UpdateDependent(int DependentId, [FromForm] AddDependentDto dto)
+        {
+            return await managementService.UpdateDependentAsync(DependentId, dto, LoginUserId);
+           
+        }
+
         #endregion
 
         #region CONTRACTUAL EMPLOYEE

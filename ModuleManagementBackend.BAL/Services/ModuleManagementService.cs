@@ -822,7 +822,6 @@ namespace ModuleManagementBackend.BAL.Services
 
             return response;
         }
-
         public async Task<ResponseModel> DeleteNotice(int id)
         {
             var response = new ResponseModel();
@@ -853,7 +852,6 @@ namespace ModuleManagementBackend.BAL.Services
 
             return response;
         }
-
         public async Task<ResponseModel> GetAllArchiveNotices()
         {
             var response = new ResponseModel();
@@ -1114,6 +1112,7 @@ namespace ModuleManagementBackend.BAL.Services
                         emp => emp.EmployeeMasterAutoId,
                         (dep, emp) => new
                         {
+                            dep.pkDependentId,
                             emp.EmployeeCode,
                             dep.DName,
                             dep.Relation,
@@ -1128,6 +1127,7 @@ namespace ModuleManagementBackend.BAL.Services
                         EmployeeCode = g.Key,
                         Dependents = g.Select(d => new
                         {
+                            d.pkDependentId,
                             d.DName,
                             d.Relation,
                             d.Gender,
@@ -1217,6 +1217,91 @@ namespace ModuleManagementBackend.BAL.Services
                 response.StatusCode = HttpStatusCode.OK;
                 response.Data = dependents;
                 response.TotalRecords = dependents.Count;
+            }
+            catch (Exception ex)
+            {
+                response.Message = "An error occurred: " + ex.Message;
+                response.StatusCode = HttpStatusCode.InternalServerError;
+            }
+
+            return response;
+        }
+
+        public async Task<ResponseModel> UpdateDependentAsync( int DependentId,AddDependentDto dto, string loginUserEmpCode)
+        {
+            var response = new ResponseModel();
+
+            if (dto == null)
+            {
+                response.Message = "Dependent data is required.";
+                response.StatusCode = HttpStatusCode.BadRequest;
+                return response;
+            }
+
+            if (DependentId <= 0)
+            {
+                response.Message = "Dependent ID is required for update.";
+                response.StatusCode = HttpStatusCode.BadRequest;
+                return response;
+            }
+
+            if (string.IsNullOrWhiteSpace(dto.EmployeeCode))
+            {
+                response.Message = "EmployeeCode is required.";
+                response.StatusCode = HttpStatusCode.BadRequest;
+                return response;
+            }
+
+            try
+            {
+                string empCode = dto.EmployeeCode.Trim();
+                var employee = await context.MstEmployeeMasters
+                    .FirstOrDefaultAsync(e => e.EmployeeCode == empCode && e.Status == 0);
+
+                if (employee == null)
+                {
+                    response.Message = "Employee not found or inactive.";
+                    response.StatusCode = HttpStatusCode.NotFound;
+                    return response;
+                }
+
+                long fkEmployeeMasterAutoId = employee.EmployeeMasterAutoId;
+
+                var existingDependent = await context.MstEmployeeDependents
+                    .FirstOrDefaultAsync(x => x.pkDependentId == DependentId &&
+                                              x.fkEmployeeMasterAutoId == fkEmployeeMasterAutoId);
+
+                if (existingDependent == null)
+                {
+                    response.Message = $"Dependent with ID {DependentId} not found.";
+                    response.StatusCode = HttpStatusCode.NotFound;
+                    return response;
+                }
+
+               
+
+              
+                existingDependent.Relation = string.IsNullOrWhiteSpace(dto.Relation) ? existingDependent.Relation : dto.Relation.Trim();
+                existingDependent.DName = string.IsNullOrWhiteSpace(dto.DName) ? existingDependent.DName : dto.DName.Trim();
+                existingDependent.Gender = string.IsNullOrWhiteSpace(dto.Gender) ? existingDependent.Gender : dto.Gender.Trim();
+                if (dto.Age > 0) existingDependent.Age = dto.Age;
+
+               
+                existingDependent.status = 99;
+                existingDependent.updatedBy = loginUserEmpCode;
+                existingDependent.updatedDate = DateTime.Now.Date;
+
+                context.MstEmployeeDependents.Update(existingDependent);
+                await context.SaveChangesAsync();
+
+               
+                if (dto.DocumentFiles != null && dto.DocumentFiles.Any())
+                {
+                    await UploadDependentDOCIfAvailable(dto.DocumentFiles, existingDependent.pkDependentId, loginUserEmpCode, "UPDATE");
+                }
+
+                response.Message = "Dependent updated successfully.";
+                response.StatusCode = HttpStatusCode.OK;
             }
             catch (Exception ex)
             {
