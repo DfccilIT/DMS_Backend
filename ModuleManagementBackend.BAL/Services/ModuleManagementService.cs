@@ -124,7 +124,7 @@ namespace ModuleManagementBackend.BAL.Services
                     x.ee.ReportingOfficer,
                     x.ee.ExtensionNo,
                 },
-            }).ToListAsync();
+            }).OrderByDescending(x=>x.RequestId).ToListAsync();
 
 
             responseModel.Message="Data fetched successfully";
@@ -309,7 +309,7 @@ namespace ModuleManagementBackend.BAL.Services
                         x.ee.ReportingOfficer,
                         x.ee.ExtensionNo,
                     },
-                }).ToListAsync();
+                }).OrderByDescending(x=>x.RequestId).ToListAsync();
 
 
 
