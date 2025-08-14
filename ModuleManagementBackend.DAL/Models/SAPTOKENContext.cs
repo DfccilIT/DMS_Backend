@@ -28,6 +28,7 @@ namespace ModuleManagementBackend.DAL.Models
         public virtual DbSet<MstPost> MstPosts { get; set; }
         public virtual DbSet<MstUnit> MstUnits { get; set; }
         public virtual DbSet<RegisterContractEmployee> RegisterContractEmployees { get; set; }
+        public virtual DbSet<SMSLogDetail> SMSLogDetails { get; set; }
         public virtual DbSet<kraUser> kraUsers { get; set; }
         public virtual DbSet<mstPositionGreade> mstPositionGreades { get; set; }
         public virtual DbSet<tblEmployeeOfTheMonth> tblEmployeeOfTheMonths { get; set; }
@@ -440,6 +441,30 @@ namespace ModuleManagementBackend.DAL.Models
                     .WithMany(p => p.RegisterContractEmployeefkContracts)
                     .HasForeignKey(d => d.fkContractid)
                     .HasConstraintName("FK__RegisterC__fkCon__118B55E3");
+            });
+
+            modelBuilder.Entity<SMSLogDetail>(entity =>
+            {
+                entity.HasKey(e => e.SMSSentId)
+                    .HasName("PK_SMSSentDetail");
+
+                entity.ToTable("SMSLogDetail");
+
+                entity.Property(e => e.IPAddress).HasMaxLength(50);
+
+                entity.Property(e => e.MobileNumber).HasMaxLength(500);
+
+                entity.Property(e => e.ResponseText).HasMaxLength(500);
+
+                entity.Property(e => e.SMSText).HasMaxLength(500);
+
+                entity.Property(e => e.SentOn)
+                    .HasColumnType("datetime")
+                    .HasDefaultValueSql("(getdate())");
+
+                entity.Property(e => e.Status).HasDefaultValueSql("((0))");
+
+                entity.Property(e => e.UserId).HasMaxLength(50);
             });
 
             modelBuilder.Entity<kraUser>(entity =>

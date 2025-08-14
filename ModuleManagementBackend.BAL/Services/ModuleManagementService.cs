@@ -1546,29 +1546,6 @@ namespace ModuleManagementBackend.BAL.Services
         }
 
         #endregion
-
-        private async Task<string> UploadPhotoIfAvailable(IFormFile photo)
-        {
-            if (photo == null || photo.Length == 0)
-                return null;
-
-            string uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "EmployeeOftheMonth");
-
-            if (!Directory.Exists(uploadsFolder))
-                Directory.CreateDirectory(uploadsFolder);
-
-            string fileName = $"{Guid.NewGuid()}{Path.GetExtension(photo.FileName)}";
-            string filePath = Path.Combine(uploadsFolder, fileName);
-
-            using (var stream = new FileStream(filePath, FileMode.Create))
-            {
-                await photo.CopyToAsync(stream);
-            }
-
-            return fileName;
-        }
-
-
         public ResponseModel GetEditEmployeeStatus(string EmployeeCode)
         {
             var response = new ResponseModel();
@@ -1608,6 +1585,59 @@ namespace ModuleManagementBackend.BAL.Services
             return response;
         }
 
+        #region Notifiaction Methods
+        //public async Task<ResponseModel> GetSMSLogDetailAsync(string EmpCode)
+        //{
+        //    var response = new ResponseModel();
+
+        //    try
+        //    {
+        //        var log = await context.SMSLogDetails
+        //            .FirstOrDefaultAsync(x => x.mas == smsSentId);
+
+        //        if (log == null)
+        //        {
+        //            response.Message = $"SMS log with ID {smsSentId} not found.";
+        //            response.StatusCode = HttpStatusCode.NotFound;
+        //            return response;
+        //        }
+
+        //        response.Data = log;
+        //        response.Message = "SMS log fetched successfully.";
+        //        response.StatusCode = HttpStatusCode.OK;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        response.Message = "An error occurred: " + ex.Message;
+        //        response.StatusCode = HttpStatusCode.InternalServerError;
+        //    }
+
+        //    return response;
+        //}
+
+        #endregion
+
+        #region HelperMethods
+        private async Task<string> UploadPhotoIfAvailable(IFormFile photo)
+        {
+            if (photo == null || photo.Length == 0)
+                return null;
+
+            string uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "EmployeeOftheMonth");
+
+            if (!Directory.Exists(uploadsFolder))
+                Directory.CreateDirectory(uploadsFolder);
+
+            string fileName = $"{Guid.NewGuid()}{Path.GetExtension(photo.FileName)}";
+            string filePath = Path.Combine(uploadsFolder, fileName);
+
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await photo.CopyToAsync(stream);
+            }
+
+            return fileName;
+        }
         private ResponseModel GETEditEmployeeStatus(string EmployeeCode)
         {
             var response = new ResponseModel();
@@ -1638,8 +1668,7 @@ namespace ModuleManagementBackend.BAL.Services
 
             return response;
         }
-
-        public async Task<string> UploadNoticeDOCIfAvailable(IFormFile doc)
+        private async Task<string> UploadNoticeDOCIfAvailable(IFormFile doc)
         {
             if (doc == null || doc.Length == 0)
                 return null;
@@ -1659,8 +1688,7 @@ namespace ModuleManagementBackend.BAL.Services
 
             return fileName;
         }
-
-        public async Task UploadDependentDOCIfAvailable(List<DependtentsDocuments> docs, long fkMstDependentId, string loginUserId, string Flag = "")
+        private async Task UploadDependentDOCIfAvailable(List<DependtentsDocuments> docs, long fkMstDependentId, string loginUserId, string Flag = "")
         {
             if (docs == null || !docs.Any())
                 return;
@@ -1716,7 +1744,6 @@ namespace ModuleManagementBackend.BAL.Services
                 await context.SaveChangesAsync();
             }
         }
-
         private async Task ApproveKraReportingOfficer(long employeeAutoId, string reportingOfficerEmpCode)
         {
             var parameters = new DynamicParameters();
@@ -1739,17 +1766,7 @@ namespace ModuleManagementBackend.BAL.Services
                 await SendSmsAsync(employeeTempalteId, EmpCode.EmployeeCode);
             }
         }
-
-
-        /// <summary>
-        /// Created By Saurabh Kumar Against Send SMS to Reporting Officer And Employee
-        /// </summary>
-        /// <param name="username"></param>
-        /// <param name="phone"></param>
-        /// <param name="msg"></param>
-        /// <param name="templateId"></param>
-        /// <returns></returns>
-        public async Task<ResponseModel> SendSmsAsync(string templateId, string empCode, string userName = "")
+        private async Task<ResponseModel> SendSmsAsync(string templateId, string empCode, string userName = "")
         {
             var response = new ResponseModel();
 
@@ -1828,8 +1845,7 @@ namespace ModuleManagementBackend.BAL.Services
 
             return response;
         }
-
-        public async Task<ResponseModel> Send2SmsAsync(string templateId, string username, string mobile, string EmpCode = "")
+        private async Task<ResponseModel> Send2SmsAsync(string templateId, string username, string mobile, string EmpCode = "")
         {
             var response = new ResponseModel();
             string Username = configuration["SMSServiceUserName"] ?? string.Empty;
@@ -1903,7 +1919,7 @@ namespace ModuleManagementBackend.BAL.Services
 
             return response;
         }
-
+        #endregion
 
     }
 }

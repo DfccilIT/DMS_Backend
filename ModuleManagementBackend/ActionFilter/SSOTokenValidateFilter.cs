@@ -112,8 +112,17 @@ namespace ModuleManagementBackend.API.ActionFilter
                 var jwtToken = tokenHandler.ReadJwtToken(token);
 
                 // Check if token has SSO issuer
+                //var issuer = jwtToken.Claims.FirstOrDefault(x => x.Type == "iss")?.Value;
+
+                //var expectedIssuer = "https://app2.dfccil.com"; // Your SSO URL
+
+                //return issuer == expectedIssuer;
+
                 var issuer = jwtToken.Claims.FirstOrDefault(x => x.Type == "iss")?.Value;
-                var expectedIssuer = "https://app2.dfccil.com"; // Your SSO URL
+                var expectedIssuer = "https://app2.dfccil.com";
+
+                var Environment = configuration["DeploymentModes"]?.ToString().Trim();
+                expectedIssuer = GetSSOBaseUrl(Environment);
 
                 return issuer == expectedIssuer;
             }
