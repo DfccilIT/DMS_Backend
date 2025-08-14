@@ -465,7 +465,7 @@ namespace ModuleManagementBackend.BAL.Services
                             personalMobile = xy.x.PersonalMobile,
                             Email = xy.x.emailAddress,
                             extensionNo = xy.x.ExtnNo,
-                            designation = xy.x.GenericDesignation,
+                            designation = xy.x.Post,
                             Department = xy.x.DeptDFCCIL,
                             PgOrder = y != null ? y.PGOrder : null
                         }
@@ -537,6 +537,7 @@ namespace ModuleManagementBackend.BAL.Services
                     .ThenByDescending(x => x.mnth)
                     .Select(x => new
                     {
+                        unitName=x.fkEmployeeMasterAuto.Location,
                         EMPCode = x.fkEmployeeMasterAuto.EmployeeCode,
                         EmployeeName = x.fkEmployeeMasterAuto.UserName,
                         Designation = x.fkEmployeeMasterAuto.GenericDesignation,
@@ -578,6 +579,7 @@ namespace ModuleManagementBackend.BAL.Services
                     ThenByDescending(x => x.mnth)
                     .Select(x => new
                     {
+                        unitName = x.fkEmployeeMasterAuto.Location,
                         EMPCode = x.fkEmployeeMasterAuto.EmployeeCode,
                         EmployeeName = x.fkEmployeeMasterAuto.UserName,
                         Designation = x.fkEmployeeMasterAuto.GenericDesignation,
