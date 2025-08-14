@@ -48,6 +48,10 @@
          "ObjectType": 0
       },
       {
+         "Name": "[dbo].[MstPosts]",
+         "ObjectType": 0
+      },
+      {
          "Name": "[dbo].[MstUnit]",
          "ObjectType": 0
       },

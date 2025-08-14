@@ -576,25 +576,36 @@ namespace ModuleManagementBackend.BAL.Services
             try
             {
                 var records = await context.tblEmployeeOfTheMonths
-                    .Where(x => x.status == 0).
-                    OrderByDescending(x => x.yr).
-                    ThenByDescending(x => x.mnth)
-                    .Select(x => new
-                    {
-                        unitName = x.fkEmployeeMasterAuto.Location,
-                        EMPCode = x.fkEmployeeMasterAuto.EmployeeCode,
-                        EmployeeName = x.fkEmployeeMasterAuto.UserName,
-                        Designation = x.fkEmployeeMasterAuto.Post,
-                        Department = x.fkEmployeeMasterAuto.DeptDFCCIL,
-                        PhotoUrl = x.photo != null
-            ? $"{httpContext.HttpContext.Request.Scheme}://{httpContext.HttpContext.Request.Host}/EmployeeOfTheMonth/{x.photo}"
-            : $"{baseUrl}/Images/Employees/{x.fkEmployeeMasterAuto.Photo}",
-                        Month = x.mnth,
-                        Year = x.yr,
-                        x.createDate,
-                        x.createBy
-                    })
-                    .FirstOrDefaultAsync();
+                  .Where(x => x.status == 0)
+                  .OrderByDescending(x => x.yr)
+                  .ThenByDescending(x => x.mnth)
+                  .GroupJoin(
+                      context.MstPosts,
+                      e => e.fkEmployeeMasterAuto.Post,
+                      p => p.Post,
+                      (e, posts) => new { e, posts }
+                  )
+                  .SelectMany(
+                   ep => ep.posts.DefaultIfEmpty(),
+                   (ep, post) => new
+                   {
+                       unitName = ep.e.fkEmployeeMasterAuto.Location,
+                       EMPCode = ep.e.fkEmployeeMasterAuto.EmployeeCode,
+                       EmployeeName = ep.e.fkEmployeeMasterAuto.UserName,
+                       Designation = ep.e.fkEmployeeMasterAuto.Post,
+                       DesinationDescription = post != null ? post.Description : null,
+                       Department = ep.e.fkEmployeeMasterAuto.DeptDFCCIL,
+                       PhotoUrl = ep.e.photo != null
+                           ? $"{httpContext.HttpContext.Request.Scheme}://{httpContext.HttpContext.Request.Host}/EmployeeOfTheMonth/{ep.e.photo}"
+                           : $"{baseUrl}/Images/Employees/{ep.e.fkEmployeeMasterAuto.Photo}",
+                       Month = ep.e.mnth,
+                       Year = ep.e.yr,
+                       ep.e.createDate,
+                       ep.e.createBy
+                   }
+    )
+           .FirstOrDefaultAsync();
+
 
                 if (records == null)
                 {
@@ -1289,7 +1300,7 @@ namespace ModuleManagementBackend.BAL.Services
                     context.MstEmployeeMasters.Add(mstEmployee);
                     await context.SaveChangesAsync();
 
-                    await Send2SmsAsync(ApproveTempalteId, existingEmployee.UserName, existingEmployee.Mobile,newEmpCode);
+                    await Send2SmsAsync(ApproveTempalteId, existingEmployee.UserName, existingEmployee.Mobile, newEmpCode);
 
                     var mstContract = new MstContractEmployeeMaster
                     {
@@ -1729,7 +1740,7 @@ namespace ModuleManagementBackend.BAL.Services
             return response;
         }
 
-        public async Task<ResponseModel> Send2SmsAsync(string templateId, string username, string mobile, string EmpCode="")
+        public async Task<ResponseModel> Send2SmsAsync(string templateId, string username, string mobile, string EmpCode = "")
         {
             var response = new ResponseModel();
             string Username = configuration["SMSServiceUserName"] ?? string.Empty;
@@ -1804,6 +1815,6 @@ namespace ModuleManagementBackend.BAL.Services
             return response;
         }
 
-       
+
     }
 }

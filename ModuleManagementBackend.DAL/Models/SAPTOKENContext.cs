@@ -25,6 +25,7 @@ namespace ModuleManagementBackend.DAL.Models
         public virtual DbSet<MstDepartment> MstDepartments { get; set; }
         public virtual DbSet<MstEmployeeDependent> MstEmployeeDependents { get; set; }
         public virtual DbSet<MstEmployeeMaster> MstEmployeeMasters { get; set; }
+        public virtual DbSet<MstPost> MstPosts { get; set; }
         public virtual DbSet<MstUnit> MstUnits { get; set; }
         public virtual DbSet<RegisterContractEmployee> RegisterContractEmployees { get; set; }
         public virtual DbSet<kraUser> kraUsers { get; set; }
@@ -353,6 +354,17 @@ namespace ModuleManagementBackend.DAL.Models
                 entity.Property(e => e.designation).HasMaxLength(100);
 
                 entity.Property(e => e.emailAddress).HasMaxLength(50);
+            });
+
+            modelBuilder.Entity<MstPost>(entity =>
+            {
+                entity.HasNoKey();
+
+                entity.Property(e => e.Post)
+                    .HasMaxLength(255)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.Postid).ValueGeneratedOnAdd();
             });
 
             modelBuilder.Entity<MstUnit>(entity =>
