@@ -1377,7 +1377,7 @@ namespace ModuleManagementBackend.BAL.Services
                         UserName = existingEmployee.UserName,
                         DeptDFCCIL = existingEmployee.DeptDFCCIL,
                         Location = existingEmployee.Location,
-                        PersonalMobile = existingEmployee.Mobile,
+                        Mobile = existingEmployee.Mobile,
                         emailAddress = existingEmployee.emailAddress,
                         TOemploy = existingEmployee.TOemploy,
                         Gender = existingEmployee.Gender,
