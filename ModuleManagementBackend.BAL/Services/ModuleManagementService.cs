@@ -576,36 +576,34 @@ namespace ModuleManagementBackend.BAL.Services
             try
             {
                 var records = await context.tblEmployeeOfTheMonths
-                  .Where(x => x.status == 0)
-                  .OrderByDescending(x => x.yr)
-                  .ThenByDescending(x => x.mnth)
-                  .GroupJoin(
-                      context.MstPosts,
-                      e => e.fkEmployeeMasterAuto.Post,
-                      p => p.Post,
-                      (e, posts) => new { e, posts }
-                  )
-                  .SelectMany(
-                   ep => ep.posts.DefaultIfEmpty(),
-                   (ep, post) => new
-                   {
-                       unitName = ep.e.fkEmployeeMasterAuto.Location,
-                       EMPCode = ep.e.fkEmployeeMasterAuto.EmployeeCode,
-                       EmployeeName = ep.e.fkEmployeeMasterAuto.UserName,
-                       Designation = ep.e.fkEmployeeMasterAuto.Post,
-                       DesinationDescription = post != null ? post.Description : null,
-                       Department = ep.e.fkEmployeeMasterAuto.DeptDFCCIL,
-                       PhotoUrl = ep.e.photo != null
-                           ? $"{httpContext.HttpContext.Request.Scheme}://{httpContext.HttpContext.Request.Host}/EmployeeOfTheMonth/{ep.e.photo}"
-                           : $"{baseUrl}/Images/Employees/{ep.e.fkEmployeeMasterAuto.Photo}",
-                       Month = ep.e.mnth,
-                       Year = ep.e.yr,
-                       ep.e.createDate,
-                       ep.e.createBy
-                   }
-    )
-           .FirstOrDefaultAsync();
-
+                     .Where(x => x.status == 0)
+                     .OrderByDescending(x => x.yr)
+                     .ThenByDescending(x => x.mnth)
+                     .Select(e => new
+                     {
+                         Employee = e,
+                         Post = context.MstPosts
+                             .Where(p => p.Post.Trim().ToLower() == e.fkEmployeeMasterAuto.Post.Trim().ToLower())
+                             .FirstOrDefault()
+                     })
+                     .Select(x => new
+                     {
+                         unitName = x.Employee.fkEmployeeMasterAuto.Location,
+                         EMPCode = x.Employee.fkEmployeeMasterAuto.EmployeeCode,
+                         EmployeeName = x.Employee.fkEmployeeMasterAuto.UserName,
+                         Designation = x.Employee.fkEmployeeMasterAuto.Post,
+                         DesignationDescription = x.Post != null ? x.Post.Description : null,
+                         Department = x.Employee.fkEmployeeMasterAuto.DeptDFCCIL,
+                         PhotoUrl = x.Employee.photo != null
+                             ? $"{httpContext.HttpContext.Request.Scheme}://{httpContext.HttpContext.Request.Host}/EmployeeOfTheMonth/{x.Employee.photo}"
+                             : $"{baseUrl}/Images/Employees/{x.Employee.fkEmployeeMasterAuto.Photo}",
+                         Month = x.Employee.mnth,
+                         Year = x.Employee.yr,
+                         x.Employee.createDate,
+                         x.Employee.createBy
+                     })
+                     .FirstOrDefaultAsync();
+                    
 
                 if (records == null)
                 {
