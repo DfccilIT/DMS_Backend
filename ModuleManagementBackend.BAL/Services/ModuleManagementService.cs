@@ -12,10 +12,12 @@ using ModuleManagementBackend.Model.DTOs.EditEmployeeDTO;
 using System.Data;
 using System.Net;
 using System.Net.Mail;
+using System.Reflection.Emit;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
+using static ModuleManagementBackend.BAL.Services.AccountService;
 
 namespace ModuleManagementBackend.BAL.Services
 {
@@ -448,13 +450,13 @@ namespace ModuleManagementBackend.BAL.Services
                 var employeeMaster = await context.MstEmployeeMasters
                     .Where(x => (EmpCode == null || x.EmployeeCode == EmpCode) && x.Status == 0)
                     .GroupJoin(
-                        context.mstPositionGreades, 
-                        x => x.PositionGrade,      
-                        y => y.PositionGrade,      
-                        (x, y) => new { x, y }    
+                        context.mstPositionGreades,
+                        x => x.PositionGrade,
+                        y => y.PositionGrade,
+                        (x, y) => new { x, y }
                     )
                     .SelectMany(
-                        xy => xy.y.DefaultIfEmpty(), 
+                        xy => xy.y.DefaultIfEmpty(),
                         (xy, y) => new
                         {
                             EmpCode = xy.x.EmployeeCode,
@@ -537,7 +539,7 @@ namespace ModuleManagementBackend.BAL.Services
                     .ThenByDescending(x => x.mnth)
                     .Select(x => new
                     {
-                        unitName=x.fkEmployeeMasterAuto.Location,
+                        unitName = x.fkEmployeeMasterAuto.Location,
                         EMPCode = x.fkEmployeeMasterAuto.EmployeeCode,
                         EmployeeName = x.fkEmployeeMasterAuto.UserName,
                         Designation = x.fkEmployeeMasterAuto.GenericDesignation,
@@ -582,7 +584,7 @@ namespace ModuleManagementBackend.BAL.Services
                         unitName = x.fkEmployeeMasterAuto.Location,
                         EMPCode = x.fkEmployeeMasterAuto.EmployeeCode,
                         EmployeeName = x.fkEmployeeMasterAuto.UserName,
-                        Designation = x.fkEmployeeMasterAuto.GenericDesignation,
+                        Designation = x.fkEmployeeMasterAuto.Post,
                         Department = x.fkEmployeeMasterAuto.DeptDFCCIL,
                         PhotoUrl = x.photo != null
             ? $"{httpContext.HttpContext.Request.Scheme}://{httpContext.HttpContext.Request.Host}/EmployeeOfTheMonth/{x.photo}"
@@ -1216,6 +1218,8 @@ namespace ModuleManagementBackend.BAL.Services
         public async Task<ResponseModel> ProcessEditContractualEmployeeRequest(AprooveContractualEmployeeDto request, string LoginUserId)
         {
             var response = new ResponseModel();
+            var ApproveTempalteId = configuration["ContractualAprrovedSMSTempleteId"]?? string.Empty;
+            var RejectTempalteId = configuration["ContractualRejectedSMSTempleteId"]?? string.Empty;
 
             try
             {
@@ -1285,6 +1289,7 @@ namespace ModuleManagementBackend.BAL.Services
                     context.MstEmployeeMasters.Add(mstEmployee);
                     await context.SaveChangesAsync();
 
+                    await Send2SmsAsync(ApproveTempalteId, existingEmployee.UserName, existingEmployee.Mobile,newEmpCode);
 
                     var mstContract = new MstContractEmployeeMaster
                     {
@@ -1332,9 +1337,15 @@ namespace ModuleManagementBackend.BAL.Services
                         File.Delete(oldFilePath);
                         Console.WriteLine("File deleted successfully.");
                     }
+                    await Send2SmsAsync(RejectTempalteId, existingEmployee.UserName, existingEmployee.Mobile);
                 }
 
                 await context.SaveChangesAsync();
+
+
+
+
+
 
                 response.Message = $"Request {(request.IsApproved ? "Approved" : "Rejected")} Successfully.";
                 response.StatusCode = HttpStatusCode.OK;
@@ -1718,6 +1729,81 @@ namespace ModuleManagementBackend.BAL.Services
             return response;
         }
 
+        public async Task<ResponseModel> Send2SmsAsync(string templateId, string username, string mobile, string EmpCode="")
+        {
+            var response = new ResponseModel();
+            string Username = configuration["SMSServiceUserName"] ?? string.Empty;
+            string phone = string.Empty;
 
+            try
+            {
+                string msg;
+
+                if (configuration["ContractualAprrovedSMSTempleteId"] == templateId)
+                {
+                    if (configuration["DeploymentModes"] !="DFCCIL")
+                    {
+                        phone = configuration["SMSServiceDefaultNumber"]?? string.Empty;
+                    }
+                    else
+                    {
+                        phone = mobile;
+                    }
+                    msg = string.Format("Dear " + username + ", your request for registration on IT connect portal has been approved. Your employee ID is - " + EmpCode + ". From DFCCIL.");
+                }
+                else
+                {
+                    if (configuration["DeploymentModes"] !="DFCCIL")
+                    {
+                        phone = configuration["SMSServiceDefaultNumber"]?? string.Empty;
+                    }
+                    else
+                    {
+                        phone =mobile;
+                    }
+                    msg = string.Format("Dear " + username + ", your request for registration on IT connect portal has been rejected. From DFCCIL");
+                }
+
+
+                string encodedMsg = Uri.EscapeDataString(msg);
+
+                if (string.IsNullOrEmpty(phone))
+                {
+                    return new ResponseModel();
+                }
+                string apiUrl = $"https://login.dfccil.com/Dfccil/DFCSMS?username={Uri.EscapeDataString(Username)}&Phone={Uri.EscapeDataString(phone)}&msg={encodedMsg}&templatedid={Uri.EscapeDataString(templateId)}";
+
+                using var httpClient = new HttpClient();
+                var apiResponse = await httpClient.PostAsync(apiUrl, null);
+
+                if (apiResponse.IsSuccessStatusCode)
+                {
+                    var resultContent = await apiResponse.Content.ReadAsStringAsync();
+                    response.StatusCode = HttpStatusCode.OK;
+                    response.Message = "SMS sent successfully.";
+                    response.Data = resultContent;
+                    response.TotalRecords = 1;
+                }
+                else
+                {
+                    var errorContent = await apiResponse.Content.ReadAsStringAsync();
+                    response.StatusCode = apiResponse.StatusCode;
+                    response.Message = $"Failed to send SMS. Status Code: {apiResponse.StatusCode}";
+                    response.Error = true;
+                    response.ErrorDetail = errorContent;
+                }
+            }
+            catch (Exception ex)
+            {
+                response.StatusCode = HttpStatusCode.InternalServerError;
+                response.Message = "An error occurred while sending SMS.";
+                response.Error = true;
+                response.ErrorDetail = ex;
+            }
+
+            return response;
+        }
+
+       
     }
 }
