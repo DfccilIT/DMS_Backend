@@ -541,7 +541,7 @@ namespace ModuleManagementBackend.BAL.Services
                       {
                           Employee = e,
                           Post = context.MstPosts
-                              .Where(p => p.Post.Trim().ToLower() == e.fkEmployeeMasterAuto.Post.Trim().ToLower())
+                              .Where(p => p.Post.Trim().ToLower() == e.fkEmployeeMasterAuto.Post.Trim().ToLower() && p.Status==0)
                               .FirstOrDefault()
                       })
                       .Select(x => new
@@ -590,7 +590,7 @@ namespace ModuleManagementBackend.BAL.Services
                      {
                          Employee = e,
                          Post = context.MstPosts
-                             .Where(p => p.Post.Trim().ToLower() == e.fkEmployeeMasterAuto.Post.Trim().ToLower())
+                             .Where(p => p.Post.Trim().ToLower() == e.fkEmployeeMasterAuto.Post.Trim().ToLower() && p.Status==0)
                              .FirstOrDefault()
                      })
                      .Select(x => new
