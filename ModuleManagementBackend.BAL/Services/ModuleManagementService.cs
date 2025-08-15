@@ -969,7 +969,7 @@ namespace ModuleManagementBackend.BAL.Services
                         bool exists = context.MstEmployeeDependents.Any(x =>
                             x.fkEmployeeMasterAutoId == fkEmployeeMasterAutoId &&
                             x.DName.ToLower() == dto.DName.Trim().ToLower() &&
-                            x.Relation.ToLower() == dto.Relation.Trim().ToLower());
+                            x.Relation.ToLower() == dto.Relation.Trim().ToLower() && x.status==0);
 
                         if (exists)
                         {
