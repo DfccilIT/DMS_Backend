@@ -462,6 +462,7 @@ namespace ModuleManagementBackend.BAL.Services
                         (xy, y) => new
                         {
                             EmpCode = xy.x.EmployeeCode,
+                            EmployeeType=xy.x.TOemploy,
                             PositionGrade = xy.x!= null ? xy.x.PositionGrade : null,
                             OfficalMobile = xy.x.Mobile,
                             name = xy.x.UserName,
@@ -509,8 +510,8 @@ namespace ModuleManagementBackend.BAL.Services
                 }
 
 
-                if (!string.IsNullOrEmpty(updateDto.PersonalMobile)) employee.PersonalMobile = updateDto.PersonalMobile;
-                if (!string.IsNullOrEmpty(updateDto.ExtnNo)) employee.ExtnNo = updateDto.ExtnNo;
+                /*if (!string.IsNullOrEmpty(updateDto.PersonalMobile))*/ employee.PersonalMobile = updateDto.PersonalMobile;
+                /*if (!string.IsNullOrEmpty(updateDto.ExtnNo))*/ employee.ExtnNo = updateDto.ExtnNo;
 
                 employee.Modify_Date= DateTime.Now;
                 employee.Modify_By = updateDto.UpdatedBy;
