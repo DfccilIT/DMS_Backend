@@ -1254,40 +1254,51 @@ namespace ModuleManagementBackend.BAL.Services
 
                 long fkEmployeeMasterAutoId = employee.EmployeeMasterAutoId;
 
-                var dependents = await context.MstEmployeeDependents
+                var groupedDependents = await context.MstEmployeeDependents
+                    .Where(dep => dep.fkEmployeeMasterAutoId == fkEmployeeMasterAutoId && dep.status==0)
                     .Join(context.MstEmployeeMasters,
-                    MD => MD.fkEmployeeMasterAutoId,
-                    MM => MM.EmployeeMasterAutoId,
-                    (MD, MM) => new
-                    {
-                        MD,
-                        MM
-                    })
-                    .Where(d => d.MD.fkEmployeeMasterAutoId == fkEmployeeMasterAutoId && d.MD.status==0)
-                    .Select(d => new
-                    {
-                        d.MD.pkDependentId,
-                        d.MM.EmployeeCode,
-                        d.MD.DName,
-                        d.MD.Relation,
-                        d.MD.Gender,
-                        d.MD.Age,
-                        d.MD.status,
-                        DocumentList = d.MD.EmployeeDependentDocuments.Select(x => new
+                        dep => dep.fkEmployeeMasterAutoId,
+                        emp => emp.EmployeeMasterAutoId,
+                        (dep, emp) => new
                         {
-                            x.DocumentId,
-                            filePath = $"{httpContext.HttpContext.Request.Scheme}://{httpContext.HttpContext.Request.Host}/DependentDocuments/{x.DocumentName}",
-                            x.DocumentName,
-                            x.DocumentType,
-                            x.Remarks
+                            dep.pkDependentId,
+                            emp.EmployeeCode,
+                            dep.DName,
+                            dep.Relation,
+                            dep.Gender,
+                            dep.Age,
+                            dep.status,
+                            dep.EmployeeDependentDocuments
+                        })
+                    .GroupBy(x => x.EmployeeCode)
+                    .Select(g => new
+                    {
+                        EmployeeCode = g.Key,
+                        Dependents = g.Select(d => new
+                        {
+                            d.pkDependentId,
+                            d.DName,
+                            d.Relation,
+                            d.Gender,
+                            d.Age,
+                            d.status,
+                            DocumentList = d.EmployeeDependentDocuments.Select(doc => new
+                            {
+                                doc.DocumentId,
+                                filePath = $"{httpContext.HttpContext.Request.Scheme}://{httpContext.HttpContext.Request.Host}/DependentDocuments/{doc.DocumentName}",
+                                doc.DocumentName,
+                                doc.DocumentType,
+                                doc.Remarks
+                            }).ToList()
                         }).ToList()
                     })
-                    .ToListAsync();
+                    .FirstOrDefaultAsync();
+
 
                 response.Message = "Dependents fetched successfully.";
                 response.StatusCode = HttpStatusCode.OK;
-                response.Data = dependents;
-                response.TotalRecords = dependents.Count;
+                response.Data = groupedDependents;
+                response.TotalRecords = 1;
             }
             catch (Exception ex)
             {
