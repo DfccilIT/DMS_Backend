@@ -1021,7 +1021,6 @@ namespace ModuleManagementBackend.BAL.Services
         {
             var response = new ResponseModel();
 
-          
             if (dependents == null || !dependents.Any())
             {
                 response.Message = "No dependent data provided.";
@@ -1029,10 +1028,15 @@ namespace ModuleManagementBackend.BAL.Services
                 return response;
             }
 
+            if (string.IsNullOrWhiteSpace(loginUserEmpCode))
+            {
+                response.Message = "Login user employee code is required.";
+                response.StatusCode = HttpStatusCode.BadRequest;
+                return response;
+            }
 
             try
             {
-               
                 var firstDependent = dependents.FirstOrDefault();
                 if (firstDependent == null || string.IsNullOrWhiteSpace(firstDependent.EmployeeCode))
                 {
@@ -1043,16 +1047,13 @@ namespace ModuleManagementBackend.BAL.Services
 
                 string empCode = firstDependent.EmployeeCode.Trim();
 
-              
-                if (dependents.Any(d => string.IsNullOrWhiteSpace(d.EmployeeCode) ||
-                                       d.EmployeeCode.Trim() != empCode))
+                if (dependents.Any(d => string.IsNullOrWhiteSpace(d.EmployeeCode) || d.EmployeeCode.Trim() != empCode))
                 {
                     response.Message = "All dependents must belong to the same employee.";
                     response.StatusCode = HttpStatusCode.BadRequest;
                     return response;
                 }
 
-               
                 var employee = await context.MstEmployeeMasters
                     .FirstOrDefaultAsync(e => e.EmployeeCode == empCode && e.Status == 0);
 
@@ -1065,7 +1066,6 @@ namespace ModuleManagementBackend.BAL.Services
 
                 long fkEmployeeMasterAutoId = employee.EmployeeMasterAutoId;
 
-                
                 var existingPendingRequest = await context.MstEmployeeDependents
                     .AnyAsync(x => x.fkEmployeeMasterAutoId == fkEmployeeMasterAutoId && x.status == 99);
 
@@ -1076,50 +1076,64 @@ namespace ModuleManagementBackend.BAL.Services
                     return response;
                 }
 
-                
                 var existingDependents = await context.MstEmployeeDependents
                     .Where(x => x.fkEmployeeMasterAutoId == fkEmployeeMasterAutoId && x.status == 0)
                     .Select(x => new { x.DName, x.Relation })
                     .ToListAsync();
 
-               
                 var validationErrors = new List<string>();
-                var duplicateCheck = new HashSet<string>();
+                var duplicateCheck = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
                 for (int i = 0; i < dependents.Count; i++)
                 {
                     var dto = dependents[i];
 
-                   
-                    if (string.IsNullOrWhiteSpace(dto.Relation) ||
-                        string.IsNullOrWhiteSpace(dto.DName) ||
-                        string.IsNullOrWhiteSpace(dto.Gender) ||
-                        dto.Age <= 0)
+                    try
                     {
-                        validationErrors.Add($"Dependent #{i + 1} '{dto?.DName}': All fields are required and age must be positive.");
-                        continue;
+                        if (string.IsNullOrWhiteSpace(dto.Relation) ||
+                            string.IsNullOrWhiteSpace(dto.DName) ||
+                            string.IsNullOrWhiteSpace(dto.Gender) ||
+                            dto.Age <= 0)
+                        {
+                            validationErrors.Add($"Dependent #{i + 1} '{dto?.DName ?? "Unknown"}': All fields are required and age must be positive.");
+                            continue;
+                        }
+
+                        string sanitizedName = dto.DName.Trim();
+                        string sanitizedRelation = dto.Relation.Trim();
+
+                        string dependentKey = $"{sanitizedName}_{sanitizedRelation}";
+                        if (!duplicateCheck.Add(dependentKey))
+                        {
+                            validationErrors.Add($"Duplicate dependent in request: '{sanitizedName}' with relation '{sanitizedRelation}'.");
+                            continue;
+                        }
+
+                        bool existsInDb = existingDependents.Any(x =>
+                            string.Equals(x.DName, sanitizedName, StringComparison.OrdinalIgnoreCase) &&
+                            string.Equals(x.Relation, sanitizedRelation, StringComparison.OrdinalIgnoreCase));
+
+                        if (existsInDb)
+                        {
+                            validationErrors.Add($"Dependent '{sanitizedName}' with relation '{sanitizedRelation}' already exists.");
+                        }
+
+                        if (dto.Age > 120)
+                        {
+                            validationErrors.Add($"Dependent '{sanitizedName}': Age cannot exceed 100 years.");
+                        }
+
+                        if (sanitizedName.Length > 100)
+                        {
+                            validationErrors.Add($"Dependent name '{sanitizedName}' is too long (max 100 characters).");
+                        }
                     }
-
-                    
-                    string dependentKey = $"{dto.DName.Trim().ToLower()}_{dto.Relation.Trim().ToLower()}";
-                    if (!duplicateCheck.Add(dependentKey))
+                    catch (Exception validationEx)
                     {
-                        validationErrors.Add($"Duplicate dependent in request: '{dto.DName}' with relation '{dto.Relation}'.");
-                        continue;
-                    }
-
-                  
-                    bool existsInDb = existingDependents.Any(x =>
-                        x.DName.ToLower() == dto.DName.Trim().ToLower() &&
-                        x.Relation.ToLower() == dto.Relation.Trim().ToLower());
-
-                    if (existsInDb)
-                    {
-                        validationErrors.Add($"Dependent '{dto.DName}' with relation '{dto.Relation}' already exists.");
+                        validationErrors.Add($"Error validating dependent #{i + 1}: {validationEx.Message}");
                     }
                 }
 
-               
                 if (validationErrors.Any())
                 {
                     response.Message = "Validation failed: " + string.Join("; ", validationErrors);
@@ -1128,81 +1142,117 @@ namespace ModuleManagementBackend.BAL.Services
                 }
 
                 
-                using var transaction = await context.Database.BeginTransactionAsync();
-                try
+                var strategy = context.Database.CreateExecutionStrategy();
+
+                await strategy.ExecuteAsync(async () =>
                 {
-                    var addedDependents = new List<MstEmployeeDependent>();
-                    var currentDateTime = DateTime.Now;
-
-                    
-                    foreach (var dto in dependents)
+                    using var transaction = await context.Database.BeginTransactionAsync();
+                    try
                     {
-                        var newDependent = new MstEmployeeDependent
+                        var addedDependents = new List<MstEmployeeDependent>();
+                        var currentDateTime = DateTime.Now;
+
+                        foreach (var dto in dependents)
                         {
-                            fkEmployeeMasterAutoId = fkEmployeeMasterAutoId,
-                            Relation = dto.Relation.Trim(),
-                            DName = dto.DName.Trim(),
-                            Gender = dto.Gender.Trim(),
-                            Age = dto.Age,
-                            status = 99, 
-                            createdBy = loginUserEmpCode,
-                            createdDate = currentDateTime.Date
-                        };
+                            var newDependent = new MstEmployeeDependent
+                            {
+                                fkEmployeeMasterAutoId = fkEmployeeMasterAutoId,
+                                Relation = dto.Relation.Trim(),
+                                DName = dto.DName.Trim(),
+                                Gender = dto.Gender.Trim(),
+                                Age = dto.Age,
+                                status = 99,
+                                createdBy = loginUserEmpCode?.Trim(),
+                                createdDate = currentDateTime.Date
+                            };
 
-                        context.MstEmployeeDependents.Add(newDependent);
-                        addedDependents.Add(newDependent);
-                    }
-
-                    
-                    await context.SaveChangesAsync();
-
-                   
-                    var uploadTasks = new List<Task>();
-                    for (int i = 0; i < dependents.Count; i++)
-                    {
-                        var dto = dependents[i];
-                        var dependent = addedDependents[i];
-
-                        if (dto.DocumentFiles != null && dto.DocumentFiles.Any())
-                        {
-                            uploadTasks.Add(UploadDependentDOCIfAvailable(
-                                dto.DocumentFiles,
-                                dependent.pkDependentId,
-                                loginUserEmpCode));
+                            context.MstEmployeeDependents.Add(newDependent);
+                            addedDependents.Add(newDependent);
                         }
+
+                        await context.SaveChangesAsync();
+
+                        var successfulUploads = 0;
+                        var failedUploads = new List<string>();
+
+                        for (int i = 0; i < dependents.Count; i++)
+                        {
+                            var dto = dependents[i];
+                            var dependent = addedDependents[i];
+
+                            if (dto.DocumentFiles != null && dto.DocumentFiles.Any())
+                            {
+                                try
+                                {
+                                    await UploadDependentDOCIfAvailable(dto.DocumentFiles, dependent.pkDependentId, loginUserEmpCode);
+                                    successfulUploads++;
+                                }
+                                catch (Exception uploadEx)
+                                {
+                                    failedUploads.Add($"Failed to upload documents for '{dto.DName}': {uploadEx.Message}");
+                                }
+                            }
+                        }
+
+                        await transaction.CommitAsync();
+
+                        var responseMessage = $"Successfully added {addedDependents.Count} dependent(s) for employee {empCode}.";
+                        if (failedUploads.Any())
+                        {
+                            responseMessage += $" Note: {failedUploads.Count} document upload(s) failed.";
+                        }
+
+                        response.Message = responseMessage;
+                        response.StatusCode = HttpStatusCode.Created;
+                        response.Data = new
+                        {
+                            EmployeeCode = empCode,
+                            DependentsAdded = addedDependents.Count,
+                            DependentIds = addedDependents.Select(d => d.pkDependentId).ToList(),
+                            DocumentUploads = new
+                            {
+                                Successful = successfulUploads,
+                                Failed = failedUploads.Count,
+                                Errors = failedUploads
+                            }
+                        };
                     }
-
-                   
-                    if (uploadTasks.Any())
+                    catch
                     {
-                        await Task.WhenAll(uploadTasks);
+                        await transaction.RollbackAsync();
+                        throw;
                     }
-
-                    await transaction.CommitAsync();
-
-                    response.Message = $"Successfully added {addedDependents.Count} dependent(s) for employee {empCode}.";
-                    response.StatusCode = HttpStatusCode.Created;
-                    response.Data = new
-                    {
-                        EmployeeCode = empCode,
-                        DependentsAdded = addedDependents.Count,
-                        DependentIds = addedDependents.Select(d => d.pkDependentId).ToList()
-                    };
-                }
-                catch (Exception)
-                {
-                    await transaction.RollbackAsync();
-                    throw; 
-                }
+                });
+            }
+            catch (ArgumentNullException argEx)
+            {
+                response.Message = $"Invalid argument: {argEx.Message}";
+                response.StatusCode = HttpStatusCode.BadRequest;
+            }
+            catch (InvalidOperationException opEx)
+            {
+                response.Message = $"Operation error: {opEx.Message}";
+                response.StatusCode = HttpStatusCode.InternalServerError;
+            }
+            catch (SqlException sqlEx)
+            {
+                response.Message = $"Database error: {sqlEx.Message}";
+                response.StatusCode = HttpStatusCode.InternalServerError;
+            }
+            catch (DbUpdateException dbEx)
+            {
+                response.Message = $"Database update error: {dbEx.InnerException?.Message ?? dbEx.Message}";
+                response.StatusCode = HttpStatusCode.InternalServerError;
             }
             catch (Exception ex)
             {
-                response.Message = "An error occurred: " + ex.Message;
+                response.Message = $"An unexpected error occurred: {ex.Message}";
                 response.StatusCode = HttpStatusCode.InternalServerError;
             }
 
             return response;
         }
+
 
         public async Task<ResponseModel> ProceedDependentsAsync(AprooveEmployeeReportDto request, string LoginUserEmpCode)
         {
