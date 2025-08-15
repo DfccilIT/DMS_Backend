@@ -87,6 +87,9 @@ namespace ModuleManagementBackend.Model.DTOs.EditEmployeeDTO
         public int CurrentPage { get; set; }
         public int PageSize { get; set; }
         public int TotalPages { get; set; }
+
+        public bool IsRead { get; set; }
+        public string NotificationType { get; set; }
     }
 
     public class SMSLogRequest

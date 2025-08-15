@@ -1105,11 +1105,12 @@ namespace ModuleManagementBackend.BAL.Services
         public async Task<ResponseModel> GetAllDependentsRequestByEmpCodeAsync()
         {
             var response = new ResponseModel();
-
             try
             {
-                var groupedDependents = await context.MstEmployeeDependents
+              
+                var dependentsWithEmployees = await context.MstEmployeeDependents
                     .Where(dep => dep.status == 99)
+                    .Include(dep => dep.EmployeeDependentDocuments) 
                     .Join(context.MstEmployeeMasters,
                         dep => dep.fkEmployeeMasterAutoId,
                         emp => emp.EmployeeMasterAutoId,
@@ -1124,6 +1125,10 @@ namespace ModuleManagementBackend.BAL.Services
                             dep.status,
                             dep.EmployeeDependentDocuments
                         })
+                    .ToListAsync(); 
+
+              
+                var groupedDependents = dependentsWithEmployees
                     .GroupBy(x => x.EmployeeCode)
                     .Select(g => new
                     {
@@ -1136,17 +1141,17 @@ namespace ModuleManagementBackend.BAL.Services
                             d.Gender,
                             d.Age,
                             d.status,
-                            DocumentList = d.EmployeeDependentDocuments.Select(doc => new
+                            DocumentList = d.EmployeeDependentDocuments?.Select(doc => new
                             {
                                 doc.DocumentId,
                                 filePath = $"{httpContext.HttpContext.Request.Scheme}://{httpContext.HttpContext.Request.Host}/DependentDocuments/{doc.DocumentName}",
                                 doc.DocumentName,
                                 doc.DocumentType,
                                 doc.Remarks
-                            }).ToList()
+                            }).ToList() 
                         }).ToList()
                     })
-                    .ToListAsync();
+                    .ToList();
 
                 response.Message = "Grouped dependents fetched successfully.";
                 response.StatusCode = HttpStatusCode.OK;
@@ -1158,7 +1163,6 @@ namespace ModuleManagementBackend.BAL.Services
                 response.Message = "An error occurred: " + ex.Message;
                 response.StatusCode = HttpStatusCode.InternalServerError;
             }
-
             return response;
         }
         public async Task<ResponseModel> GetDependentsByEmpCodeAsync(string empCode)
@@ -1186,40 +1190,55 @@ namespace ModuleManagementBackend.BAL.Services
 
                 long fkEmployeeMasterAutoId = employee.EmployeeMasterAutoId;
 
-                var dependents = await context.MstEmployeeDependents
-                    .Join(context.MstEmployeeMasters,
-                    MD => MD.fkEmployeeMasterAutoId,
-                    MM => MM.EmployeeMasterAutoId,
-                    (MD, MM) => new
+                var dependentsWithEmployees = await context.MstEmployeeDependents
+                   .Where(dep => dep.status == 99 && dep.fkEmployeeMasterAutoId==fkEmployeeMasterAutoId)
+                   .Include(dep => dep.EmployeeDependentDocuments)
+                   .Join(context.MstEmployeeMasters,
+                       dep => dep.fkEmployeeMasterAutoId,
+                       emp => emp.EmployeeMasterAutoId,
+                       (dep, emp) => new
+                       {
+                           dep.pkDependentId,
+                           emp.EmployeeCode,
+                           dep.DName,
+                           dep.Relation,
+                           dep.Gender,
+                           dep.Age,
+                           dep.status,
+                           dep.EmployeeDependentDocuments
+                       })
+                   .ToListAsync();
+
+
+                var groupedDependents = dependentsWithEmployees
+                    .GroupBy(x => x.EmployeeCode)
+                    .Select(g => new
                     {
-                        MD,
-                        MM
-                    })
-                    .Where(d => d.MD.fkEmployeeMasterAutoId == fkEmployeeMasterAutoId && d.MD.status==99)
-                    .Select(d => new
-                    {
-                        d.MD.pkDependentId,
-                        d.MM.EmployeeCode,
-                        d.MD.DName,
-                        d.MD.Relation,
-                        d.MD.Gender,
-                        d.MD.Age,
-                        d.MD.status,
-                        DocumentList = d.MD.EmployeeDependentDocuments.Select(x => new
+                        EmployeeCode = g.Key,
+                        Dependents = g.Select(d => new
                         {
-                            x.DocumentId,
-                            filePath = $"{httpContext.HttpContext.Request.Scheme}://{httpContext.HttpContext.Request.Host}/DependentDocuments/{x.DocumentName}",
-                            x.DocumentName,
-                            x.DocumentType,
-                            x.Remarks
+                            d.pkDependentId,
+                            d.DName,
+                            d.Relation,
+                            d.Gender,
+                            d.Age,
+                            d.status,
+                            DocumentList = d.EmployeeDependentDocuments?.Select(doc => new
+                            {
+                                doc.DocumentId,
+                                filePath = $"{httpContext.HttpContext.Request.Scheme}://{httpContext.HttpContext.Request.Host}/DependentDocuments/{doc.DocumentName}",
+                                doc.DocumentName,
+                                doc.DocumentType,
+                                doc.Remarks
+                            }).ToList()
                         }).ToList()
                     })
-                    .ToListAsync();
+                    .FirstOrDefault();
 
                 response.Message = "Dependents fetched successfully.";
                 response.StatusCode = HttpStatusCode.OK;
-                response.Data = dependents;
-                response.TotalRecords = dependents.Count;
+                response.Data = groupedDependents?? new object();
+                response.TotalRecords = 1;
             }
             catch (Exception ex)
             {
@@ -1242,8 +1261,9 @@ namespace ModuleManagementBackend.BAL.Services
 
             try
             {
-                var employee = context.MstEmployeeMasters
-                    .FirstOrDefault(e => e.EmployeeCode == empCode && e.Status == 0);
+               
+                var employee = await context.MstEmployeeMasters
+                    .FirstOrDefaultAsync(e => e.EmployeeCode == empCode && e.Status == 0);
 
                 if (employee == null)
                 {
@@ -1254,8 +1274,10 @@ namespace ModuleManagementBackend.BAL.Services
 
                 long fkEmployeeMasterAutoId = employee.EmployeeMasterAutoId;
 
-                var groupedDependents = await context.MstEmployeeDependents
-                    .Where(dep => dep.fkEmployeeMasterAutoId == fkEmployeeMasterAutoId && dep.status==0)
+                
+                var dependentsWithEmployees = await context.MstEmployeeDependents
+                    .Where(dep => dep.fkEmployeeMasterAutoId == fkEmployeeMasterAutoId && dep.status == 0)
+                    .Include(dep => dep.EmployeeDependentDocuments) 
                     .Join(context.MstEmployeeMasters,
                         dep => dep.fkEmployeeMasterAutoId,
                         emp => emp.EmployeeMasterAutoId,
@@ -1270,10 +1292,24 @@ namespace ModuleManagementBackend.BAL.Services
                             dep.status,
                             dep.EmployeeDependentDocuments
                         })
+                    .ToListAsync(); 
+
+                if (!dependentsWithEmployees.Any())
+                {
+                    response.Message = "No dependents found for this employee.";
+                    response.StatusCode = HttpStatusCode.NotFound;
+                    response.Data = new { EmployeeCode = empCode, Dependents = new List<object>() };
+                    response.TotalRecords = 0;
+                    return response;
+                }
+
+                
+                var groupedDependents = dependentsWithEmployees
                     .GroupBy(x => x.EmployeeCode)
                     .Select(g => new
                     {
                         EmployeeCode = g.Key,
+                        TotalDependents = g.Count(),
                         Dependents = g.Select(d => new
                         {
                             d.pkDependentId,
@@ -1282,23 +1318,23 @@ namespace ModuleManagementBackend.BAL.Services
                             d.Gender,
                             d.Age,
                             d.status,
-                            DocumentList = d.EmployeeDependentDocuments.Select(doc => new
+                            DocumentCount = d.EmployeeDependentDocuments?.Count ?? 0,
+                            DocumentList = d.EmployeeDependentDocuments?.Select(doc => new
                             {
                                 doc.DocumentId,
                                 filePath = $"{httpContext.HttpContext.Request.Scheme}://{httpContext.HttpContext.Request.Host}/DependentDocuments/{doc.DocumentName}",
                                 doc.DocumentName,
                                 doc.DocumentType,
                                 doc.Remarks
-                            }).ToList()
+                            }).ToList() 
                         }).ToList()
                     })
-                    .FirstOrDefaultAsync();
+                    .FirstOrDefault();
 
-
-                response.Message = "Dependents fetched successfully.";
+                response.Message = $"Dependents fetched successfully. Found {groupedDependents?.Dependents?.Count ?? 0} dependents.";
                 response.StatusCode = HttpStatusCode.OK;
-                response.Data = groupedDependents;
-                response.TotalRecords = 1;
+                response.Data = groupedDependents?? new object();
+                response.TotalRecords = groupedDependents?.Dependents?.Count ?? 0;
             }
             catch (Exception ex)
             {
@@ -1308,6 +1344,7 @@ namespace ModuleManagementBackend.BAL.Services
 
             return response;
         }
+
         public async Task<ResponseModel> UpdateDependentAsync( int DependentId,AddDependentDto dto, string loginUserEmpCode)
         {
             var response = new ResponseModel();
@@ -1691,13 +1728,22 @@ namespace ModuleManagementBackend.BAL.Services
                     commandTimeout: 30
                 );
 
-                var smsLogs = results.ToList();
+                var smsLogs = results.Select(x => new
+                {
+                    x.SMSSentId,
+                    x.MobileNumber,
+                    x.SMSText,
+                    x.SentOn,
+                    x.UserId,
+                    x.IsRead,
+                    x.NotificationType
+                }).ToList();
 
                 if (!smsLogs.Any())
                 {
                     response.Message = "No SMS logs found for the given criteria.";
                     response.StatusCode = HttpStatusCode.NotFound;
-                    response.Data = new List<SMSLogDetailDto>();
+                    response.Data = new object();
                     response.TotalRecords = 0;
                     response.CurrentPage = request.PageNumber;
                     response.PageSize = request.PageSize;
@@ -1706,7 +1752,7 @@ namespace ModuleManagementBackend.BAL.Services
                 }
 
                 
-                var firstRecord = smsLogs.First();
+                var firstRecord = results.First();
 
                 response.Data = smsLogs;
                 response.TotalRecords = firstRecord.TotalRecords;
