@@ -272,6 +272,21 @@ namespace ModuleManagementBackend.API.Controllers
             }
             return response;
         }
+
+
+        [HttpGet("GetNotificationList")]
+        public async Task<IActionResult> GetSMSLogDetailsPaginatedGet([FromQuery] SMSLogRequest request)
+        {
+            var result = await managementService.GetSMSLogDetailsPaginatedAsync(request);
+            return StatusCode((int)result.StatusCode, result);
+        }
+
+        [HttpPut("UpdateNotification")]
+        public async Task<IActionResult> UpdateNotification(int SmsId)
+        {
+            var result = await managementService.UpdateSMSAsync(SmsId);
+            return StatusCode((int)result.StatusCode, result);
+        }
     }
 
 }

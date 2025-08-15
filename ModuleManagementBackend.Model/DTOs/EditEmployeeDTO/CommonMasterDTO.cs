@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Http;
+using ModuleManagementBackend.Model.Common;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -74,6 +75,39 @@ namespace ModuleManagementBackend.Model.DTOs.EditEmployeeDTO
         public string DeptName { get; set; }
 
         public string PositionGrade { get; set; }
+    }
+    public class SMSLogDetailDto
+    {
+        public int SMSSentId { get; set; }
+        public string MobileNumber { get; set; }
+        public string SMSText { get; set; }
+        public DateTime SentOn { get; set; }
+        public string UserId { get; set; }
+        public int TotalRecords { get; set; }
+        public int CurrentPage { get; set; }
+        public int PageSize { get; set; }
+        public int TotalPages { get; set; }
+    }
+
+    public class SMSLogRequest
+    {
+        public string EmpCode { get; set; }
+        public int PageNumber { get; set; } = 1;
+        public int PageSize { get; set; } = 10;
+        public int? Status { get; set; }
+        public DateTime? DateFrom { get; set; }
+        public DateTime? DateTo { get; set; }
+        public string? SearchText { get; set; }
+    }
+
+    public class PagedResponseModel : ResponseModel
+    {
+        public int TotalRecords { get; set; }
+        public int CurrentPage { get; set; }
+        public int PageSize { get; set; }
+        public int TotalPages { get; set; }
+        public bool HasNextPage => CurrentPage < TotalPages;
+        public bool HasPreviousPage => CurrentPage > 1;
     }
 
 }

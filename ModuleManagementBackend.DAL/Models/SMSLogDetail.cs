@@ -15,5 +15,6 @@ namespace ModuleManagementBackend.DAL.Models
         public string UserId { get; set; }
         public int? Status { get; set; }
         public string IPAddress { get; set; }
+        public bool? ArchiveStatus { get; set; }
     }
 }

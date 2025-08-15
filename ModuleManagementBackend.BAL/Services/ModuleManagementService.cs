@@ -1668,24 +1668,91 @@ namespace ModuleManagementBackend.BAL.Services
         }
 
         #region Notifiaction Methods
-        public async Task<ResponseModel> GetSMSLogDetailAsync(string EmpCode)
+        public async Task<PagedResponseModel> GetSMSLogDetailsPaginatedAsync(SMSLogRequest request)
         {
-            var response = new ResponseModel();
-
+            var response = new PagedResponseModel();
             try
             {
-                var log = await context.SMSLogDetails
-                    .FirstOrDefaultAsync(x => x.UserId == EmpCode);
+                using var connection = dapper.GetConnection();
 
-                if (log == null)
+                var parameters = new DynamicParameters();
+                parameters.Add("@EmpCode", request.EmpCode);
+                parameters.Add("@PageNumber", request.PageNumber);
+                parameters.Add("@PageSize", request.PageSize);
+                parameters.Add("@Status", request.Status);
+                parameters.Add("@DateFrom", request.DateFrom);
+                parameters.Add("@DateTo", request.DateTo);
+                parameters.Add("@SearchText", request.SearchText);
+
+                var results = await connection.QueryAsync<SMSLogDetailDto>(
+                    "[GetSmsNotificationByUser]",
+                    parameters,
+                    commandType: CommandType.StoredProcedure,
+                    commandTimeout: 30
+                );
+
+                var smsLogs = results.ToList();
+
+                if (!smsLogs.Any())
                 {
-                    response.Message = $"SMS log with empcode {EmpCode} not found.";
+                    response.Message = "No SMS logs found for the given criteria.";
+                    response.StatusCode = HttpStatusCode.NotFound;
+                    response.Data = new List<SMSLogDetailDto>();
+                    response.TotalRecords = 0;
+                    response.CurrentPage = request.PageNumber;
+                    response.PageSize = request.PageSize;
+                    response.TotalPages = 0;
+                    return response;
+                }
+
+                
+                var firstRecord = smsLogs.First();
+
+                response.Data = smsLogs;
+                response.TotalRecords = firstRecord.TotalRecords;
+                response.CurrentPage = firstRecord.CurrentPage;
+                response.PageSize = firstRecord.PageSize;
+                response.TotalPages = firstRecord.TotalPages;
+                response.Message = $"Found {smsLogs.Count} SMS logs on page {response.CurrentPage} of {response.TotalPages}.";
+                response.StatusCode = HttpStatusCode.OK;
+            }
+            catch (SqlException sqlEx)
+            {
+                response.Message = $"Database error: {sqlEx.Message}";
+                response.StatusCode = HttpStatusCode.InternalServerError;
+            }
+            catch (Exception ex)
+            {
+                response.Message = $"An error occurred: {ex.Message}";
+                response.StatusCode = HttpStatusCode.InternalServerError;
+            }
+
+            return response;
+        }
+
+        public async Task<ResponseModel> UpdateSMSAsync(int SmsId)
+        {
+            var response = new ResponseModel();
+            try
+            {
+                var existingSMS = await context.SMSLogDetails
+                    .FirstOrDefaultAsync(x => x.SMSSentId == SmsId)                                             ;
+
+                if (existingSMS == null)
+                {
+                    response.Message = $"sms with ID {SmsId} not found.";
                     response.StatusCode = HttpStatusCode.NotFound;
                     return response;
                 }
 
-                response.Data = log;
-                response.Message = "SMS log fetched successfully.";
+
+                existingSMS.ArchiveStatus=true;
+                await context.SaveChangesAsync();
+
+
+             
+
+                response.Message = "sms updated successfully.";
                 response.StatusCode = HttpStatusCode.OK;
             }
             catch (Exception ex)

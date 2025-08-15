@@ -42,5 +42,7 @@ namespace ModuleManagementBackend.BAL.IServices
 
        
         ResponseModel GetEditEmployeeStatus(string EmployeeCode);
+        Task<PagedResponseModel> GetSMSLogDetailsPaginatedAsync(SMSLogRequest request);
+        Task<ResponseModel> UpdateSMSAsync(int SmsId);
     }
 }
