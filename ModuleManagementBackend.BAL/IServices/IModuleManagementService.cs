@@ -32,6 +32,7 @@ namespace ModuleManagementBackend.BAL.IServices
         Task<ResponseModel> ProceedDependentsAsync(AprooveEmployeeReportDto request, string loginUserEmpCode);
         Task<ResponseModel> GetAllDependentsRequestByEmpCodeAsync();
         Task<ResponseModel> GetDependentsByEmpCodeAsync(string empCode);
+        Task<ResponseModel> GetDependentsListByEmpCodeAsync(string empCode);
         Task<ResponseModel> UpdateDependentAsync(int DependentId, AddDependentDto dto, string loginUserEmpCode);
         #endregion
 

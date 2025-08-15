@@ -179,6 +179,13 @@ namespace ModuleManagementBackend.API.Controllers
         }
 
 
+        [HttpGet("GetAllDependentsByEmpCode/{empCode}")]
+        public async Task<ResponseModel> GetAllDependents(string empCode)
+        {
+            var response = await managementService.GetDependentsListByEmpCodeAsync(empCode);
+            return response;
+        }
+
         [HttpPut("UpdateDependent/{DependentId}")]
         public async Task<ResponseModel> UpdateDependent(int DependentId, [FromForm] AddDependentDto dto)
         {

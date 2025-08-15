@@ -1229,6 +1229,74 @@ namespace ModuleManagementBackend.BAL.Services
 
             return response;
         }
+        public async Task<ResponseModel> GetDependentsListByEmpCodeAsync(string empCode)
+        {
+            var response = new ResponseModel();
+
+            if (string.IsNullOrWhiteSpace(empCode))
+            {
+                response.Message = "EmployeeCode is required.";
+                response.StatusCode = HttpStatusCode.BadRequest;
+                return response;
+            }
+
+            try
+            {
+                var employee = context.MstEmployeeMasters
+                    .FirstOrDefault(e => e.EmployeeCode == empCode && e.Status == 0);
+
+                if (employee == null)
+                {
+                    response.Message = "Employee not found or inactive.";
+                    response.StatusCode = HttpStatusCode.NotFound;
+                    return response;
+                }
+
+                long fkEmployeeMasterAutoId = employee.EmployeeMasterAutoId;
+
+                var dependents = await context.MstEmployeeDependents
+                    .Join(context.MstEmployeeMasters,
+                    MD => MD.fkEmployeeMasterAutoId,
+                    MM => MM.EmployeeMasterAutoId,
+                    (MD, MM) => new
+                    {
+                        MD,
+                        MM
+                    })
+                    .Where(d => d.MD.fkEmployeeMasterAutoId == fkEmployeeMasterAutoId && d.MD.status==0)
+                    .Select(d => new
+                    {
+                        d.MD.pkDependentId,
+                        d.MM.EmployeeCode,
+                        d.MD.DName,
+                        d.MD.Relation,
+                        d.MD.Gender,
+                        d.MD.Age,
+                        d.MD.status,
+                        DocumentList = d.MD.EmployeeDependentDocuments.Select(x => new
+                        {
+                            x.DocumentId,
+                            filePath = $"{httpContext.HttpContext.Request.Scheme}://{httpContext.HttpContext.Request.Host}/DependentDocuments/{x.DocumentName}",
+                            x.DocumentName,
+                            x.DocumentType,
+                            x.Remarks
+                        }).ToList()
+                    })
+                    .ToListAsync();
+
+                response.Message = "Dependents fetched successfully.";
+                response.StatusCode = HttpStatusCode.OK;
+                response.Data = dependents;
+                response.TotalRecords = dependents.Count;
+            }
+            catch (Exception ex)
+            {
+                response.Message = "An error occurred: " + ex.Message;
+                response.StatusCode = HttpStatusCode.InternalServerError;
+            }
+
+            return response;
+        }
         public async Task<ResponseModel> UpdateDependentAsync( int DependentId,AddDependentDto dto, string loginUserEmpCode)
         {
             var response = new ResponseModel();
