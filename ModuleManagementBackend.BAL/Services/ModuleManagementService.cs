@@ -462,7 +462,7 @@ namespace ModuleManagementBackend.BAL.Services
                         (xy, y) => new
                         {
                             EmpCode = xy.x.EmployeeCode,
-                            EmployeeType=xy.x.TOemploy,
+                            EmployeeType=xy.x.TOemploy.ToUpper(),
                             PositionGrade = xy.x!= null ? xy.x.PositionGrade : null,
                             OfficalMobile = xy.x.Mobile,
                             name = xy.x.UserName,
@@ -1589,34 +1589,34 @@ namespace ModuleManagementBackend.BAL.Services
         }
 
         #region Notifiaction Methods
-        //public async Task<ResponseModel> GetSMSLogDetailAsync(string EmpCode)
-        //{
-        //    var response = new ResponseModel();
+        public async Task<ResponseModel> GetSMSLogDetailAsync(string EmpCode)
+        {
+            var response = new ResponseModel();
 
-        //    try
-        //    {
-        //        var log = await context.SMSLogDetails
-        //            .FirstOrDefaultAsync(x => x.mas == smsSentId);
+            try
+            {
+                var log = await context.SMSLogDetails
+                    .FirstOrDefaultAsync(x => x.UserId == EmpCode);
 
-        //        if (log == null)
-        //        {
-        //            response.Message = $"SMS log with ID {smsSentId} not found.";
-        //            response.StatusCode = HttpStatusCode.NotFound;
-        //            return response;
-        //        }
+                if (log == null)
+                {
+                    response.Message = $"SMS log with empcode {EmpCode} not found.";
+                    response.StatusCode = HttpStatusCode.NotFound;
+                    return response;
+                }
 
-        //        response.Data = log;
-        //        response.Message = "SMS log fetched successfully.";
-        //        response.StatusCode = HttpStatusCode.OK;
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        response.Message = "An error occurred: " + ex.Message;
-        //        response.StatusCode = HttpStatusCode.InternalServerError;
-        //    }
+                response.Data = log;
+                response.Message = "SMS log fetched successfully.";
+                response.StatusCode = HttpStatusCode.OK;
+            }
+            catch (Exception ex)
+            {
+                response.Message = "An error occurred: " + ex.Message;
+                response.StatusCode = HttpStatusCode.InternalServerError;
+            }
 
-        //    return response;
-        //}
+            return response;
+        }
 
         #endregion
 
