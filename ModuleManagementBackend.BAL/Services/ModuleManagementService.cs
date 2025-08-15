@@ -897,10 +897,131 @@ namespace ModuleManagementBackend.BAL.Services
 
         #region Dependent Methods
 
+        //public async Task<ResponseModel> AddDependentsAsync(List<AddDependentDto> dependents, string loginUserEmpCode)
+        //{
+        //    var response = new ResponseModel();
+
+        //    if (dependents == null || !dependents.Any())
+        //    {
+        //        response.Message = "No dependent data provided.";
+        //        response.StatusCode = HttpStatusCode.BadRequest;
+        //        return response;
+        //    }
+
+        //    try
+        //    {
+        //        var firstDependent = dependents.FirstOrDefault();
+        //        if (firstDependent == null || string.IsNullOrWhiteSpace(firstDependent.EmployeeCode))
+        //        {
+        //            response.Message = "EmployeeCode is required.";
+        //            response.StatusCode = HttpStatusCode.BadRequest;
+        //            return response;
+        //        }
+
+        //        string empCode = firstDependent.EmployeeCode.Trim();
+        //        var employee = context.MstEmployeeMasters
+        //            .FirstOrDefault(e => e.EmployeeCode == empCode && e.Status == 0);
+
+        //        if (employee == null)
+        //        {
+        //            response.Message = "Employee not found or inactive.";
+        //            response.StatusCode = HttpStatusCode.NotFound;
+        //            return response;
+        //        }
+
+        //        long fkEmployeeMasterAutoId = employee.EmployeeMasterAutoId;
+
+        //        foreach (var dto in dependents)
+        //        {
+
+        //            var existing = await context.MstEmployeeDependents.FirstOrDefaultAsync(x => x.fkEmployeeMasterAutoId==fkEmployeeMasterAutoId && x.status==99);
+        //            if (existing != null)
+        //            {
+        //                response.Message = "There is already a pending request for this employee.";
+        //                response.StatusCode = HttpStatusCode.Conflict;
+        //                return response;
+        //                //existing.Relation = dto.Relation ?? existing.Relation;
+        //                //existing.DName = dto.DName ?? existing.DName;
+        //                //existing.Gender = dto.Gender ?? existing.Gender;
+        //                //if (dto.Age > 0) existing.Age = dto.Age;
+
+        //                //existing.status = 99;
+        //                //existing.updatedBy = loginUserEmpCode;
+        //                //existing.updatedDate = DateTime.Now.Date;
+        //                //context.MstEmployeeDependents.Update(existing);
+        //                //if (dto.DocumentFiles != null && dto.DocumentFiles.Any())
+        //                //{
+        //                //    await UploadDependentDOCIfAvailable(dto.DocumentFiles, existing.pkDependentId, loginUserEmpCode,"UPDATE");
+        //                //}
+        //            }
+        //            else
+        //            {
+        //                if (string.IsNullOrWhiteSpace(dto.Relation) ||
+        //                string.IsNullOrWhiteSpace(dto.DName) ||
+        //                string.IsNullOrWhiteSpace(dto.Gender) ||
+        //                dto.Age <= 0)
+        //                {
+        //                    response.Message = $"Validation failed for dependent: {dto?.DName}";
+        //                    response.StatusCode = HttpStatusCode.BadRequest;
+        //                    return response;
+        //                }
+
+        //                bool exists = context.MstEmployeeDependents.Any(x =>
+        //                    x.fkEmployeeMasterAutoId == fkEmployeeMasterAutoId &&
+        //                    x.DName.ToLower() == dto.DName.Trim().ToLower() &&
+        //                    x.Relation.ToLower() == dto.Relation.Trim().ToLower() && x.status==0);
+
+        //                if (exists)
+        //                {
+        //                    response.Message = $"Dependent '{dto.DName}' with relation '{dto.Relation}' already exists.";
+        //                    response.StatusCode = HttpStatusCode.Conflict;
+        //                    return response;
+        //                }
+
+        //                var newDependent = new MstEmployeeDependent
+        //                {
+        //                    fkEmployeeMasterAutoId = fkEmployeeMasterAutoId,
+        //                    Relation = dto.Relation.Trim(),
+        //                    DName = dto.DName.Trim(),
+        //                    Gender = dto.Gender.Trim(),
+        //                    Age = dto.Age,
+        //                    status = 99,
+        //                    createdBy = loginUserEmpCode,
+        //                    createdDate = DateTime.Now.Date
+        //                };
+
+        //                await context.MstEmployeeDependents.AddAsync(newDependent);
+        //                await context.SaveChangesAsync();
+
+
+        //                if (dto.DocumentFiles != null && dto.DocumentFiles.Any())
+        //                {
+        //                    await UploadDependentDOCIfAvailable(dto.DocumentFiles, newDependent.pkDependentId, loginUserEmpCode);
+        //                }
+        //            }
+
+        //        }
+
+
+        //        await context.SaveChangesAsync();
+
+        //        response.Message = "Dependents processed successfully.";
+        //        response.StatusCode = HttpStatusCode.OK;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        response.Message = "An error occurred: " + ex.Message;
+        //        response.StatusCode = HttpStatusCode.InternalServerError;
+        //    }
+
+        //    return response;
+        //}
+
         public async Task<ResponseModel> AddDependentsAsync(List<AddDependentDto> dependents, string loginUserEmpCode)
         {
             var response = new ResponseModel();
 
+          
             if (dependents == null || !dependents.Any())
             {
                 response.Message = "No dependent data provided.";
@@ -908,8 +1029,10 @@ namespace ModuleManagementBackend.BAL.Services
                 return response;
             }
 
+
             try
             {
+               
                 var firstDependent = dependents.FirstOrDefault();
                 if (firstDependent == null || string.IsNullOrWhiteSpace(firstDependent.EmployeeCode))
                 {
@@ -919,8 +1042,19 @@ namespace ModuleManagementBackend.BAL.Services
                 }
 
                 string empCode = firstDependent.EmployeeCode.Trim();
-                var employee = context.MstEmployeeMasters
-                    .FirstOrDefault(e => e.EmployeeCode == empCode && e.Status == 0);
+
+              
+                if (dependents.Any(d => string.IsNullOrWhiteSpace(d.EmployeeCode) ||
+                                       d.EmployeeCode.Trim() != empCode))
+                {
+                    response.Message = "All dependents must belong to the same employee.";
+                    response.StatusCode = HttpStatusCode.BadRequest;
+                    return response;
+                }
+
+               
+                var employee = await context.MstEmployeeMasters
+                    .FirstOrDefaultAsync(e => e.EmployeeCode == empCode && e.Status == 0);
 
                 if (employee == null)
                 {
@@ -931,53 +1065,78 @@ namespace ModuleManagementBackend.BAL.Services
 
                 long fkEmployeeMasterAutoId = employee.EmployeeMasterAutoId;
 
-                foreach (var dto in dependents)
+                
+                var existingPendingRequest = await context.MstEmployeeDependents
+                    .AnyAsync(x => x.fkEmployeeMasterAutoId == fkEmployeeMasterAutoId && x.status == 99);
+
+                if (existingPendingRequest)
                 {
+                    response.Message = "There is already a pending request for this employee.";
+                    response.StatusCode = HttpStatusCode.Conflict;
+                    return response;
+                }
 
-                    var existing = await context.MstEmployeeDependents.FirstOrDefaultAsync(x => x.fkEmployeeMasterAutoId==fkEmployeeMasterAutoId && x.status==99);
-                    if (existing != null)
-                    {
-                        response.Message = "There is already a pending request for this employee.";
-                        response.StatusCode = HttpStatusCode.Conflict;
-                        return response;
-                        //existing.Relation = dto.Relation ?? existing.Relation;
-                        //existing.DName = dto.DName ?? existing.DName;
-                        //existing.Gender = dto.Gender ?? existing.Gender;
-                        //if (dto.Age > 0) existing.Age = dto.Age;
+                
+                var existingDependents = await context.MstEmployeeDependents
+                    .Where(x => x.fkEmployeeMasterAutoId == fkEmployeeMasterAutoId && x.status == 0)
+                    .Select(x => new { x.DName, x.Relation })
+                    .ToListAsync();
 
-                        //existing.status = 99;
-                        //existing.updatedBy = loginUserEmpCode;
-                        //existing.updatedDate = DateTime.Now.Date;
-                        //context.MstEmployeeDependents.Update(existing);
-                        //if (dto.DocumentFiles != null && dto.DocumentFiles.Any())
-                        //{
-                        //    await UploadDependentDOCIfAvailable(dto.DocumentFiles, existing.pkDependentId, loginUserEmpCode,"UPDATE");
-                        //}
-                    }
-                    else
-                    {
-                        if (string.IsNullOrWhiteSpace(dto.Relation) ||
+               
+                var validationErrors = new List<string>();
+                var duplicateCheck = new HashSet<string>();
+
+                for (int i = 0; i < dependents.Count; i++)
+                {
+                    var dto = dependents[i];
+
+                   
+                    if (string.IsNullOrWhiteSpace(dto.Relation) ||
                         string.IsNullOrWhiteSpace(dto.DName) ||
                         string.IsNullOrWhiteSpace(dto.Gender) ||
                         dto.Age <= 0)
-                        {
-                            response.Message = $"Validation failed for dependent: {dto?.DName}";
-                            response.StatusCode = HttpStatusCode.BadRequest;
-                            return response;
-                        }
+                    {
+                        validationErrors.Add($"Dependent #{i + 1} '{dto?.DName}': All fields are required and age must be positive.");
+                        continue;
+                    }
 
-                        bool exists = context.MstEmployeeDependents.Any(x =>
-                            x.fkEmployeeMasterAutoId == fkEmployeeMasterAutoId &&
-                            x.DName.ToLower() == dto.DName.Trim().ToLower() &&
-                            x.Relation.ToLower() == dto.Relation.Trim().ToLower() && x.status==0);
+                    
+                    string dependentKey = $"{dto.DName.Trim().ToLower()}_{dto.Relation.Trim().ToLower()}";
+                    if (!duplicateCheck.Add(dependentKey))
+                    {
+                        validationErrors.Add($"Duplicate dependent in request: '{dto.DName}' with relation '{dto.Relation}'.");
+                        continue;
+                    }
 
-                        if (exists)
-                        {
-                            response.Message = $"Dependent '{dto.DName}' with relation '{dto.Relation}' already exists.";
-                            response.StatusCode = HttpStatusCode.Conflict;
-                            return response;
-                        }
+                  
+                    bool existsInDb = existingDependents.Any(x =>
+                        x.DName.ToLower() == dto.DName.Trim().ToLower() &&
+                        x.Relation.ToLower() == dto.Relation.Trim().ToLower());
 
+                    if (existsInDb)
+                    {
+                        validationErrors.Add($"Dependent '{dto.DName}' with relation '{dto.Relation}' already exists.");
+                    }
+                }
+
+               
+                if (validationErrors.Any())
+                {
+                    response.Message = "Validation failed: " + string.Join("; ", validationErrors);
+                    response.StatusCode = HttpStatusCode.BadRequest;
+                    return response;
+                }
+
+                
+                using var transaction = await context.Database.BeginTransactionAsync();
+                try
+                {
+                    var addedDependents = new List<MstEmployeeDependent>();
+                    var currentDateTime = DateTime.Now;
+
+                    
+                    foreach (var dto in dependents)
+                    {
                         var newDependent = new MstEmployeeDependent
                         {
                             fkEmployeeMasterAutoId = fkEmployeeMasterAutoId,
@@ -985,28 +1144,56 @@ namespace ModuleManagementBackend.BAL.Services
                             DName = dto.DName.Trim(),
                             Gender = dto.Gender.Trim(),
                             Age = dto.Age,
-                            status = 99,
+                            status = 99, 
                             createdBy = loginUserEmpCode,
-                            createdDate = DateTime.Now.Date
+                            createdDate = currentDateTime.Date
                         };
 
-                        await context.MstEmployeeDependents.AddAsync(newDependent);
-                        await context.SaveChangesAsync();
+                        context.MstEmployeeDependents.Add(newDependent);
+                        addedDependents.Add(newDependent);
+                    }
 
+                    
+                    await context.SaveChangesAsync();
+
+                   
+                    var uploadTasks = new List<Task>();
+                    for (int i = 0; i < dependents.Count; i++)
+                    {
+                        var dto = dependents[i];
+                        var dependent = addedDependents[i];
 
                         if (dto.DocumentFiles != null && dto.DocumentFiles.Any())
                         {
-                            await UploadDependentDOCIfAvailable(dto.DocumentFiles, newDependent.pkDependentId, loginUserEmpCode);
+                            uploadTasks.Add(UploadDependentDOCIfAvailable(
+                                dto.DocumentFiles,
+                                dependent.pkDependentId,
+                                loginUserEmpCode));
                         }
                     }
 
+                   
+                    if (uploadTasks.Any())
+                    {
+                        await Task.WhenAll(uploadTasks);
+                    }
+
+                    await transaction.CommitAsync();
+
+                    response.Message = $"Successfully added {addedDependents.Count} dependent(s) for employee {empCode}.";
+                    response.StatusCode = HttpStatusCode.Created;
+                    response.Data = new
+                    {
+                        EmployeeCode = empCode,
+                        DependentsAdded = addedDependents.Count,
+                        DependentIds = addedDependents.Select(d => d.pkDependentId).ToList()
+                    };
                 }
-
-
-                await context.SaveChangesAsync();
-
-                response.Message = "Dependents processed successfully.";
-                response.StatusCode = HttpStatusCode.OK;
+                catch (Exception)
+                {
+                    await transaction.RollbackAsync();
+                    throw; 
+                }
             }
             catch (Exception ex)
             {
@@ -1016,6 +1203,7 @@ namespace ModuleManagementBackend.BAL.Services
 
             return response;
         }
+
         public async Task<ResponseModel> ProceedDependentsAsync(AprooveEmployeeReportDto request, string LoginUserEmpCode)
         {
             var response = new ResponseModel();
