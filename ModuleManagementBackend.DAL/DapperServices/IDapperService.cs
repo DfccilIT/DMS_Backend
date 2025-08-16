@@ -14,5 +14,7 @@ namespace ModuleManagementBackend.DAL.DapperServices
         DbConnection GetDbconnection();
         Task<int> ExecuteAsync(string storedProcedure, DynamicParameters parameters, CommandType commandType = CommandType.StoredProcedure);
         SqlConnection GetConnection();
+        string getCoonectionString();
+        void Dispose();
     }
 }

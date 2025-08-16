@@ -135,6 +135,9 @@ namespace ModuleManagementBackend.DAL.DapperServices
             return connection;
         }
 
-
+        public string getCoonectionString()
+        {
+            return Connectionstring??string.Empty;
+        }
     }
 }

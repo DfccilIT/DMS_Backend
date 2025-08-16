@@ -1,12 +1,15 @@
-﻿using ModuleManagementBackend.Model.Common;
+﻿using ModuleManagementBackend.DAL.Models;
+using ModuleManagementBackend.Model.Common;
 using ModuleManagementBackend.Model.DTOs.EditEmployeeDTO;
 
 namespace ModuleManagementBackend.BAL.IServices
 {
     public interface IModuleManagementService
     {
+        Task<ResponseModel> EditEmployeeProfileAsync(EditEmployeeDto incoming);
         Task<ResponseModel> GetAllEditEmployeeRequests(string? employeeCode = null, string? location = null, string? userName = null, string? empcode = null, string? autoId = null);
         Task<ResponseModel> ProcessEditEmployeeRequest(AprooveEmployeeReportDto request);
+        Task<ResponseModel> EditEmployeeReportingOfficerAsync(EditEmployeeReportDto dto);
         Task<ResponseModel> GetAllReportingOfficerRequest(string? employeeCode = null, string? location = null, string? userName = null);
         Task<ResponseModel> ProcessEditReportingOfficerRequest(AprooveEmployeeReportDto request);
         Task<ResponseModel> GetDfccilDirectory(string? EmpCode = null);
@@ -36,13 +39,21 @@ namespace ModuleManagementBackend.BAL.IServices
         Task<ResponseModel> UpdateDependentAsync(int DependentId, AddDependentDto dto, string loginUserEmpCode);
         #endregion
 
+        #region Contractual Employee Edit Requests
         Task<ResponseModel> GetAllContractualEmployeeEditRequestsAsync();
         Task<ResponseModel> GetAcceptOrRejectContractualEmployeeEditRequestsAsync(int status);
         Task<ResponseModel> ProcessEditContractualEmployeeRequest(AprooveContractualEmployeeDto request, string LoginUserId);
+        #endregion
 
-       
+        #region Notification 
         ResponseModel GetEditEmployeeStatus(string EmployeeCode);
         Task<PagedResponseModel> GetSMSLogDetailsPaginatedAsync(SMSLogRequest request);
         Task<ResponseModel> UpdateSMSAsync(int SmsId);
+        #endregion
+
+        #region Todo List
+        Task<ResponseModel> CreateToDoListAsync(CreateTodoListDto dto);
+        Task<ResponseModel> GetToDoListAsync(string employeeCode = "0");
+        #endregion
     }
 }

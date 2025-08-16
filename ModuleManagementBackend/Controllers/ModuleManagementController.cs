@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ModuleManagementBackend.BAL.IServices;
+using ModuleManagementBackend.BAL.Services;
 using ModuleManagementBackend.DAL.DapperServices;
 using ModuleManagementBackend.Model.Common;
 using ModuleManagementBackend.Model.DTOs.EditEmployeeDTO;
@@ -41,6 +42,12 @@ namespace ModuleManagementBackend.API.Controllers
             }
         }
 
+        [HttpPost("EditEmployee")]
+        public async Task<ResponseModel> EditEmployeeProfile(EditEmployeeDto dto)
+        {
+            return await managementService.EditEmployeeProfileAsync(dto);
+        }
+
         [HttpGet("ModuleMangement/GetAllEditEmployeeRequest")]
         public async Task<ResponseModel> GetAllEditEmployeeRequest(string? employeeCode = null, string? location = null, string? userName = null)
         {
@@ -51,6 +58,12 @@ namespace ModuleManagementBackend.API.Controllers
         public async Task<ResponseModel> ProceedEditEmployeeRequest([FromBody] AprooveEmployeeReportDto aprooveEmployee)
         {
             return await managementService.ProcessEditEmployeeRequest(aprooveEmployee);
+        }
+
+        [HttpPost("EditEmployeeReportingOfficer")]
+        public async Task<ResponseModel> EditEmployeeReportingOfficer(EditEmployeeReportDto dto)
+        {
+            return await managementService.EditEmployeeReportingOfficerAsync(dto);
         }
 
         [HttpGet("ModuleMangement/GetAllReportingOfficerRequest")]
@@ -286,6 +299,17 @@ namespace ModuleManagementBackend.API.Controllers
         {
             var result = await managementService.UpdateSMSAsync(SmsId);
             return StatusCode((int)result.StatusCode, result);
+        }
+
+        [HttpPost("CreateToDoList")]
+        public async Task<ResponseModel> CreateToDoList(CreateTodoListDto dto)
+        {
+            return await managementService.CreateToDoListAsync(dto);
+        }
+        [HttpGet("GetToDoList/{employeeCode}")]
+        public async Task<ResponseModel> GetToDoList(string employeeCode)
+        {
+            return await managementService.GetToDoListAsync(employeeCode);
         }
     }
 

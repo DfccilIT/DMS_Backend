@@ -112,5 +112,34 @@ namespace ModuleManagementBackend.Model.DTOs.EditEmployeeDTO
         public bool HasNextPage => CurrentPage < TotalPages;
         public bool HasPreviousPage => CurrentPage > 1;
     }
+    public class EditEmployeeDto
+    {
+        public string EmployeeCode { get; set; }
+        public string UserName { get; set; }
+        public string Gender { get; set; }
+        public string Designation { get; set; }
+        public string PositionGrade { get; set; }
+        public string Department { get; set; }
 
+        public DateTime? DOB { get; set; }
+        public DateTime? DateOfAnniversary { get; set; }
+        public DateTime? DateOfJoining { get; set; }
+
+        public string Location { get; set; }
+        public string Mobile { get; set; }
+        public string Email { get; set; }
+        public string PersonalEmailId { get; set; }
+        public string Toemploy { get; set; }
+        public string ExtensionNo { get; set; }
+    }
+    public class EditEmployeeReportDto
+    {
+        public string EmployeeCode { get; set; }
+        public string ReportingOfficerEmployeeCode { get; set; }
+    }
+    public class CreateTodoListDto
+    {
+        public string Empcode { get; set; }
+        public string Data { get; set; }
+    }
 }
