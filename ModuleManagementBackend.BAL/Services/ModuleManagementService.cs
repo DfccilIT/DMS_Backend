@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
 using ModuleManagementBackend.BAL.IServices;
 using ModuleManagementBackend.BAL.IServices.ICacheServices;
+using ModuleManagementBackend.BAL.Services.CacheServices;
 using ModuleManagementBackend.DAL.DapperServices;
 using ModuleManagementBackend.DAL.Models;
 using ModuleManagementBackend.Model.Common;
@@ -2234,7 +2235,7 @@ namespace ModuleManagementBackend.BAL.Services
             try
             {
                 using var connection = dapper.GetConnection();
-                using var adapter = new SqlDataAdapter("[DFCcontext].GetEditEmployeeStatus", connection)
+                using var adapter = new SqlDataAdapter("[DFCAPI].GetEditEmployeeStatus", connection)
                 {
                     SelectCommand = { CommandType = CommandType.StoredProcedure }
                 };
@@ -2339,7 +2340,7 @@ namespace ModuleManagementBackend.BAL.Services
             parameters.Add("@ReportingOfficerEmpCode", reportingOfficerEmpCode);
 
             await dapper.ExecuteAsync(
-                "[DFCcontext].Sp_Approved_Reporting_Officer",
+                "[DFCAPI].Sp_Approved_Reporting_Officer",
                 parameters,
                 commandType: CommandType.StoredProcedure
             );
@@ -2513,21 +2514,21 @@ namespace ModuleManagementBackend.BAL.Services
         {
             try
             {
-                
+
                 var cacheKey = $"dfccil_directory_{EmpCode ?? "all"}";
 
-                
+
                 var currentDataVersion = await _dbChangeService.GetDataVersionAsync();
                 var versionCacheKey = $"{cacheKey}_version";
 
-                
+
                 var cachedVersion = await _cacheService.GetOrSetAsync(
                     versionCacheKey,
                     () => Task.FromResult(currentDataVersion),
-                    TimeSpan.FromMinutes(5) 
+                    TimeSpan.FromMinutes(5)
                 );
 
-                
+
                 if (cachedVersion != currentDataVersion)
                 {
                     await _cacheService.RemoveAsync(cacheKey);
@@ -2535,12 +2536,12 @@ namespace ModuleManagementBackend.BAL.Services
                     _logger.LogInformation("Data version changed, cache invalidated");
                 }
 
-                
+
                 var responseModel = await _cacheService.GetOrSetAsync(
                     cacheKey,
                     async () => await FetchDirectoryFromDatabase(EmpCode),
-                    TimeSpan.FromMinutes(30), 
-                    TimeSpan.FromHours(2)     
+                    TimeSpan.FromMinutes(30),
+                    TimeSpan.FromHours(2)
                 );
 
                 return responseModel;
@@ -2606,6 +2607,91 @@ namespace ModuleManagementBackend.BAL.Services
                 responseModel.Message = $"An error occurred: {ex.Message}";
                 responseModel.StatusCode = System.Net.HttpStatusCode.InternalServerError;
                 return responseModel;
+            }
+        }
+        public async Task<ResponseModel> UploadAboutUsAsync(UploadAboutUsDto dto)
+        {
+            var response = new ResponseModel();
+
+            try
+            {
+                if (dto == null || string.IsNullOrWhiteSpace(dto.EmployeeCode))
+                {
+                    response.StatusCode = HttpStatusCode.BadRequest;
+                    response.Message = "Employee code is required.";
+                    return response;
+                }
+
+                var employee = await context.MstEmployeeMasters
+                    .FirstOrDefaultAsync(e => e.EmployeeCode == dto.EmployeeCode && e.Status == 0);
+
+                if (employee == null)
+                {
+                    response.StatusCode = HttpStatusCode.NotFound;
+                    response.Message = "Employee not found or inactive.";
+                    return response;
+                }
+
+
+                if (dto.PhotoFile != null && dto.PhotoFile.Length > 0)
+                {
+                    if (dto.PhotoFile.Length > 5 * 1024 * 1024)
+                    {
+                        response.StatusCode = HttpStatusCode.BadRequest;
+                        response.Message = "File size should not exceed 5MB.";
+                        return response;
+                    }
+
+                    var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif" };
+                    var fileExtension = Path.GetExtension(dto.PhotoFile.FileName).ToLower();
+
+                    if (!allowedExtensions.Contains(fileExtension))
+                    {
+                        response.StatusCode = HttpStatusCode.BadRequest;
+                        response.Message = "Only JPG, JPEG, PNG, or GIF files are allowed.";
+                        return response;
+                    }
+
+                    string fileName = $"{dto.EmployeeCode}_{DateTime.Now:yyyyMMdd_HHmmssfff}{fileExtension}";
+                    string saveFolder = "C:/RunningApplication/Server application/sso ticket/TicketManagement/TicketManagement/Images/Employees/";
+                    string savePath = Path.Combine(saveFolder, fileName);
+
+
+                    if (!string.IsNullOrEmpty(employee.Photo))
+                    {
+                        string oldFilePath = Path.Combine(saveFolder, employee.Photo);
+                        if (File.Exists(oldFilePath))
+                        {
+                            File.Delete(oldFilePath);
+                        }
+                    }
+
+
+                    using (var stream = new FileStream(savePath, FileMode.Create))
+                    {
+                        await dto.PhotoFile.CopyToAsync(stream);
+                    }
+
+
+                    employee.Photo = fileName;
+
+                }
+
+                employee.AboutUs = dto.AboutUs;
+
+                await context.SaveChangesAsync();
+
+                response.StatusCode = HttpStatusCode.OK;
+                response.Message = "AboutUs and photo updated successfully.";
+                response.Data = new { employee.EmployeeCode, employee.Photo, employee.AboutUs };
+
+                return response;
+            }
+            catch (Exception ex)
+            {
+                response.StatusCode = HttpStatusCode.InternalServerError;
+                response.Message = ex.Message;
+                return response;
             }
         }
 

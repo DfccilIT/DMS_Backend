@@ -311,6 +311,13 @@ namespace ModuleManagementBackend.API.Controllers
         {
             return await managementService.GetToDoListAsync(employeeCode);
         }
+
+        [HttpPost("UploadAboutUs")]
+        public async Task<IActionResult> UploadAboutUs([FromForm] UploadAboutUsDto dto)
+        {
+            var result = await managementService.UploadAboutUsAsync(dto);
+            return StatusCode((int)result.StatusCode, result);
+        }
     }
 
 }

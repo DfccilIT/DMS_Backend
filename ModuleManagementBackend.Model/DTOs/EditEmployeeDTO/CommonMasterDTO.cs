@@ -142,4 +142,10 @@ namespace ModuleManagementBackend.Model.DTOs.EditEmployeeDTO
         public string Empcode { get; set; }
         public string Data { get; set; }
     }
+    public class UploadAboutUsDto
+    {
+        public string EmployeeCode { get; set; }
+        public string ?AboutUs { get; set; }
+        public IFormFile PhotoFile { get; set; }  
+    }
 }

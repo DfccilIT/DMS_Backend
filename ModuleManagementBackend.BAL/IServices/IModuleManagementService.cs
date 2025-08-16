@@ -54,6 +54,7 @@ namespace ModuleManagementBackend.BAL.IServices
         #region Todo List
         Task<ResponseModel> CreateToDoListAsync(CreateTodoListDto dto);
         Task<ResponseModel> GetToDoListAsync(string employeeCode = "0");
+        Task<ResponseModel> UploadAboutUsAsync(UploadAboutUsDto dto);
         #endregion
     }
 }
