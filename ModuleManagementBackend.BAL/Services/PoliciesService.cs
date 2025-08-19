@@ -31,7 +31,7 @@ namespace ModuleManagementBackend.BAL.Services
                 "LOCAL" => configuration["PolicyPathLocal"] ?? string.Empty,
                 _ => configuration["PolicyPathProd"] ?? string.Empty
             };
-            this.DocUrl=$"{httpContext.HttpContext.Request.Scheme}://{httpContext.HttpContext.Request.Host}/api/Download?id=";
+            this.DocUrl=$"{httpContext.HttpContext.Request.Scheme}://{httpContext.HttpContext.Request.Host}/api/PoliciesManagement/Download/";
         }
 
         #region Policies Methods
