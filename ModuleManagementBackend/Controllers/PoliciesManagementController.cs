@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ModuleManagementBackend.BAL.IServices;
 using ModuleManagementBackend.Model.Common;
+using System.Net;
 using static ModuleManagementBackend.BAL.Services.AccountService;
 using static ModuleManagementBackend.Model.DTOs.PoliciesGenricDTO.PoliciesCommonDTO;
 
@@ -89,6 +90,23 @@ namespace ModuleManagementBackend.API.Controllers
             var response = await _policyService.DeletePolicyItem(id);
             return response;
         }
+
+        [AllowAnonymous]
+        [HttpGet("Download/{id}")]
+        public async Task<IActionResult> Download(int id)
+        {
+
+            var response = await _policyService.DownloadPolicyAsync(id, LoginUserId);
+
+            if (response.StatusCode == HttpStatusCode.NotFound)
+                return NotFound(response.Message);
+
+            if (response.StatusCode != HttpStatusCode.OK)
+                return StatusCode((int)response.StatusCode, response.Message);
+
+            return File(response.FileBytes, response.MimeType, response.FileName);
+        }
+
     }
 
 }

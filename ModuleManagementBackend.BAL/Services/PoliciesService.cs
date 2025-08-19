@@ -1,10 +1,12 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Protocols;
 using ModuleManagementBackend.BAL.IServices;
 using ModuleManagementBackend.DAL.Models;
 using ModuleManagementBackend.Model.Common;
 using System.Net;
+using System.Net.Mail;
 using static ModuleManagementBackend.Model.DTOs.PoliciesGenricDTO.PoliciesCommonDTO;
 
 namespace ModuleManagementBackend.BAL.Services
@@ -12,10 +14,24 @@ namespace ModuleManagementBackend.BAL.Services
     public class PoliciesService : IPolicyService
     {
         private readonly SAPTOKENContext context;
+        private readonly IConfiguration configuration;
+        private readonly IHttpContextAccessor httpContext;
+        private readonly string baseUrl;
+        private readonly string DocUrl;
 
-        public PoliciesService(SAPTOKENContext context)
+        public PoliciesService(SAPTOKENContext context, IConfiguration configuration,IHttpContextAccessor httpContext)
         {
             this.context=context;
+            this.configuration=configuration;
+            this.httpContext=httpContext;
+            var mode = configuration["DeploymentModes"] ?? string.Empty;
+            baseUrl = mode switch
+            {
+                "DFCCIL_UAT" => configuration["PolicyPathUAT"] ?? string.Empty,
+                "LOCAL" => configuration["PolicyPathLocal"] ?? string.Empty,
+                _ => configuration["PolicyPathProd"] ?? string.Empty
+            };
+            this.DocUrl=$"{httpContext.HttpContext.Request.Scheme}://{httpContext.HttpContext.Request.Host}/api/Download?id=";
         }
 
         #region Policies Methods
@@ -52,8 +68,8 @@ namespace ModuleManagementBackend.BAL.Services
                                     itemType = i.itemType,
                                     docName = i.docName,
                                     fileName = i.filName,
-                                    OrderFactor = i.OrderFactor
-                                    // Url = !string.IsNullOrEmpty(i.filName) ? $"{PoliciesPath}{i.pkPolItemId}" : ""
+                                    OrderFactor = i.OrderFactor,
+                                    Url = !string.IsNullOrEmpty(i.filName) ? $"{DocUrl}{i.pkPolItemId}" : ""
                                 }).ToList()
                                 : new List<PolicyItemDto>()
                         })
@@ -307,7 +323,7 @@ namespace ModuleManagementBackend.BAL.Services
                 return string.Empty;
 
 
-            var uploadFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "PolicyDocs");
+            var uploadFolder = baseUrl;
             if (!Directory.Exists(uploadFolder))
                 Directory.CreateDirectory(uploadFolder);
 
@@ -326,8 +342,89 @@ namespace ModuleManagementBackend.BAL.Services
         }
 
 
+        public async Task<FileResponseModel> DownloadPolicyAsync(int policyItemId, string employeeCode)
+        {
+            var response = new FileResponseModel();
+
+            try
+            {
+                var employee = await context.MstEmployeeMasters.FirstOrDefaultAsync(e => e.EmployeeCode == employeeCode);
+
+                var downLoadLog = new tblDownLoadLog
+                {
+                    fkEmployeeMasterAutoId = employee?.EmployeeMasterAutoId,
+                    fkPolItemId = policyItemId,
+                    createDate = DateTime.Now
+                };
+                context.tblDownLoadLogs.Add(downLoadLog);
+                await context.SaveChangesAsync();
+
+                
+                var ltr = await context.tblPolicyItems.FindAsync(policyItemId);
+                if (ltr == null)
+                {
+                    response.StatusCode = HttpStatusCode.NotFound;
+                    response.Message = "File not found.";
+                    return response;
+                }
+                var BasePath = baseUrl;
+
+                var filePath = Path.Combine(BasePath, ltr.filName);
+                if (!System.IO.File.Exists(filePath))
+                {
+                    response.StatusCode = HttpStatusCode.NotFound;
+                    response.Message = "File not found.";
+                    return response;
+                }
+
+               
+                var mimeType = GetMimeType(ltr.filName);
+                var fileBytes = await System.IO.File.ReadAllBytesAsync(filePath);
+
+                response.StatusCode = HttpStatusCode.OK;
+                response.FileBytes = fileBytes;
+                response.FileName = ltr.filName;
+                response.MimeType = mimeType;
+            }
+            catch (Exception ex)
+            {
+                response.StatusCode = HttpStatusCode.InternalServerError;
+                response.Message = $"Internal server error: {ex.Message}";
+            }
+
+            return response;
+        }
+
         #endregion
 
 
+
+
+
+        #region Helper Methods
+        public class FileResponseModel
+        {
+           
+            public byte[] FileBytes { get; set; }
+            public string FileName { get; set; }
+            public string MimeType { get; set; }
+            public HttpStatusCode StatusCode { get; set; }
+            public string Message { get; set; }
+        }
+
+        private string GetMimeType(string fileName)
+        {
+            string extension = Path.GetExtension(fileName).ToLowerInvariant();
+            switch (extension)
+            {
+                case ".pdf": return "application/pdf";
+                case ".doc": return "application/msword";
+                case ".docx": return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+                case ".xls": return "application/vnd.ms-excel";
+                case ".xlsx": return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+                default: return "application/octet-stream"; 
+            }
+        }
+        #endregion
     }
 }

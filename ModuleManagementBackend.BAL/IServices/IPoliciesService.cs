@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static ModuleManagementBackend.BAL.Services.PoliciesService;
 using static ModuleManagementBackend.Model.DTOs.PoliciesGenricDTO.PoliciesCommonDTO;
 
 namespace ModuleManagementBackend.BAL.IServices
@@ -19,6 +20,7 @@ namespace ModuleManagementBackend.BAL.IServices
         Task<ResponseModel> AddPolicyItem(AddPolicyItemDto dto, string LoginUserEmpCode);
         Task<ResponseModel> UpdatePolicyItem(int id, UpdatePolicyItemDto dto, string LoginUserEmpCode);
         Task<ResponseModel> DeletePolicyItem(int id);
+        Task<FileResponseModel> DownloadPolicyAsync(int policyItemId, string employeeId);
     }
 
 }
