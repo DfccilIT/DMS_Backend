@@ -21,6 +21,7 @@ namespace ModuleManagementBackend.BAL.Extension
             services.AddScoped<IDapperService, DapperService>();
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IModuleManagementService, ModuleManagementService>();
+            services.AddScoped<IPolicyService, PoliciesService>();
             
 
         }

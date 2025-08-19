@@ -2826,7 +2826,7 @@ namespace ModuleManagementBackend.BAL.Services
                     .ToListAsync();
 
                 var mstUnit = await context.UnitNameDetails
-                   .OrderByDescending(c => c.SequenceID)
+                   .OrderBy(c => c.SequenceID)
                    .Select(c => new { c.Id, c.Name, c.SequenceID, c.Abbrivation })
                    .ToListAsync();
 

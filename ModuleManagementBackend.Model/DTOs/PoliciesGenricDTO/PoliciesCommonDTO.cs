@@ -10,15 +10,6 @@ namespace ModuleManagementBackend.Model.DTOs.PoliciesGenricDTO
     public class PoliciesCommonDTO
     {
 
-       
-        public class PolicyDto
-        {
-            public int PkPolId { get; set; }
-            public string PolicyHead { get; set; }
-            public int? ParentPolicyId { get; set; }
-           
-        }
-
         public class GETPolicyDto
         {
             public int PkPolId { get; set; }
@@ -49,11 +40,6 @@ namespace ModuleManagementBackend.Model.DTOs.PoliciesGenricDTO
             public string ModifyBy { get; set; }
         }
 
-        // =====================
-        // POLICY ITEM DTOs
-        // =====================
-
-       
 
         public class AddPolicyItemDto
         {
@@ -64,7 +50,6 @@ namespace ModuleManagementBackend.Model.DTOs.PoliciesGenricDTO
             public string ItemDescription { get; set; }
             public DateTime? OfficeOrderDate { get; set; }
             public double? OrderFactor { get; set; }
-            public string CreateBy { get; set; }
 
            
             public IFormFile? Doc { get; set; }
@@ -79,12 +64,31 @@ namespace ModuleManagementBackend.Model.DTOs.PoliciesGenricDTO
             public string? ItemDescription { get; set; }
             public DateTime? OfficeOrderDate { get; set; }
             public double? OrderFactor { get; set; }
-            public int Status { get; set; }
-            public string? ModifyBy { get; set; }
-
-            // Optional file update
+           
             public IFormFile? Doc { get; set; }
         }
+
+        public class PolicyDto
+        {
+            public int pkPolId { get; set; }
+            public string PolicyHead { get; set; }
+            public List<PolicyDto> Children { get; set; } = new List<PolicyDto>();
+            public List<PolicyItemDto> PolicyItems { get; set; } = new List<PolicyItemDto>();
+        }
+
+        public class PolicyItemDto
+        {
+            public int pkPolItemId { get; set; }
+            public string itemSubject { get; set; }
+            public string itemContent { get; set; }
+            public string itemDescription { get; set; }
+            public string itemType { get; set; }
+            public string docName { get; set; }
+            public string fileName { get; set; }
+            public string Url { get; set; }
+            public double? OrderFactor { get; set; }
+        }
+
     }
 
 }

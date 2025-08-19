@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Protocols;
+using ModuleManagementBackend.BAL.IServices;
 using ModuleManagementBackend.DAL.Models;
 using ModuleManagementBackend.Model.Common;
 using System.Net;
@@ -7,7 +9,7 @@ using static ModuleManagementBackend.Model.DTOs.PoliciesGenricDTO.PoliciesCommon
 
 namespace ModuleManagementBackend.BAL.Services
 {
-    public class PoliciesService
+    public class PoliciesService : IPolicyService
     {
         private readonly SAPTOKENContext context;
 
@@ -22,26 +24,48 @@ namespace ModuleManagementBackend.BAL.Services
             var response = new ResponseModel();
             try
             {
-                var flatPolicies = await context.tblPolices
-                    .Select(x => new GETPolicyDto
-                    {
-                        PkPolId = x.pkPolId,
-                        PolicyHead = x.PolicyHead,
-                        ParentPolicyId = x.ParentPolicyId,
-                        Status = x.status.Value,
-                        CreateBy = x.createBy,
-                        CreateDate = x.createdate,
-                        ModifyBy = x.modifyBy,
-                        ModifyDate = x.modifydate
-                    })
-                    .ToListAsync();
+                var allPolicies = await context.tblPolices.Where(x => x.status == 0).ToListAsync();
+                var allItems = await context.tblPolicyItems.Where(x => x.status == 0).ToListAsync();
 
-                var policyTree = BuildPolicyTree(flatPolicies);
+               
+                var itemsLookup = allItems
+                    .GroupBy(i => i.fkPolId.Value)
+                    .ToDictionary(g => g.Key, g => g.OrderBy(i => i.OrderFactor).ToList());
+
+                
+                List<PolicyDto> BuildTree(int parentId)
+                {
+                    return allPolicies
+                        .Where(p => p.ParentPolicyId == parentId)
+                        .Select(p => new PolicyDto
+                        {
+                            pkPolId = p.pkPolId,
+                            PolicyHead = p.PolicyHead,
+                            Children = BuildTree(p.pkPolId),
+                            PolicyItems = itemsLookup.TryGetValue(p.pkPolId, out var policyItems)
+                                ? policyItems.Select(i => new PolicyItemDto
+                                {
+                                    pkPolItemId = i.pkPolItemId,
+                                    itemSubject = i.itemSubject,
+                                    itemContent = i.itemContent,
+                                    itemDescription = i.itemDescription,
+                                    itemType = i.itemType,
+                                    docName = i.docName,
+                                    fileName = i.filName,
+                                    OrderFactor = i.OrderFactor
+                                    // Url = !string.IsNullOrEmpty(i.filName) ? $"{PoliciesPath}{i.pkPolItemId}" : ""
+                                }).ToList()
+                                : new List<PolicyItemDto>()
+                        })
+                        .ToList();
+                }
+
+                var result = BuildTree(0);
 
                 response.Message = "Policies fetched successfully.";
                 response.StatusCode = HttpStatusCode.OK;
-                response.Data = policyTree;
-                response.TotalRecords = flatPolicies.Count;
+                response.Data = result;
+                response.TotalRecords = result.Count;
             }
             catch (Exception ex)
             {
@@ -52,7 +76,7 @@ namespace ModuleManagementBackend.BAL.Services
             return response;
         }
 
-        public async Task<ResponseModel> AddPolicy(PolicyDto dto, string loginUserEmpCode)
+        public async Task<ResponseModel> AddPolicy(AddPolicyDto dto, string loginUserEmpCode)
         {
             var response = new ResponseModel();
             try
@@ -93,7 +117,7 @@ namespace ModuleManagementBackend.BAL.Services
             return response;
         }
 
-        public async Task<ResponseModel> UpdatePolicy(int id, PolicyDto dto, string LoginUserEmpCode)
+        public async Task<ResponseModel> UpdatePolicy(int id, UpdatePolicyDto dto, string LoginUserEmpCode)
         {
             var response = new ResponseModel();
             try
@@ -152,30 +176,12 @@ namespace ModuleManagementBackend.BAL.Services
             return response;
         }
 
-        private List<GETPolicyDto> BuildPolicyTree(List<GETPolicyDto> policies, int? parentId = 0)
-        {
-            return policies
-                .Where(p => p.ParentPolicyId == parentId)
-                .Select(p => new GETPolicyDto
-                {
-                    PkPolId = p.PkPolId,
-                    PolicyHead = p.PolicyHead,
-                    ParentPolicyId = p.ParentPolicyId,
-                    Status = p.Status,
-                    CreateBy = p.CreateBy,
-                    CreateDate = p.CreateDate,
-                    ModifyBy = p.ModifyBy,
-                    ModifyDate = p.ModifyDate,
-
-                    Children = BuildPolicyTree(policies, p.PkPolId)
-                })
-                .ToList();
-        }
+       
 
         #endregion
         #region Policy Items Methods
 
-        public async Task<ResponseModel> AddPolicyItem(AddPolicyItemDto dto)
+        public async Task<ResponseModel> AddPolicyItem(AddPolicyItemDto dto, string LoginUserEmpCode)
         {
             var response = new ResponseModel();
             try
@@ -203,9 +209,9 @@ namespace ModuleManagementBackend.BAL.Services
                     officeOrderDate = dto.OfficeOrderDate,
                     OrderFactor = dto.OrderFactor,
                     status = 0,
-                    createBy = dto.CreateBy,
+                    createBy = LoginUserEmpCode,
                     createdate = DateTime.Now,
-                    modifyBy = dto.CreateBy,
+                    modifyBy = LoginUserEmpCode,
                     modifydate = DateTime.Now
                 };
 
@@ -224,7 +230,7 @@ namespace ModuleManagementBackend.BAL.Services
             return response;
         }
 
-        public async Task<ResponseModel> UpdatePolicyItem(int id, UpdatePolicyItemDto dto)
+        public async Task<ResponseModel> UpdatePolicyItem(int id, UpdatePolicyItemDto dto, string loginUserEmpCode)
         {
             var response = new ResponseModel();
             try
@@ -250,8 +256,8 @@ namespace ModuleManagementBackend.BAL.Services
                 item.itemDescription = dto.ItemDescription;
                 item.officeOrderDate = dto.OfficeOrderDate;
                 item.OrderFactor = dto.OrderFactor;
-                item.status = dto.Status;
-                item.modifyBy = dto.ModifyBy;
+                item.status = 0;
+                item.modifyBy =loginUserEmpCode;
                 item.modifydate = DateTime.Now;
 
                 await context.SaveChangesAsync();
