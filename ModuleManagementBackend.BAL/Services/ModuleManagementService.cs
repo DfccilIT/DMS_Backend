@@ -13,6 +13,7 @@ using ModuleManagementBackend.DAL.DapperServices;
 using ModuleManagementBackend.DAL.Models;
 using ModuleManagementBackend.Model.Common;
 using ModuleManagementBackend.Model.DTOs.EditEmployeeDTO;
+using ModuleManagementBackend.Model.DTOs.GETEMPLOYEEDTO;
 using System.Data;
 using System.Net;
 using System.Net.Mail;
@@ -704,7 +705,7 @@ namespace ModuleManagementBackend.BAL.Services
             try
             {
                 var records = await context.tblEmployeeOfTheMonths
-                      .Where(x => x.status == 0)
+                      .OrderBy(x => x.status)
                       .OrderByDescending(x => x.yr)
                       .ThenByDescending(x => x.mnth)
                       .Select(e => new
@@ -1627,7 +1628,6 @@ namespace ModuleManagementBackend.BAL.Services
 
             return response;
         }
-
         public async Task<ResponseModel> UpdateDependentAsync(int DependentId, AddDependentDto dto, string loginUserEmpCode)
         {
             var response = new ResponseModel();
@@ -2695,5 +2695,163 @@ namespace ModuleManagementBackend.BAL.Services
             }
         }
 
+        public async Task<ResponseModel> GetEmployeeProfile(string EmpCode)
+        {
+            try
+            {
+
+                var cacheKey = $"GetEmployeeProfile_{EmpCode ?? "X"}";
+
+
+                var currentDataVersion = await _dbChangeService.GetDataVersionAsync();
+                var versionCacheKey = $"{cacheKey}_version";
+
+
+                var cachedVersion = await _cacheService.GetOrSetAsync(
+                    versionCacheKey,
+                    () => Task.FromResult(currentDataVersion),
+                    TimeSpan.FromMinutes(5)
+                );
+
+
+                if (cachedVersion != currentDataVersion)
+                {
+                    await _cacheService.RemoveAsync(cacheKey);
+                    await _cacheService.RemoveAsync(versionCacheKey);
+                    _logger.LogInformation("Data version changed, cache invalidated");
+                }
+
+
+                var responseModel = await _cacheService.GetOrSetAsync(
+                    cacheKey,
+                    async () => await GetEmployeeProfileData(EmpCode),
+                    TimeSpan.FromMinutes(30),
+                    TimeSpan.FromHours(2)
+                );
+
+                return responseModel;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in GetDfccilDirectory");
+                return new ResponseModel
+                {
+                    Message = $"An error occurred: {ex.Message}",
+                    StatusCode = System.Net.HttpStatusCode.InternalServerError
+                };
+            }
+        }
+        public async Task<ResponseModel> GetEmployeeProfileData(string empCode)
+        {
+            try
+            {
+
+                using var connection = dapper.GetConnection();
+
+                using var multi = await connection.QueryMultipleAsync(
+                    "[dbo].[GetEmployeeOptimise]",
+                    new { EmployeeCode = empCode },
+                    commandType: CommandType.StoredProcedure
+                );
+
+                var employees = await multi.ReadAsync<EmployeeProfileDto>();
+                var units = await multi.ReadAsync<UnitDto>();
+
+                var employee = employees.ToList();
+
+                var Grade = context.mstPositionGreades.Select(x => new
+                {
+                    x.PositionGrade,
+                    x.PGOrder
+                }).OrderByDescending(x => x.PGOrder).ToList();
+
+                var result = new
+                {
+                    employee = employee,
+                    units = units.ToList(),
+                    PositionGrades = Grade
+                };
+
+                return new ResponseModel()
+                {
+                    StatusCode=HttpStatusCode.OK,
+                    Data=result,
+                    Message="Employee Details Fetched Successfully."
+
+
+                };
+            }
+            catch (Exception ex)
+            {
+
+                return new ResponseModel()
+                {
+                    StatusCode=HttpStatusCode.InternalServerError,
+                    Message=ex.Message,
+
+                };
+            }
+        }
+        public async Task<ResponseModel> GetAllMastersAsync()
+        {
+            var response = new ResponseModel();
+
+            try
+            {
+
+                var positionGrades = await context.mstPositionGreades
+                    .OrderByDescending(p => p.PGOrder)
+                    .Select(p => new { p.PositionGrade, p.PGOrder })
+                    .ToListAsync();
+
+
+                var posts = await context.MstPosts
+                    .Where(p => p.Status == 0)
+                    .OrderBy(p => p.Post)
+                    .Select(p => new { p.Post, p.Description })
+                    .ToListAsync();
+
+
+                var departments = await context.MstDepartments
+                    .Where(d => d.Status == 0)
+                    .OrderBy(d => d.Department)
+                    .Select(d => new { d.Department, d.Departmentid })
+                    .ToListAsync();
+
+
+                var contractors = await context.MstContractMasters
+                    .Where(c => c.status == true)
+                    .OrderBy(c => c.Contractor)
+                    .Select(c => new { c.Contractor, c.PkContractid })
+                    .ToListAsync();
+
+                var mstUnit = await context.UnitNameDetails
+                   .OrderByDescending(c => c.SequenceID)
+                   .Select(c => new { c.Id, c.Name, c.SequenceID, c.Abbrivation })
+                   .ToListAsync();
+
+                var masterData = new
+                {
+                    Unit = mstUnit,
+                    PositionGrades = positionGrades,
+                    Posts = posts,
+                    Departments = departments,
+                    Contractors = contractors
+                };
+
+                response.StatusCode = HttpStatusCode.OK;
+                response.Message = "Master data fetched successfully.";
+                response.Data = masterData;
+            }
+            catch (Exception ex)
+            {
+                response.StatusCode = HttpStatusCode.InternalServerError;
+                response.Message = ex.Message;
+                response.Data = null;
+            }
+
+            return response;
+        }
     }
 }
+

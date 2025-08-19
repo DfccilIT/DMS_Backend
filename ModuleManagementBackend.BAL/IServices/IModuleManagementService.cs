@@ -56,5 +56,7 @@ namespace ModuleManagementBackend.BAL.IServices
         Task<ResponseModel> GetToDoListAsync(string employeeCode = "0");
         Task<ResponseModel> UploadAboutUsAsync(UploadAboutUsDto dto);
         #endregion
+        Task<ResponseModel> GetEmployeeProfile(string empCode);
+        Task<ResponseModel> GetAllMastersAsync();
     }
 }

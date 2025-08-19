@@ -12,6 +12,7 @@ namespace ModuleManagementBackend.DAL.Models
             MstContractEmployeeMasters = new HashSet<MstContractEmployeeMaster>();
             MstEmployeeDependents = new HashSet<MstEmployeeDependent>();
             kraUsers = new HashSet<kraUser>();
+            tblDownLoadLogs = new HashSet<tblDownLoadLog>();
             tblEmployeeOfTheMonths = new HashSet<tblEmployeeOfTheMonth>();
             todoLists = new HashSet<todoList>();
         }
@@ -80,6 +81,7 @@ namespace ModuleManagementBackend.DAL.Models
         public virtual ICollection<MstContractEmployeeMaster> MstContractEmployeeMasters { get; set; }
         public virtual ICollection<MstEmployeeDependent> MstEmployeeDependents { get; set; }
         public virtual ICollection<kraUser> kraUsers { get; set; }
+        public virtual ICollection<tblDownLoadLog> tblDownLoadLogs { get; set; }
         public virtual ICollection<tblEmployeeOfTheMonth> tblEmployeeOfTheMonths { get; set; }
         public virtual ICollection<todoList> todoLists { get; set; }
     }

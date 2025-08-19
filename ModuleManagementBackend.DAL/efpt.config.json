@@ -76,6 +76,22 @@
          "ObjectType": 0
       },
       {
+         "Name": "[dbo].[UnitNameDetails]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[DFCpolicy].[tblDownLoadLog]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[DFCpolicy].[tblPolices]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[DFCpolicy].[tblPolicyItems]",
+         "ObjectType": 0
+      },
+      {
          "Name": "[form].[kraUser]",
          "ObjectType": 0
       }

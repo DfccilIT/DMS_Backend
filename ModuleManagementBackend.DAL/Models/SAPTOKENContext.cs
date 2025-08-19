@@ -29,10 +29,14 @@ namespace ModuleManagementBackend.DAL.Models
         public virtual DbSet<MstUnit> MstUnits { get; set; }
         public virtual DbSet<RegisterContractEmployee> RegisterContractEmployees { get; set; }
         public virtual DbSet<SMSLogDetail> SMSLogDetails { get; set; }
+        public virtual DbSet<UnitNameDetail> UnitNameDetails { get; set; }
         public virtual DbSet<kraUser> kraUsers { get; set; }
         public virtual DbSet<mstPositionGreade> mstPositionGreades { get; set; }
+        public virtual DbSet<tblDownLoadLog> tblDownLoadLogs { get; set; }
         public virtual DbSet<tblEmployeeOfTheMonth> tblEmployeeOfTheMonths { get; set; }
         public virtual DbSet<tblNoticeBoard> tblNoticeBoards { get; set; }
+        public virtual DbSet<tblPolice> tblPolices { get; set; }
+        public virtual DbSet<tblPolicyItem> tblPolicyItems { get; set; }
         public virtual DbSet<todoList> todoLists { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -467,6 +471,17 @@ namespace ModuleManagementBackend.DAL.Models
                 entity.Property(e => e.UserId).HasMaxLength(50);
             });
 
+            modelBuilder.Entity<UnitNameDetail>(entity =>
+            {
+                entity.Property(e => e.Abbrivation)
+                    .HasMaxLength(100)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.Name)
+                    .IsRequired()
+                    .HasMaxLength(150);
+            });
+
             modelBuilder.Entity<kraUser>(entity =>
             {
                 entity.HasKey(e => e.pkKraUser)
@@ -492,6 +507,28 @@ namespace ModuleManagementBackend.DAL.Models
                     .HasName("PK__mstPosit__5336982EE41A4F15");
 
                 entity.Property(e => e.PositionGrade).HasMaxLength(255);
+            });
+
+            modelBuilder.Entity<tblDownLoadLog>(entity =>
+            {
+                entity.HasKey(e => e.pkDownLoadLogId)
+                    .HasName("PK__tblDownL__D0DD7ADCAB2ECC70");
+
+                entity.ToTable("tblDownLoadLog", "DFCpolicy");
+
+                entity.Property(e => e.createDate)
+                    .HasColumnType("datetime")
+                    .HasDefaultValueSql("(getdate())");
+
+                entity.HasOne(d => d.fkEmployeeMasterAuto)
+                    .WithMany(p => p.tblDownLoadLogs)
+                    .HasForeignKey(d => d.fkEmployeeMasterAutoId)
+                    .HasConstraintName("FK__tblDownLo__fkEmp__41999061");
+
+                entity.HasOne(d => d.fkPolItem)
+                    .WithMany(p => p.tblDownLoadLogs)
+                    .HasForeignKey(d => d.fkPolItemId)
+                    .HasConstraintName("FK__tblDownLo__fkPol__428DB49A");
             });
 
             modelBuilder.Entity<tblEmployeeOfTheMonth>(entity =>
@@ -531,6 +568,61 @@ namespace ModuleManagementBackend.DAL.Models
                 entity.Property(e => e.subject)
                     .HasMaxLength(5000)
                     .IsUnicode(false);
+            });
+
+            modelBuilder.Entity<tblPolice>(entity =>
+            {
+                entity.HasKey(e => e.pkPolId)
+                    .HasName("PK__tblPolic__FE28980C1CB621E1");
+
+                entity.ToTable("tblPolices", "DFCpolicy");
+
+                entity.Property(e => e.ParentPolicyId).HasDefaultValueSql("((0))");
+
+                entity.Property(e => e.PolicyHead).IsRequired();
+
+                entity.Property(e => e.createBy).HasMaxLength(100);
+
+                entity.Property(e => e.createdate)
+                    .HasColumnType("datetime")
+                    .HasDefaultValueSql("(getdate())");
+
+                entity.Property(e => e.modifyBy).HasMaxLength(100);
+
+                entity.Property(e => e.modifydate)
+                    .HasColumnType("datetime")
+                    .HasDefaultValueSql("(getdate())");
+
+                entity.Property(e => e.status).HasDefaultValueSql("((0))");
+            });
+
+            modelBuilder.Entity<tblPolicyItem>(entity =>
+            {
+                entity.HasKey(e => e.pkPolItemId)
+                    .HasName("PK__tblPolic__FCE925CE1FA8D780");
+
+                entity.ToTable("tblPolicyItems", "DFCpolicy");
+
+                entity.Property(e => e.createBy).HasMaxLength(100);
+
+                entity.Property(e => e.createdate)
+                    .HasColumnType("datetime")
+                    .HasDefaultValueSql("(getdate())");
+
+                entity.Property(e => e.modifyBy).HasMaxLength(100);
+
+                entity.Property(e => e.modifydate)
+                    .HasColumnType("datetime")
+                    .HasDefaultValueSql("(getdate())");
+
+                entity.Property(e => e.officeOrderDate).HasColumnType("datetime");
+
+                entity.Property(e => e.status).HasDefaultValueSql("((0))");
+
+                entity.HasOne(d => d.fkPol)
+                    .WithMany(p => p.tblPolicyItems)
+                    .HasForeignKey(d => d.fkPolId)
+                    .HasConstraintName("FK__tblPolicy__fkPol__4381D8D3");
             });
 
             modelBuilder.Entity<todoList>(entity =>

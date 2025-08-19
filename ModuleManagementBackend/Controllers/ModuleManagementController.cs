@@ -229,43 +229,9 @@ namespace ModuleManagementBackend.API.Controllers
         #endregion
 
         [HttpGet("GetEmployeeProfile/{empCode}")]
-        public async Task<IActionResult> GetEmployeeProfile(string empCode)
+        public async Task<ResponseModel> GetEmployeeProfile(string empCode)
         {
-            try
-            {
-                if (string.IsNullOrWhiteSpace(empCode))
-                {
-                    return BadRequest(new { message = "Employee code is required" });
-                }
-
-                using var connection = dapper.GetConnection();
-
-                using var multi = await connection.QueryMultipleAsync(
-                    "[dbo].[GetEmployeeOptimise]",
-                    new { EmployeeCode = empCode },
-                    commandType: CommandType.StoredProcedure
-                );
-
-                var employees = await multi.ReadAsync<EmployeeProfileDto>();
-                var units = await multi.ReadAsync<UnitDto>();
-
-                var employee = employees.ToList();
-
-                
-
-                var result = new
-                {
-                    employee = employee,
-                    units = units.ToList()
-                };
-
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-               
-                return StatusCode(500, new { message = "Error fetching employee profile", error = ex.Message });
-            }
+            return await managementService.GetEmployeeProfile(empCode);
         }
 
 
@@ -317,6 +283,12 @@ namespace ModuleManagementBackend.API.Controllers
         {
             var result = await managementService.UploadAboutUsAsync(dto);
             return StatusCode((int)result.StatusCode, result);
+        }
+
+        [HttpGet("GetAllMasterData")]
+        public async Task<ResponseModel> GetAllMasterData()
+        {
+            return await managementService.GetAllMastersAsync();
         }
     }
 
