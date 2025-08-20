@@ -16,7 +16,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="wwwroot\EmployeeOftheMonth\" />
     <Folder Include="wwwroot\PoliciesDocuments\" />
   </ItemGroup>
 

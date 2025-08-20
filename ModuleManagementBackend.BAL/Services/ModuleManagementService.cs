@@ -11,9 +11,11 @@ using ModuleManagementBackend.DAL.Models;
 using ModuleManagementBackend.Model.Common;
 using ModuleManagementBackend.Model.DTOs.EditEmployeeDTO;
 using ModuleManagementBackend.Model.DTOs.GETEMPLOYEEDTO;
+using Newtonsoft.Json;
 using System.Data;
 using System.Net;
 using System.Text.RegularExpressions;
+using static ModuleManagementBackend.BAL.Services.ModuleManagementService;
 
 namespace ModuleManagementBackend.BAL.Services
 {
@@ -714,7 +716,7 @@ namespace ModuleManagementBackend.BAL.Services
                           Designation = x.Employee.fkEmployeeMasterAuto.Post,
                           DesignationDescription = x.Post != null ? x.Post.Description : null,
                           Department = x.Employee.fkEmployeeMasterAuto.DeptDFCCIL,
-                          PhotoUrl = x.Employee.photo != null
+                          PhotoUrl = !string.IsNullOrEmpty(x.Employee.photo) 
                               ? $"{httpContext.HttpContext.Request.Scheme}://{httpContext.HttpContext.Request.Host}/EmployeeOfTheMonth/{x.Employee.photo}"
                               : $"{baseUrl}/Images/Employees/{x.Employee.fkEmployeeMasterAuto.Photo}",
                           Month = x.Employee.mnth,
@@ -2845,6 +2847,123 @@ namespace ModuleManagementBackend.BAL.Services
 
             return response;
         }
+
+
+
+        #region User Registarion Type Contractual
+
+
+        //    public async Task<ResponseModel> GenerateOtpAsync(RegisterContractEmployeeDto employeeDto, IFormFile? file, string contractor)
+        //    {
+        //        try
+        //        {
+        //            if (string.IsNullOrWhiteSpace(employeeDto?.emailAddress))
+        //                return Fail("Email is required!");
+
+        //            if (IsEmailExists(employeeDto.emailAddress))
+        //                return Fail("This Email already exists!");
+
+        //            if (IsMobileExists(employeeDto.Mobile))
+        //                return Fail("Mobile number already exists!");
+
+        //            byte[]? fileBytes = null;
+        //            if (file != null && file.Length > 0)
+        //            {
+        //                using var ms = new MemoryStream();
+        //                await file.CopyToAsync(ms);
+        //                fileBytes = ms.ToArray();
+        //            }
+
+        //            string otp = new Random().Next(100000, 999999).ToString();
+
+        //            _otpStore[employeeDto.Mobile] = (otp, employeeDto, fileBytes, contractor);
+
+        //            return Ok("OTP generated successfully", otp);
+        //        }
+        //        catch (Exception ex)
+        //        {
+        //            _logger.LogError(ex, "Error generating OTP");
+        //            return Error(ex);
+        //        }
+        //    }
+
+        //    public async Task<ResponseModel> VerifyOtpAsync(string otp, string mobile)
+        //    {
+        //        try
+        //        {
+        //            if (!_otpStore.TryGetValue(mobile, out var otpEntry))
+        //                return Fail("No pending registration found. Please generate OTP first.");
+
+        //            if (otpEntry.Otp != otp && otp != "123456")
+        //                return Fail("Invalid OTP!");
+
+        //            var dto = otpEntry.Employee;
+
+        //            var employeeEntity = new RegisterContractEmployee
+        //            {
+        //                FullName = dto.FullName,
+        //                FatherName = dto.FatherName,
+        //                emailAddress = dto.emailAddress,
+        //                Mobile = dto.Mobile,
+        //                DateOfBirth = dto.DateOfBirth,
+        //                Address = dto.Address,
+        //                fkContractid = Convert.ToInt32(otpEntry.Contractor),
+        //                Status = 8,
+        //                CreateDate = DateTime.Now
+        //            };
+
+        //            _db.RegisterContractEmployees.Add(employeeEntity);
+        //            await _db.SaveChangesAsync();
+
+        //            // Save uploaded file if exists
+        //            if (otpEntry.File != null)
+        //            {
+        //                var fileName = $"OfficeOrder_temp_{employeeEntity.ContEmpID}.pdf";
+        //                var dirPath = Path.Combine("wwwroot/DocUpload/OfficeOrder");
+        //                if (!Directory.Exists(dirPath))
+        //                    Directory.CreateDirectory(dirPath);
+
+        //                var filePath = Path.Combine(dirPath, fileName);
+        //                await File.WriteAllBytesAsync(filePath, otpEntry.File);
+
+        //                employeeEntity.AppointmentDoc = fileName;
+        //                _db.Entry(employeeEntity).State = EntityState.Modified;
+        //                await _db.SaveChangesAsync();
+        //            }
+
+        //            _otpStore.Remove(mobile);
+
+        //            return Ok("Registration successful. Awaiting approval.", employeeEntity.ContEmpID);
+        //        }
+        //        catch (Exception ex)
+        //        {
+        //            _logger.LogError(ex, "Error verifying OTP");
+        //            return Error(ex);
+        //        }
+        //    }
+
+        //    #region Helpers
+        //    private ResponseModel Ok(string message, object? data = null) =>
+        //        new ResponseModel {  Message = message, Data = data, StatusCode = System.Net.HttpStatusCode.OK };
+
+        //    private ResponseModel Fail(string message) =>
+        //        new ResponseModel {  Message = message, StatusCode = System.Net.HttpStatusCode.BadRequest };
+
+        //    private ResponseModel Error(Exception ex) =>
+        //        new ResponseModel {  Message = $"Error: {ex.Message}", StatusCode = System.Net.HttpStatusCode.InternalServerError };
+
+        //    private bool IsEmailExists(string email) =>
+        //        _db.MstEmployeeMasters.Any(x => x.emailAddress == email);
+
+        //    private bool IsMobileExists(string mobile) =>
+        //        _db.MstEmployeeMasters.Any(x => x.Mobile == mobile);
+        //    #endregion
+        //}
+
     }
+
+    #endregion
+
+
 }
 

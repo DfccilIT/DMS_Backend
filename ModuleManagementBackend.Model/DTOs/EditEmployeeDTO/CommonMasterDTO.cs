@@ -148,4 +148,11 @@ namespace ModuleManagementBackend.Model.DTOs.EditEmployeeDTO
         public string ?AboutUs { get; set; }
         public IFormFile PhotoFile { get; set; }  
     }
+
+    public class RegisterContractEmployeeDto
+    {
+    
+    
+    
+    }
 }
