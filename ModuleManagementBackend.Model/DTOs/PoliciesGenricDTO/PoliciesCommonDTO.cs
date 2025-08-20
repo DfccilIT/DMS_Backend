@@ -49,7 +49,6 @@ namespace ModuleManagementBackend.Model.DTOs.PoliciesGenricDTO
             public string ItemDescription { get; set; }
             public DateTime? OfficeOrderDate { get; set; }
             public double? OrderFactor { get; set; }
-
            
             public IFormFile? Doc { get; set; }
         }
@@ -63,7 +62,6 @@ namespace ModuleManagementBackend.Model.DTOs.PoliciesGenricDTO
             public string? ItemDescription { get; set; }
             public DateTime? OfficeOrderDate { get; set; }
             public double? OrderFactor { get; set; }
-           
             public IFormFile? Doc { get; set; }
         }
 

@@ -2585,17 +2585,17 @@ namespace ModuleManagementBackend.BAL.Services
 
 
                     employee.Photo = fileName;
-                    employee.Modify_Date=DateTime.Now;
+                   
 
                 }
 
                 employee.AboutUs = dto.AboutUs;
-
+                employee.Modify_Date=DateTime.Now;
                 await context.SaveChangesAsync();
 
                 response.StatusCode = HttpStatusCode.OK;
                 response.Message = "AboutUs and photo updated successfully.";
-                response.Data = new { employee.EmployeeCode, employee.Photo, employee.AboutUs };
+                response.Data = new { employee.EmployeeCode, employee.Photo, employee.AboutUs , employee.Modify_Date };
 
                 return response;
             }
