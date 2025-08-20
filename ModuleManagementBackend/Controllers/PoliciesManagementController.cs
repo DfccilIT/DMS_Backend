@@ -104,7 +104,7 @@ namespace ModuleManagementBackend.API.Controllers
             if (response.StatusCode != HttpStatusCode.OK)
                 return StatusCode((int)response.StatusCode, response.Message);
 
-            return File(response.FileBytes, response.MimeType, response.FileName);
+            return File(response.FileBytes, response.MimeType);
         }
 
     }

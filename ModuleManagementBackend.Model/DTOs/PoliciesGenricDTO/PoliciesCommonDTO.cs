@@ -33,7 +33,7 @@ namespace ModuleManagementBackend.Model.DTOs.PoliciesGenricDTO
 
         public class UpdatePolicyDto
         {
-            public int PkPolId { get; set; }
+            
             public string PolicyHead { get; set; }
             public int? ParentPolicyId { get; set; }
             public int Status { get; set; }
@@ -57,7 +57,7 @@ namespace ModuleManagementBackend.Model.DTOs.PoliciesGenricDTO
 
         public class UpdatePolicyItemDto
         {
-            public int PkPolItemId { get; set; }
+            
             public string? ItemSubject { get; set; }
             public string? ItemType { get; set; }
             public string? ItemContent { get; set; }

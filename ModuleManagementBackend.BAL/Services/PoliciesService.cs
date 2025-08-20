@@ -22,7 +22,7 @@ namespace ModuleManagementBackend.BAL.Services
         private readonly IDatabaseChangesService _dbChangeService;
         private readonly ILogger<PoliciesService> _logger;
 
-        public PoliciesService(SAPTOKENContext context, IConfiguration configuration,IHttpContextAccessor httpContext, ICacheService CacheService, IDatabaseChangesService DbChangeService, ILogger<PoliciesService> logger)
+        public PoliciesService(SAPTOKENContext context, IConfiguration configuration, IHttpContextAccessor httpContext, ICacheService CacheService, IDatabaseChangesService DbChangeService, ILogger<PoliciesService> logger)
         {
             this.context=context;
             this.configuration=configuration;
@@ -105,17 +105,17 @@ namespace ModuleManagementBackend.BAL.Services
                 var cacheKey = "GetAllPolicies";
                 var versionCacheKey = $"{cacheKey}_version";
 
-                
+
                 var currentDataVersion = await _dbChangeService.GetDataVersionForPolicyAsync();
 
-                
+
                 var cachedVersion = await _cacheService.GetOrSetAsync(
                     versionCacheKey,
                     () => Task.FromResult(currentDataVersion),
                     TimeSpan.FromMinutes(5)
                 );
 
-               
+
                 if (cachedVersion != currentDataVersion)
                 {
                     await _cacheService.RemoveAsync(cacheKey);
@@ -123,7 +123,7 @@ namespace ModuleManagementBackend.BAL.Services
                     _logger.LogInformation("Policy data version changed, cache invalidated");
                 }
 
-               
+
                 var responseModel = await _cacheService.GetOrSetAsync(
                     cacheKey,
                     async () =>
@@ -172,8 +172,8 @@ namespace ModuleManagementBackend.BAL.Services
                             TotalRecords = result.Count
                         };
                     },
-                    TimeSpan.FromMinutes(30),  
-                    TimeSpan.FromHours(2)      
+                    TimeSpan.FromMinutes(30),
+                    TimeSpan.FromHours(2)
                 );
 
                 return responseModel;
@@ -190,11 +190,52 @@ namespace ModuleManagementBackend.BAL.Services
             }
         }
 
+        //public async Task<ResponseModel> AddPolicy(AddPolicyDto dto, string loginUserEmpCode)
+        //{
+        //    var response = new ResponseModel();
+        //    try
+        //    {
+        //        if (dto.ParentPolicyId != 0)
+        //        {
+        //            var parentExists = await context.tblPolices.AnyAsync(p => p.pkPolId == dto.ParentPolicyId);
+        //            if (!parentExists)
+        //            {
+        //                response.Message = "Parent policy not found.";
+        //                response.StatusCode = HttpStatusCode.BadRequest;
+        //                return response;
+        //            }
+        //        }
+
+        //        var policy = new tblPolice
+        //        {
+        //            PolicyHead = dto.PolicyHead,
+        //            ParentPolicyId = dto.ParentPolicyId,
+        //            status = 0,
+        //            createBy = loginUserEmpCode,
+        //            createdate = DateTime.Now
+
+        //        };
+
+        //        await context.tblPolices.AddAsync(policy);
+        //        await context.SaveChangesAsync();
+
+        //        response.Message = "Policy added successfully.";
+        //        response.StatusCode = HttpStatusCode.OK;
+        //        response.Data = policy;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        response.Message = $"Error: {ex.Message}";
+        //        response.StatusCode = HttpStatusCode.InternalServerError;
+        //    }
+        //    return response;
+        //}
         public async Task<ResponseModel> AddPolicy(AddPolicyDto dto, string loginUserEmpCode)
         {
             var response = new ResponseModel();
             try
             {
+
                 if (dto.ParentPolicyId != 0)
                 {
                     var parentExists = await context.tblPolices.AnyAsync(p => p.pkPolId == dto.ParentPolicyId);
@@ -206,6 +247,26 @@ namespace ModuleManagementBackend.BAL.Services
                     }
                 }
 
+
+                var existingPolicy = await context.tblPolices
+                    .FirstOrDefaultAsync(p =>
+                        p.PolicyHead.Trim().ToLower() == dto.PolicyHead.Trim().ToLower() &&
+                        p.ParentPolicyId == dto.ParentPolicyId &&
+                        p.status == 0
+                    );
+
+                if (existingPolicy != null)
+                {
+                    return new ResponseModel
+                    {
+                        Message = "A policy with the same header already exists under the same parent.",
+                        StatusCode = HttpStatusCode.Conflict,
+                        Error = true,
+                        Data = existingPolicy
+                    };
+                }
+
+
                 var policy = new tblPolice
                 {
                     PolicyHead = dto.PolicyHead,
@@ -213,7 +274,6 @@ namespace ModuleManagementBackend.BAL.Services
                     status = 0,
                     createBy = loginUserEmpCode,
                     createdate = DateTime.Now
-
                 };
 
                 await context.tblPolices.AddAsync(policy);
@@ -227,6 +287,8 @@ namespace ModuleManagementBackend.BAL.Services
             {
                 response.Message = $"Error: {ex.Message}";
                 response.StatusCode = HttpStatusCode.InternalServerError;
+                response.Error = true;
+                response.ErrorDetail = ex;
             }
             return response;
         }
@@ -290,16 +352,97 @@ namespace ModuleManagementBackend.BAL.Services
             return response;
         }
 
-       
+
 
         #endregion
         #region Policy Items Methods
+
+        //public async Task<ResponseModel> AddPolicyItem(AddPolicyItemDto dto, string LoginUserEmpCode)
+        //{
+        //    var response = new ResponseModel();
+        //    try
+        //    {
+        //        string fileName = string.Empty;
+        //        string docName = string.Empty;
+        //        string fileExtension = string.Empty;
+        //        if (dto.Doc != null && dto.Doc.Length > 0)
+        //        {
+        //            fileName = await UploadPolicyDocIfAvailable(dto.Doc);
+        //            fileExtension = Path.GetExtension(dto.Doc.FileName);
+        //            docName = dto.Doc.FileName;
+        //        }
+
+        //        var item = new tblPolicyItem
+        //        {
+        //            fkPolId = dto.FkPolId,
+        //            itemSubject = dto.ItemSubject,
+        //            itemType = dto.ItemType,
+        //            itemContent = dto.ItemContent,
+        //            itemDescription = dto.ItemDescription,
+        //            docName = docName,
+        //            docExtension = fileExtension,
+        //            filName = fileName,
+        //            officeOrderDate = dto.OfficeOrderDate,
+        //            OrderFactor = dto.OrderFactor,
+        //            status = 0,
+        //            createBy = LoginUserEmpCode,
+        //            createdate = DateTime.Now,
+        //            modifyBy = LoginUserEmpCode,
+        //            modifydate = DateTime.Now
+        //        };
+
+        //        await context.tblPolicyItems.AddAsync(item);
+        //        await context.SaveChangesAsync();
+
+        //        response.Message = "Policy item added successfully.";
+        //        response.StatusCode = HttpStatusCode.OK;
+        //        response.Data = item;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        response.Message = $"Error: {ex.Message}";
+        //        response.StatusCode = HttpStatusCode.InternalServerError;
+        //    }
+        //    return response;
+        //}
 
         public async Task<ResponseModel> AddPolicyItem(AddPolicyItemDto dto, string LoginUserEmpCode)
         {
             var response = new ResponseModel();
             try
             {
+                bool hasSubPolicies = await context.tblPolices
+           .AnyAsync(x => x.ParentPolicyId == dto.FkPolId && x.status == 0);
+
+                if (hasSubPolicies)
+                {
+                    return new ResponseModel
+                    {
+                        Message = "Cannot add policy item because the selected policy has sub-policies.",
+                        StatusCode = HttpStatusCode.Conflict,
+                        Error = true
+                    };
+                }
+                var existingItem = await context.tblPolicyItems
+                    .FirstOrDefaultAsync(x =>
+                        x.fkPolId == dto.FkPolId &&
+                        x.itemSubject.Trim().ToLower() == dto.ItemSubject.Trim().ToLower() &&
+                        x.itemType.Trim().ToLower() == dto.ItemType.Trim().ToLower() &&
+                        x.status == 0
+                    );
+
+                if (existingItem != null)
+                {
+                    return new ResponseModel
+                    {
+                        Message = "A policy item with the same header already exists.",
+                        StatusCode = HttpStatusCode.Conflict,
+                        Error = true,
+                        Data = existingItem
+                    };
+                }
+
+
                 string fileName = string.Empty;
                 string docName = string.Empty;
                 string fileExtension = string.Empty;
@@ -309,6 +452,7 @@ namespace ModuleManagementBackend.BAL.Services
                     fileExtension = Path.GetExtension(dto.Doc.FileName);
                     docName = dto.Doc.FileName;
                 }
+
 
                 var item = new tblPolicyItem
                 {
@@ -340,9 +484,12 @@ namespace ModuleManagementBackend.BAL.Services
             {
                 response.Message = $"Error: {ex.Message}";
                 response.StatusCode = HttpStatusCode.InternalServerError;
+                response.Error = true;
+                response.ErrorDetail = ex;
             }
             return response;
         }
+
 
         public async Task<ResponseModel> UpdatePolicyItem(int id, UpdatePolicyItemDto dto, string loginUserEmpCode)
         {
@@ -457,7 +604,7 @@ namespace ModuleManagementBackend.BAL.Services
                 context.tblDownLoadLogs.Add(downLoadLog);
                 await context.SaveChangesAsync();
 
-                
+
                 var ltr = await context.tblPolicyItems.FindAsync(policyItemId);
                 if (ltr == null)
                 {
@@ -475,7 +622,7 @@ namespace ModuleManagementBackend.BAL.Services
                     return response;
                 }
 
-               
+
                 var mimeType = GetMimeType(ltr.filName);
                 var fileBytes = await System.IO.File.ReadAllBytesAsync(filePath);
 
@@ -502,7 +649,7 @@ namespace ModuleManagementBackend.BAL.Services
         #region Helper Methods
         public class FileResponseModel
         {
-           
+
             public byte[] FileBytes { get; set; }
             public string FileName { get; set; }
             public string MimeType { get; set; }
@@ -520,7 +667,7 @@ namespace ModuleManagementBackend.BAL.Services
                 case ".docx": return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
                 case ".xls": return "application/vnd.ms-excel";
                 case ".xlsx": return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-                default: return "application/octet-stream"; 
+                default: return "application/octet-stream";
             }
         }
         #endregion
