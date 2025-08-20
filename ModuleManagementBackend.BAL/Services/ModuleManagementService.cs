@@ -566,92 +566,7 @@ namespace ModuleManagementBackend.BAL.Services
                 return responseModel;
             }
         }
-        //public async Task<ResponseModel> GetDfccilDirectory(string? EmpCode = null)
-        //{
-        //    ResponseModel responseModel = new ResponseModel();
-
-        //    try
-        //    {
-
-        //        //var Employeemaster = await context.MstEmployeeMasters.
-
-        //        //    Where(x => (x.EmployeeCode==EmpCode ||EmpCode==null) && x.Status==0).
-        //        //    LeftJoin(context.mstPositionGreades, x => x.PositionGrade, y => y.PositionGrade, (x, y) =>
-
-        //        //        new
-        //        //        {
-        //        //            x.EmployeeCode,
-        //        //            x.UserName,
-        //        //            x.Location,
-        //        //            x.PersonalMobile,
-        //        //            x.emailAddress,
-        //        //            x.ExtnNo,
-        //        //            x.GenericDesignation,
-        //        //            x.DeptDFCCIL,
-        //        //            y.PositionGrade,
-        //        //            y.PGOrder,
-        //        //            x.Mobile
-        //        //        }).
-
-        //        //      Select(x => new
-        //        //      {
-        //        //          EmpCode = x.EmployeeCode,
-        //        //          x.PositionGrade,
-        //        //          OfficalMobil = x.Mobile,
-        //        //          name = x.UserName,
-        //        //          unit = x.Location,
-        //        //          personalMobile = x.PersonalMobile,
-        //        //          Email = x.emailAddress,
-        //        //          extensionNo = x.ExtnNo,
-        //        //          designation = x.GenericDesignation,
-        //        //          Department = x.DeptDFCCIL,
-        //        //          PgOrder = x.PGOrder
-
-        //        //      }).OrderByDescending(x => x.PgOrder).ToListAsync();
-        //        var employeeMaster = await context.MstEmployeeMasters
-        //            .Where(x => (EmpCode == null || x.EmployeeCode == EmpCode) && x.Status == 0)
-        //            .GroupJoin(
-        //                context.mstPositionGreades,
-        //                x => x.PositionGrade,
-        //                y => y.PositionGrade,
-        //                (x, y) => new { x, y }
-        //            )
-        //            .SelectMany(
-        //                xy => xy.y.DefaultIfEmpty(),
-        //                (xy, y) => new
-        //                {
-        //                    EmpCode = xy.x.EmployeeCode,
-        //                    EmployeeType = xy.x.TOemploy.ToUpper(),
-        //                    PositionGrade = xy.x!= null ? xy.x.PositionGrade : null,
-        //                    OfficalMobile = xy.x.Mobile,
-        //                    name = xy.x.UserName,
-        //                    unit = xy.x.Location,
-        //                    personalMobile = xy.x.PersonalMobile,
-        //                    Email = xy.x.emailAddress,
-        //                    extensionNo = xy.x.ExtnNo,
-        //                    designation = xy.x.Post,
-        //                    Department = xy.x.DeptDFCCIL,
-        //                    PgOrder = y != null ? y.PGOrder : null
-        //                }
-        //            )
-        //            .OrderByDescending(x => x.PgOrder)
-        //            .AsNoTracking() // avoid tracking overhead
-        //            .ToListAsync();
-
-        //        responseModel.Message = "Directory fetched successfully.";
-        //        responseModel.StatusCode= System.Net.HttpStatusCode.OK;
-        //        responseModel.Data = employeeMaster;
-        //        responseModel.TotalRecords=employeeMaster.Count();
-
-        //        return responseModel;
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        responseModel.Message = $"An error occurred: {ex.Message}";
-        //        responseModel.StatusCode = System.Net.HttpStatusCode.InternalServerError;
-        //        return responseModel;
-        //    }
-        //}
+       
         public async Task<ResponseModel> UpdateDfccilDirectory(UpdateEmployeeDto updateDto)
         {
             ResponseModel responseModel = new ResponseModel();
@@ -2635,6 +2550,8 @@ namespace ModuleManagementBackend.BAL.Services
                         return response;
                     }
 
+
+
                     var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif" };
                     var fileExtension = Path.GetExtension(dto.PhotoFile.FileName).ToLower();
 
@@ -2644,9 +2561,10 @@ namespace ModuleManagementBackend.BAL.Services
                         response.Message = "Only JPG, JPEG, PNG, or GIF files are allowed.";
                         return response;
                     }
-
+                  var saveFolder = ((configuration["DeploymentModes"] ?? string.Empty) == "DFCCIL_UAT")
+    ? (configuration["EmployeeImagePathUat"] ?? string.Empty)
+    : (configuration["EmployeeImagePathProd"] ?? string.Empty);
                     string fileName = $"{dto.EmployeeCode}_{DateTime.Now:yyyyMMdd_HHmmssfff}{fileExtension}";
-                    string saveFolder = "C:/RunningApplication/Server application/sso ticket/TicketManagement/TicketManagement/Images/Employees/";
                     string savePath = Path.Combine(saveFolder, fileName);
 
 
