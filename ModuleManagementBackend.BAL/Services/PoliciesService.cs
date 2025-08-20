@@ -175,7 +175,9 @@ namespace ModuleManagementBackend.BAL.Services
                     ParentPolicyId = dto.ParentPolicyId,
                     status = 0,
                     createBy = loginUserEmpCode,
-                    createdate = DateTime.Now
+                    createdate = DateTime.Now,
+                    modifydate = DateTime.Now,
+                    modifyBy = loginUserEmpCode
                 };
 
                 await context.tblPolices.AddAsync(policy);
@@ -241,6 +243,7 @@ namespace ModuleManagementBackend.BAL.Services
                 }
 
                 policy.status=9;
+                policy.modifydate = DateTime.Now;
                 await context.SaveChangesAsync();
 
                 response.Message = "Policy deleted successfully.";
@@ -404,6 +407,7 @@ namespace ModuleManagementBackend.BAL.Services
                 }
 
                 item.status = 9;
+                item.modifydate= DateTime.Now;
                 await context.SaveChangesAsync();
 
                 response.Message = "Policy item deleted successfully.";
