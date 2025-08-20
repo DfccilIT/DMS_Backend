@@ -2585,6 +2585,7 @@ namespace ModuleManagementBackend.BAL.Services
 
 
                     employee.Photo = fileName;
+                    employee.Modify_Date=DateTime.Now;
 
                 }
 
