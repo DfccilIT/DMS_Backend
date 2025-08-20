@@ -1,12 +1,12 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
-using Microsoft.IdentityModel.Protocols;
+using Microsoft.Extensions.Logging;
 using ModuleManagementBackend.BAL.IServices;
+using ModuleManagementBackend.BAL.IServices.ICacheServices;
 using ModuleManagementBackend.DAL.Models;
 using ModuleManagementBackend.Model.Common;
 using System.Net;
-using System.Net.Mail;
 using static ModuleManagementBackend.Model.DTOs.PoliciesGenricDTO.PoliciesCommonDTO;
 
 namespace ModuleManagementBackend.BAL.Services
@@ -18,8 +18,11 @@ namespace ModuleManagementBackend.BAL.Services
         private readonly IHttpContextAccessor httpContext;
         private readonly string baseUrl;
         private readonly string DocUrl;
+        private readonly ICacheService _cacheService;
+        private readonly IDatabaseChangesService _dbChangeService;
+        private readonly ILogger<PoliciesService> _logger;
 
-        public PoliciesService(SAPTOKENContext context, IConfiguration configuration,IHttpContextAccessor httpContext)
+        public PoliciesService(SAPTOKENContext context, IConfiguration configuration,IHttpContextAccessor httpContext, ICacheService CacheService, IDatabaseChangesService DbChangeService, ILogger<PoliciesService> logger)
         {
             this.context=context;
             this.configuration=configuration;
@@ -32,64 +35,159 @@ namespace ModuleManagementBackend.BAL.Services
                 _ => configuration["PolicyPathProd"] ?? string.Empty
             };
             this.DocUrl=$"{httpContext.HttpContext.Request.Scheme}://{httpContext.HttpContext.Request.Host}/api/PoliciesManagement/Download/";
+            _cacheService = CacheService;
+            _dbChangeService = DbChangeService;
+            _logger = logger;
         }
 
         #region Policies Methods
+        //public async Task<ResponseModel> GetAllPolicies()
+        //{
+        //    var response = new ResponseModel();
+        //    try
+        //    {
+        //        var allPolicies = await context.tblPolices.Where(x => x.status == 0).ToListAsync();
+        //        var allItems = await context.tblPolicyItems.Where(x => x.status == 0).ToListAsync();
+
+
+        //        var itemsLookup = allItems
+        //            .GroupBy(i => i.fkPolId.Value)
+        //            .ToDictionary(g => g.Key, g => g.OrderBy(i => i.OrderFactor).ToList());
+
+
+        //        List<PolicyDto> BuildTree(int parentId)
+        //        {
+        //            return allPolicies
+        //                .Where(p => p.ParentPolicyId == parentId)
+        //                .Select(p => new PolicyDto
+        //                {
+        //                    pkPolId = p.pkPolId,
+        //                    PolicyHead = p.PolicyHead,
+        //                    Children = BuildTree(p.pkPolId),
+        //                    PolicyItems = itemsLookup.TryGetValue(p.pkPolId, out var policyItems)
+        //                        ? policyItems.Select(i => new PolicyItemDto
+        //                        {
+        //                            pkPolItemId = i.pkPolItemId,
+        //                            itemSubject = i.itemSubject,
+        //                            itemContent = i.itemContent,
+        //                            itemDescription = i.itemDescription,
+        //                            itemType = i.itemType,
+        //                            docName = i.docName,
+        //                            fileName = i.filName,
+        //                            OrderFactor = i.OrderFactor,
+        //                            Url = !string.IsNullOrEmpty(i.filName) ? $"{DocUrl}{i.pkPolItemId}" : ""
+        //                        }).ToList()
+        //                        : new List<PolicyItemDto>()
+        //                })
+        //                .ToList();
+        //        }
+
+        //        var result = BuildTree(0);
+
+        //        response.Message = "Policies fetched successfully.";
+        //        response.StatusCode = HttpStatusCode.OK;
+        //        response.Data = result;
+        //        response.TotalRecords = result.Count;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        response.Message = $"Error: {ex.Message}";
+        //        response.StatusCode = HttpStatusCode.InternalServerError;
+        //    }
+
+        //    return response;
+        //}
+
         public async Task<ResponseModel> GetAllPolicies()
         {
-            var response = new ResponseModel();
             try
             {
-                var allPolicies = await context.tblPolices.Where(x => x.status == 0).ToListAsync();
-                var allItems = await context.tblPolicyItems.Where(x => x.status == 0).ToListAsync();
-
-               
-                var itemsLookup = allItems
-                    .GroupBy(i => i.fkPolId.Value)
-                    .ToDictionary(g => g.Key, g => g.OrderBy(i => i.OrderFactor).ToList());
+                var cacheKey = "GetAllPolicies";
+                var versionCacheKey = $"{cacheKey}_version";
 
                 
-                List<PolicyDto> BuildTree(int parentId)
+                var currentDataVersion = await _dbChangeService.GetDataVersionForPolicyAsync();
+
+                
+                var cachedVersion = await _cacheService.GetOrSetAsync(
+                    versionCacheKey,
+                    () => Task.FromResult(currentDataVersion),
+                    TimeSpan.FromMinutes(5)
+                );
+
+               
+                if (cachedVersion != currentDataVersion)
                 {
-                    return allPolicies
-                        .Where(p => p.ParentPolicyId == parentId)
-                        .Select(p => new PolicyDto
-                        {
-                            pkPolId = p.pkPolId,
-                            PolicyHead = p.PolicyHead,
-                            Children = BuildTree(p.pkPolId),
-                            PolicyItems = itemsLookup.TryGetValue(p.pkPolId, out var policyItems)
-                                ? policyItems.Select(i => new PolicyItemDto
-                                {
-                                    pkPolItemId = i.pkPolItemId,
-                                    itemSubject = i.itemSubject,
-                                    itemContent = i.itemContent,
-                                    itemDescription = i.itemDescription,
-                                    itemType = i.itemType,
-                                    docName = i.docName,
-                                    fileName = i.filName,
-                                    OrderFactor = i.OrderFactor,
-                                    Url = !string.IsNullOrEmpty(i.filName) ? $"{DocUrl}{i.pkPolItemId}" : ""
-                                }).ToList()
-                                : new List<PolicyItemDto>()
-                        })
-                        .ToList();
+                    await _cacheService.RemoveAsync(cacheKey);
+                    await _cacheService.RemoveAsync(versionCacheKey);
+                    _logger.LogInformation("Policy data version changed, cache invalidated");
                 }
 
-                var result = BuildTree(0);
+               
+                var responseModel = await _cacheService.GetOrSetAsync(
+                    cacheKey,
+                    async () =>
+                    {
+                        var allPolicies = await context.tblPolices.Where(x => x.status == 0).ToListAsync();
+                        var allItems = await context.tblPolicyItems.Where(x => x.status == 0).ToListAsync();
 
-                response.Message = "Policies fetched successfully.";
-                response.StatusCode = HttpStatusCode.OK;
-                response.Data = result;
-                response.TotalRecords = result.Count;
+                        var itemsLookup = allItems
+                            .GroupBy(i => i.fkPolId.Value)
+                            .ToDictionary(g => g.Key, g => g.OrderBy(i => i.OrderFactor).ToList());
+
+                        List<PolicyDto> BuildTree(int parentId)
+                        {
+                            return allPolicies
+                                .Where(p => p.ParentPolicyId == parentId)
+                                .Select(p => new PolicyDto
+                                {
+                                    pkPolId = p.pkPolId,
+                                    PolicyHead = p.PolicyHead,
+                                    Children = BuildTree(p.pkPolId),
+                                    PolicyItems = itemsLookup.TryGetValue(p.pkPolId, out var policyItems)
+                                        ? policyItems.Select(i => new PolicyItemDto
+                                        {
+                                            pkPolItemId = i.pkPolItemId,
+                                            itemSubject = i.itemSubject,
+                                            itemContent = i.itemContent,
+                                            itemDescription = i.itemDescription,
+                                            itemType = i.itemType,
+                                            docName = i.docName,
+                                            fileName = i.filName,
+                                            OrderFactor = i.OrderFactor,
+                                            Url = !string.IsNullOrEmpty(i.filName) ? $"{DocUrl}{i.pkPolItemId}" : ""
+                                        }).ToList()
+                                        : new List<PolicyItemDto>()
+                                })
+                                .ToList();
+                        }
+
+                        var result = BuildTree(0);
+
+                        return new ResponseModel
+                        {
+                            Message = "Policies fetched successfully.",
+                            StatusCode = HttpStatusCode.OK,
+                            Data = result,
+                            TotalRecords = result.Count
+                        };
+                    },
+                    TimeSpan.FromMinutes(30),  
+                    TimeSpan.FromHours(2)      
+                );
+
+                return responseModel;
             }
             catch (Exception ex)
             {
-                response.Message = $"Error: {ex.Message}";
-                response.StatusCode = HttpStatusCode.InternalServerError;
-            }
+                _logger.LogInformation(ex.Message);
 
-            return response;
+                return new ResponseModel
+                {
+                    Message = $"Error: {ex.Message}",
+                    StatusCode = HttpStatusCode.InternalServerError
+                };
+            }
         }
 
         public async Task<ResponseModel> AddPolicy(AddPolicyDto dto, string loginUserEmpCode)

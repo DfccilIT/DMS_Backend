@@ -2,13 +2,10 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Primitives;
 using ModuleManagementBackend.BAL.IServices;
 using ModuleManagementBackend.BAL.IServices.ICacheServices;
-using ModuleManagementBackend.BAL.Services.CacheServices;
 using ModuleManagementBackend.DAL.DapperServices;
 using ModuleManagementBackend.DAL.Models;
 using ModuleManagementBackend.Model.Common;
@@ -16,13 +13,7 @@ using ModuleManagementBackend.Model.DTOs.EditEmployeeDTO;
 using ModuleManagementBackend.Model.DTOs.GETEMPLOYEEDTO;
 using System.Data;
 using System.Net;
-using System.Net.Mail;
-using System.Reflection.Emit;
-using System.Runtime.InteropServices;
-using System.Security.Cryptography;
 using System.Text.RegularExpressions;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
-using static ModuleManagementBackend.BAL.Services.AccountService;
 
 namespace ModuleManagementBackend.BAL.Services
 {
@@ -2798,6 +2789,7 @@ namespace ModuleManagementBackend.BAL.Services
 
             try
             {
+                var EmployeeType = await context.MstEmployeeMasters.Where(x=>x.Status==0 && x.TOemploy!=null).Select(x => x.TOemploy).Distinct().ToListAsync();
 
                 var positionGrades = await context.mstPositionGreades
                     .OrderByDescending(p => p.PGOrder)
@@ -2836,7 +2828,8 @@ namespace ModuleManagementBackend.BAL.Services
                     PositionGrades = positionGrades,
                     Posts = posts,
                     Departments = departments,
-                    Contractors = contractors
+                    Contractors = contractors,
+                    EmployeeTypes= EmployeeType
                 };
 
                 response.StatusCode = HttpStatusCode.OK;
