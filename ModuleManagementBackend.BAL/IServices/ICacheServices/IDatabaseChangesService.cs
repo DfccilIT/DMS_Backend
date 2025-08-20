@@ -8,8 +8,9 @@ namespace ModuleManagementBackend.BAL.IServices.ICacheServices
 {
     public interface IDatabaseChangesService
     {
-        Task<string> GetDataVersionAsync();
-        Task<string> GetDataVersionForPolicyAsync();
+        Task<long> GetDataVersionAsync();
+
+        Task<long> GetDataVersionForPolicyAsync();
         Task InvalidateCacheOnChangeAsync(string tableName);
     }
 }

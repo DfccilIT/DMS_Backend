@@ -17,7 +17,11 @@ namespace ModuleManagementBackend.BAL.Services.CacheServices
             _logger = logger;
         }
 
-        public async Task<T> GetOrSetAsync<T>(string key, Func<Task<T>> getItem, TimeSpan? slidingExpiration = null, TimeSpan? absoluteExpiration = null)
+        public async Task<T> GetOrSetAsync<T>(
+            string key,
+            Func<Task<T>> getItem,
+            TimeSpan? slidingExpiration = null,
+            TimeSpan? absoluteExpiration = null)
         {
             if (_memoryCache.TryGetValue(key, out T cachedValue))
             {
@@ -28,6 +32,21 @@ namespace ModuleManagementBackend.BAL.Services.CacheServices
             _logger.LogInformation("Cache miss for key: {Key}", key);
             var item = await getItem();
 
+            await SetAsync(key, item, slidingExpiration, absoluteExpiration);
+            return item;
+        }
+
+        public Task<T?> GetAsync<T>(string key)
+        {
+            if (_memoryCache.TryGetValue(key, out T value))
+            {
+                return Task.FromResult<T?>(value);
+            }
+            return Task.FromResult<T?>(default);
+        }
+
+        public Task SetAsync<T>(string key, T value, TimeSpan? slidingExpiration = null, TimeSpan? absoluteExpiration = null)
+        {
             var cacheEntryOptions = new MemoryCacheEntryOptions();
 
             if (slidingExpiration.HasValue)
@@ -38,13 +57,12 @@ namespace ModuleManagementBackend.BAL.Services.CacheServices
             if (absoluteExpiration.HasValue)
                 cacheEntryOptions.AbsoluteExpirationRelativeToNow = absoluteExpiration;
 
-           
             lock (_lock)
             {
                 _cacheKeys.Add(key);
             }
 
-            cacheEntryOptions.RegisterPostEvictionCallback((evictedKey, value, reason, state) =>
+            cacheEntryOptions.RegisterPostEvictionCallback((evictedKey, valueObj, reason, state) =>
             {
                 lock (_lock)
                 {
@@ -56,9 +74,8 @@ namespace ModuleManagementBackend.BAL.Services.CacheServices
                 }
             });
 
-
-            _memoryCache.Set(key, item, cacheEntryOptions);
-            return item;
+            _memoryCache.Set(key, value, cacheEntryOptions);
+            return Task.CompletedTask;
         }
 
         public Task RemoveAsync(string key)
@@ -85,5 +102,4 @@ namespace ModuleManagementBackend.BAL.Services.CacheServices
             return Task.CompletedTask;
         }
     }
-
 }

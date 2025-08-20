@@ -2422,34 +2422,32 @@ namespace ModuleManagementBackend.BAL.Services
         {
             try
             {
-
                 var cacheKey = $"dfccil_directory_{EmpCode ?? "all"}";
-
-
-                var currentDataVersion = await _dbChangeService.GetDataVersionAsync();
                 var versionCacheKey = $"{cacheKey}_version";
 
+               
+                var currentDataVersion = await _dbChangeService.GetDataVersionAsync();
 
-                var cachedVersion = await _cacheService.GetOrSetAsync(
-                    versionCacheKey,
-                    () => Task.FromResult(currentDataVersion),
-                    TimeSpan.FromMinutes(5)
-                );
+                
+                var cachedVersion = await _cacheService.GetAsync<long?>(versionCacheKey);
 
-
-                if (cachedVersion != currentDataVersion)
+                if (cachedVersion == null || cachedVersion != currentDataVersion)
                 {
+                   
                     await _cacheService.RemoveAsync(cacheKey);
-                    await _cacheService.RemoveAsync(versionCacheKey);
-                    _logger.LogInformation("Data version changed, cache invalidated");
+
+                    
+                    await _cacheService.SetAsync(versionCacheKey, currentDataVersion, TimeSpan.FromHours(2));
+
+                    _logger.LogInformation("Data version changed, cache invalidated for {CacheKey}", cacheKey);
                 }
 
-
+               
                 var responseModel = await _cacheService.GetOrSetAsync(
                     cacheKey,
                     async () => await FetchDirectoryFromDatabase(EmpCode),
-                    TimeSpan.FromMinutes(30),
-                    TimeSpan.FromHours(2)
+                    TimeSpan.FromMinutes(30),   
+                    TimeSpan.FromHours(2)       
                 );
 
                 return responseModel;
@@ -2464,6 +2462,7 @@ namespace ModuleManagementBackend.BAL.Services
                 };
             }
         }
+
 
         private async Task<ResponseModel> FetchDirectoryFromDatabase(string? EmpCode)
         {
@@ -2611,48 +2610,46 @@ namespace ModuleManagementBackend.BAL.Services
         {
             try
             {
-
                 var cacheKey = $"GetEmployeeProfile_{EmpCode ?? "X"}";
-
-
-                var currentDataVersion = await _dbChangeService.GetDataVersionAsync();
                 var versionCacheKey = $"{cacheKey}_version";
 
+               
+                var currentDataVersion = await _dbChangeService.GetDataVersionAsync();
 
-                var cachedVersion = await _cacheService.GetOrSetAsync(
-                    versionCacheKey,
-                    () => Task.FromResult(currentDataVersion),
-                    TimeSpan.FromMinutes(5)
-                );
+               
+                var cachedVersion = await _cacheService.GetAsync<long?>(versionCacheKey);
 
-
-                if (cachedVersion != currentDataVersion)
+                if (cachedVersion == null || cachedVersion != currentDataVersion)
                 {
+                   
                     await _cacheService.RemoveAsync(cacheKey);
-                    await _cacheService.RemoveAsync(versionCacheKey);
+
+                   
+                    await _cacheService.SetAsync(versionCacheKey, currentDataVersion, TimeSpan.FromHours(2));
+
                     _logger.LogInformation("Data version changed, cache invalidated");
                 }
-
 
                 var responseModel = await _cacheService.GetOrSetAsync(
                     cacheKey,
                     async () => await GetEmployeeProfileData(EmpCode),
-                    TimeSpan.FromMinutes(30),
-                    TimeSpan.FromHours(2)
+                    TimeSpan.FromMinutes(30),   
+                    TimeSpan.FromHours(2)       
                 );
 
                 return responseModel;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error in GetDfccilDirectory");
+                _logger.LogError(ex, "Error in GetEmployeeProfile");
                 return new ResponseModel
                 {
                     Message = $"An error occurred: {ex.Message}",
-                    StatusCode = System.Net.HttpStatusCode.InternalServerError
+                    StatusCode = HttpStatusCode.InternalServerError
                 };
             }
         }
+
         public async Task<ResponseModel> GetEmployeeProfileData(string empCode)
         {
             try

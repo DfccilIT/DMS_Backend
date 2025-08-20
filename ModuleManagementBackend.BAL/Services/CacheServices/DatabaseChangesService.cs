@@ -27,61 +27,67 @@ namespace ModuleManagementBackend.BAL.Services.CacheServices
 
         }
 
-        public async Task<string> GetDataVersionAsync()
+        public async Task<long> GetDataVersionAsync()
         {
             try
             {
                 using var connection = new SqlConnection(_connectionString);
                 await connection.OpenAsync();
+
                 var query = @"
-                SELECT MAX(LastModified) as LastModified
-                FROM (
-                    SELECT MAX(ISNULL(Modify_Date,'1990/01/01')) as LastModified FROM MstEmployeeMaster
-                ) t";
+        SELECT CAST(DATEDIFF_BIG(MICROSECOND, '1970-01-01', 
+                   ISNULL(MAX(Modify_Date), '1990-01-01')) as bigint)
+        FROM MstEmployeeMaster";
 
                 var command = new SqlCommand(query, connection);
                 var result = await command.ExecuteScalarAsync();
 
-                return result?.ToString() ?? DateTime.UtcNow.Ticks.ToString();
+                return (result != DBNull.Value) ? Convert.ToInt64(result) : DateTime.UtcNow.Ticks;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting data version");
-                return DateTime.UtcNow.Ticks.ToString();
+                return DateTime.UtcNow.Ticks;
             }
         }
 
-        public async Task<string> GetDataVersionForPolicyAsync()
+
+        public async Task<long> GetDataVersionForPolicyAsync()
         {
             try
             {
                 using var connection = new SqlConnection(_connectionString);
                 await connection.OpenAsync();
+
                 var query = @"
-            SELECT ISNULL(CONVERT(VARCHAR, MAX(LastModified), 120), '1990-01-01') AS LastModified
-            FROM (
-                SELECT MAX(ISNULL(modifydate, '1990-01-01')) AS LastModified FROM DFCpolicy.tblPolices
-                UNION ALL
-                SELECT MAX(ISNULL(modifydate, '1990-01-01')) AS LastModified FROM DFCpolicy.tblPolicyItems
-            ) t;
+        SELECT CAST(DATEDIFF_BIG(MICROSECOND, '1970-01-01', MAX(LastModified)) as bigint)
+        FROM (
+            SELECT MAX(ISNULL(modifydate, '1990-01-01')) AS LastModified FROM DFCpolicy.tblPolices
+            UNION ALL
+            SELECT MAX(ISNULL(modifydate, '1990-01-01')) AS LastModified FROM DFCpolicy.tblPolicyItems
+        ) t;
         ";
+
                 var command = new SqlCommand(query, connection);
                 var result = await command.ExecuteScalarAsync();
 
-                return result?.ToString() ?? DateTime.UtcNow.Ticks.ToString();
+                return (result != DBNull.Value) ? Convert.ToInt64(result) : DateTime.UtcNow.Ticks;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting data version");
-                return DateTime.UtcNow.Ticks.ToString();
+                _logger.LogError(ex, "Error getting data version for policies");
+                return DateTime.UtcNow.Ticks;
             }
         }
+
 
         public async Task InvalidateCacheOnChangeAsync(string tableName)
         {
             await _cacheService.RemoveByPatternAsync("dfccil_directory");
             _logger.LogInformation("Cache invalidated for table: {TableName}", tableName);
         }
+
+        
     }
 }
 
