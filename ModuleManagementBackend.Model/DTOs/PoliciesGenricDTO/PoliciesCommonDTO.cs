@@ -28,7 +28,7 @@ namespace ModuleManagementBackend.Model.DTOs.PoliciesGenricDTO
         {
             public string PolicyHead { get; set; }
             public int? ParentPolicyId { get; set; } = 0;
-            public string CreateBy { get; set; }
+            
         }
 
         public class UpdatePolicyDto
@@ -36,8 +36,7 @@ namespace ModuleManagementBackend.Model.DTOs.PoliciesGenricDTO
             
             public string PolicyHead { get; set; }
             public int? ParentPolicyId { get; set; }
-            public int Status { get; set; }
-            public string ModifyBy { get; set; }
+           
         }
 
 
