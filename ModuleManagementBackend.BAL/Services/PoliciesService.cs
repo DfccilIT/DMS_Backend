@@ -192,7 +192,7 @@ namespace ModuleManagementBackend.BAL.Services
                                             docName = i.docName,
                                             fileName = i.filName,
                                             OrderFactor = i.OrderFactor,
-                                            Url = !string.IsNullOrEmpty(i.filName) ? $"{DocUrl}{i.pkPolItemId}" : ""
+                                            Url = !string.IsNullOrEmpty(i.filName) && i.itemType.ToLower()!="url" ? $"{DocUrl}{i.pkPolItemId}" : i.filName
                                         }).ToList()
                                         : new List<PolicyItemDto>()
                                 })
@@ -472,6 +472,12 @@ namespace ModuleManagementBackend.BAL.Services
                     item.docName = dto.Doc.FileName;
                     item.docExtension = Path.GetExtension(dto.Doc.FileName);
                 }
+                if(dto.ItemType.ToLower() == "url")
+                {
+                    item.filName = dto.Url;
+                    item.docName = dto.Url;
+                }
+               
 
                 item.itemSubject = dto.ItemSubject;
                 item.itemType = dto.ItemType;

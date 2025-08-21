@@ -28,15 +28,15 @@ namespace ModuleManagementBackend.Model.DTOs.PoliciesGenricDTO
         {
             public string PolicyHead { get; set; }
             public int? ParentPolicyId { get; set; } = 0;
-            
+
         }
 
         public class UpdatePolicyDto
         {
-            
+
             public string PolicyHead { get; set; }
             public int? ParentPolicyId { get; set; }
-           
+
         }
 
 
@@ -49,19 +49,20 @@ namespace ModuleManagementBackend.Model.DTOs.PoliciesGenricDTO
             public string ItemDescription { get; set; }
             public DateTime? OfficeOrderDate { get; set; }
             public double? OrderFactor { get; set; }
-            public bool whatNew { get; set; }=false;
+            public bool whatNew { get; set; } = false;
             public string Url { get; set; }
             public IFormFile? Doc { get; set; }
         }
 
         public class UpdatePolicyItemDto
         {
-            
+
             public string? ItemSubject { get; set; }
             public string? ItemType { get; set; }
             public string? ItemContent { get; set; }
             public string? ItemDescription { get; set; }
             public DateTime? OfficeOrderDate { get; set; }
+            public string Url { get; set; }
             public bool WhatNew { get; set; } = false;
             public double? OrderFactor { get; set; }
             public IFormFile? Doc { get; set; }
