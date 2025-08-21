@@ -312,8 +312,8 @@ namespace ModuleManagementBackend.BAL.Services
                 }
                 else
                 {
-                    fileName = dto.ItemType;
-                    docName=dto.ItemType;
+                    fileName = dto.Url;
+                    docName=dto.Url;
                 }
 
 
