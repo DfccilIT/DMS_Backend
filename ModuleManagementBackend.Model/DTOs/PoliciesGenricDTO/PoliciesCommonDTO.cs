@@ -49,8 +49,8 @@ namespace ModuleManagementBackend.Model.DTOs.PoliciesGenricDTO
             public string ItemDescription { get; set; }
             public DateTime? OfficeOrderDate { get; set; }
             public double? OrderFactor { get; set; }
-            public bool whatNew { get; set; } = false;
-            public string Url { get; set; }
+            public bool? whatNew { get; set; } = false;
+            public string? Url { get; set; }
             public IFormFile? Doc { get; set; }
         }
 
@@ -62,8 +62,8 @@ namespace ModuleManagementBackend.Model.DTOs.PoliciesGenricDTO
             public string? ItemContent { get; set; }
             public string? ItemDescription { get; set; }
             public DateTime? OfficeOrderDate { get; set; }
-            public string Url { get; set; }
-            public bool WhatNew { get; set; } = false;
+            public string? Url { get; set; }
+            public bool? WhatNew { get; set; } = false;
             public double? OrderFactor { get; set; }
             public IFormFile? Doc { get; set; }
         }
