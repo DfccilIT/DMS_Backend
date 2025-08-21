@@ -192,7 +192,7 @@ namespace ModuleManagementBackend.BAL.Services
                                             docName = i.docName,
                                             fileName = i.filName,
                                             OrderFactor = i.OrderFactor,
-                                            Url = !string.IsNullOrEmpty(i.filName) && i.itemType.ToLower()!="url" ? $"{DocUrl}{i.pkPolItemId}" : i.filName
+                                            Url = !string.IsNullOrEmpty(i.filName) && i.itemType?.ToLower()!="url" ? $"{DocUrl}{i.pkPolItemId}" : i.filName
                                         }).ToList()
                                         : new List<PolicyItemDto>()
                                 })
