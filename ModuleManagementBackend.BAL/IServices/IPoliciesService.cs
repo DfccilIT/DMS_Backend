@@ -11,7 +11,7 @@ namespace ModuleManagementBackend.BAL.IServices
 {
     public interface IPolicyService
     {
-        Task<ResponseModel> GetAllPolicies();
+        Task<ResponseModel> GetAllPolicies(bool onlyWhatNew = false);
         Task<ResponseModel> AddPolicy(AddPolicyDto dto,string LoginUserEmpCode);
         Task<ResponseModel> UpdatePolicy(int id, UpdatePolicyDto dto, string LoginUserEmpCode);
         Task<ResponseModel> DeletePolicy(int id);

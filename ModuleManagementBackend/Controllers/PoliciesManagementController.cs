@@ -35,9 +35,9 @@ namespace ModuleManagementBackend.API.Controllers
         }
         [HttpGet("GetAllPolicies")]
         [AllowAnonymous]
-        public async Task<ResponseModel> GetAllPolicies()
+        public async Task<ResponseModel> GetAllPolicies(bool onlyWhatNew = false)
         {
-            var response = await _policyService.GetAllPolicies();
+            var response = await _policyService.GetAllPolicies(onlyWhatNew);
             return response;
         }
 

@@ -28,6 +28,7 @@ namespace ModuleManagementBackend.DAL.Models
         public string itemDescription { get; set; }
         public DateTime? officeOrderDate { get; set; }
         public double? OrderFactor { get; set; }
+        public bool? WhatNew { get; set; }
 
         public virtual tblPolice fkPol { get; set; }
         public virtual ICollection<tblDownLoadLog> tblDownLoadLogs { get; set; }
