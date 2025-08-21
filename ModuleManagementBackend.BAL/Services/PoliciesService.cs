@@ -304,32 +304,37 @@ namespace ModuleManagementBackend.BAL.Services
                 string fileName = string.Empty;
                 string docName = string.Empty;
                 string fileExtension = string.Empty;
-                if (dto.Doc != null && dto.Doc.Length > 0)
+                if (dto.ItemType.ToLower()!="url" && dto.Doc != null && dto.Doc.Length > 0)
                 {
                     fileName = await UploadPolicyDocIfAvailable(dto.Doc);
                     fileExtension = Path.GetExtension(dto.Doc.FileName);
                     docName = dto.Doc.FileName;
                 }
-
-
-                var item = new tblPolicyItem
+                else
                 {
-                    fkPolId = dto.FkPolId,
-                    itemSubject = dto.ItemSubject,
-                    itemType = dto.ItemType,
-                    itemContent = dto.ItemContent,
-                    itemDescription = dto.ItemDescription,
-                    docName = docName,
-                    docExtension = fileExtension,
-                    filName = fileName,
-                    officeOrderDate = dto.OfficeOrderDate,
-                    OrderFactor = dto.OrderFactor,
-                    status = 0,
-                    createBy = LoginUserEmpCode,
-                    createdate = DateTime.Now,
-                    modifyBy = LoginUserEmpCode,
-                    modifydate = DateTime.Now
-                };
+                    fileName = dto.ItemType;
+                    docName=dto.ItemType;
+                }
+
+
+                    var item = new tblPolicyItem
+                    {
+                        fkPolId = dto.FkPolId,
+                        itemSubject = dto.ItemSubject,
+                        itemType = dto.ItemType,
+                        itemContent = dto.ItemContent,
+                        itemDescription = dto.ItemDescription,
+                        docName = docName,
+                        docExtension = fileExtension,
+                        filName = fileName,
+                        officeOrderDate = dto.OfficeOrderDate,
+                        OrderFactor = dto.OrderFactor,
+                        status = 0,
+                        createBy = LoginUserEmpCode,
+                        createdate = DateTime.Now,
+                        modifyBy = LoginUserEmpCode,
+                        modifydate = DateTime.Now
+                    };
 
                 await context.tblPolicyItems.AddAsync(item);
                 await context.SaveChangesAsync();
