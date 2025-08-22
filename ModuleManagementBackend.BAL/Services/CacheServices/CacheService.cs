@@ -23,8 +23,10 @@ namespace ModuleManagementBackend.BAL.Services.CacheServices
             TimeSpan? slidingExpiration = null,
             TimeSpan? absoluteExpiration = null)
         {
+            
             if (_memoryCache.TryGetValue(key, out T cachedValue))
             {
+                
                 _logger.LogInformation("Cache HIT for key: {Key}", key);
                 return cachedValue;
             }

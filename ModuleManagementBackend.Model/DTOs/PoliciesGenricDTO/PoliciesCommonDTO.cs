@@ -88,6 +88,7 @@ namespace ModuleManagementBackend.Model.DTOs.PoliciesGenricDTO
             public bool WhatNew { get; set; }
             public string Url { get; set; }
             public double? OrderFactor { get; set; }
+            public DateTime? OfficeOrderDate { get; set; }
         }
 
     }
