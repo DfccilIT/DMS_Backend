@@ -2635,6 +2635,8 @@ namespace ModuleManagementBackend.BAL.Services
                     TimeSpan.FromMinutes(30),
                     TimeSpan.FromHours(2)
                 );
+                responseModel.Message=$"Data:{currentDataVersion},Cache:{cachedVersion}";
+                
 
                 return responseModel;
             }
