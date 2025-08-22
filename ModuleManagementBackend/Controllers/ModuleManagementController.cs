@@ -296,11 +296,11 @@ namespace ModuleManagementBackend.API.Controllers
             return await managementService.GetEmployeeMasterColumnsAsync();
         }
 
-        //[HttpGet("GetEmployeeList")]
-        //public async Task<ResponseModel> GetEmployeeList(string columnNamesCsv,string? empCode=null)
-        //{
-        //    return await managementService.GetSelectedEmployeeColumnsAsync(columnNamesCsv, empCode);
-        //}
+        [HttpGet("GetEmployeeList")]
+        public async Task<ResponseModel> GetEmployeeList(string columnNamesCsv, string? empCode = null)
+        {
+            return await managementService.GetSelectedEmployeeColumnsAsync(columnNamesCsv, empCode);
+        }
     }
 
 }
