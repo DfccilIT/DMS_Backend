@@ -8,8 +8,8 @@ namespace ModuleManagementBackend.BAL.Services.CacheServices
     {
         private readonly IMemoryCache _memoryCache;
         private readonly ILogger<CacheService> _logger;
-        private readonly HashSet<string> _cacheKeys = new HashSet<string>();
-        private readonly object _lock = new object();
+        private readonly HashSet<string> _cacheKeys = new();
+        private readonly object _lock = new();
 
         public CacheService(IMemoryCache memoryCache, ILogger<CacheService> logger)
         {
@@ -25,11 +25,11 @@ namespace ModuleManagementBackend.BAL.Services.CacheServices
         {
             if (_memoryCache.TryGetValue(key, out T cachedValue))
             {
-                _logger.LogInformation("Cache hit for key: {Key}", key);
+                _logger.LogInformation("Cache HIT for key: {Key}", key);
                 return cachedValue;
             }
 
-            _logger.LogInformation("Cache miss for key: {Key}", key);
+            _logger.LogInformation("Cache MISS for key: {Key}", key);
             var item = await getItem();
 
             await SetAsync(key, item, slidingExpiration, absoluteExpiration);
@@ -38,21 +38,26 @@ namespace ModuleManagementBackend.BAL.Services.CacheServices
 
         public Task<T?> GetAsync<T>(string key)
         {
-            if (_memoryCache.TryGetValue(key, out T value))
+            if (_memoryCache.TryGetValue(key, out var value))
             {
-                return Task.FromResult<T?>(value);
+                _logger.LogInformation("Cache HIT for key: {Key}", key);
+                return Task.FromResult((T?)value);
             }
-            return Task.FromResult<T?>(default);
+
+            _logger.LogWarning("Cache MISS for key: {Key}", key);
+            return Task.FromResult(default(T));
         }
 
-        public Task SetAsync<T>(string key, T value, TimeSpan? slidingExpiration = null, TimeSpan? absoluteExpiration = null)
+        public Task SetAsync<T>(
+            string key,
+            T value,
+            TimeSpan? slidingExpiration = null,
+            TimeSpan? absoluteExpiration = null)
         {
-            var cacheEntryOptions = new MemoryCacheEntryOptions();
-
-            if (slidingExpiration.HasValue)
-                cacheEntryOptions.SlidingExpiration = slidingExpiration;
-            else
-                cacheEntryOptions.SlidingExpiration = TimeSpan.FromMinutes(30); // Default
+            var cacheEntryOptions = new MemoryCacheEntryOptions
+            {
+                SlidingExpiration = slidingExpiration ?? TimeSpan.FromMinutes(30)
+            };
 
             if (absoluteExpiration.HasValue)
                 cacheEntryOptions.AbsoluteExpirationRelativeToNow = absoluteExpiration;
@@ -70,11 +75,14 @@ namespace ModuleManagementBackend.BAL.Services.CacheServices
                     if (!string.IsNullOrEmpty(keyString))
                     {
                         _cacheKeys.Remove(keyString);
+                        _logger.LogWarning("Cache EVICTED. Key: {Key}, Reason: {Reason}", keyString, reason);
                     }
                 }
             });
 
             _memoryCache.Set(key, value, cacheEntryOptions);
+            _logger.LogInformation("Cache SET for key: {Key}, Expiry: {Expiry}", key, cacheEntryOptions.AbsoluteExpirationRelativeToNow);
+
             return Task.CompletedTask;
         }
 
@@ -85,6 +93,7 @@ namespace ModuleManagementBackend.BAL.Services.CacheServices
             {
                 _cacheKeys.Remove(key);
             }
+            _logger.LogInformation("Cache REMOVED manually. Key: {Key}", key);
             return Task.CompletedTask;
         }
 
@@ -97,6 +106,7 @@ namespace ModuleManagementBackend.BAL.Services.CacheServices
                 {
                     _memoryCache.Remove(key);
                     _cacheKeys.Remove(key);
+                    _logger.LogInformation("Cache REMOVED by pattern. Key: {Key}, Pattern: {Pattern}", key, pattern);
                 }
             }
             return Task.CompletedTask;
