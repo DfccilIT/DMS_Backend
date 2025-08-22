@@ -11,7 +11,8 @@ namespace ModuleManagementBackend.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    
+
+    [AllowAnonymous]
     public class PoliciesManagementController : ControllerBase
     {
         private readonly IPolicyService _policyService;
