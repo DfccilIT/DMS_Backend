@@ -2635,7 +2635,7 @@ namespace ModuleManagementBackend.BAL.Services
                     TimeSpan.FromMinutes(30),
                     TimeSpan.FromHours(2)
                 );
-                responseModel.Message=$"Data:{currentDataVersion},Cache:{cachedVersion}";
+               // responseModel.Message=$"Data:{currentDataVersion},Cache:{cachedVersion}";
                 
 
                 return responseModel;
@@ -2655,7 +2655,7 @@ namespace ModuleManagementBackend.BAL.Services
         {
             try
             {
-
+                var count = 1;
                 using var connection = dapper.GetConnection();
 
                 using var multi = await connection.QueryMultipleAsync(
@@ -2686,7 +2686,7 @@ namespace ModuleManagementBackend.BAL.Services
                 {
                     StatusCode=HttpStatusCode.OK,
                     Data=result,
-                    Message="Employee Details Fetched Successfully."
+                    Message=$"Employee Details Fetched Successfully{count+1}."
 
 
                 };
