@@ -35,9 +35,9 @@ namespace ModuleManagementBackend.BAL.Services.CacheServices
                 await connection.OpenAsync();
 
                 var query = @"
-        SELECT CAST(DATEDIFF_BIG(MICROSECOND, '1970-01-01', 
-                   ISNULL(MAX(Modify_Date), '1990-01-01')) as bigint)
-        FROM MstEmployeeMaster";
+SELECT CAST(DATEDIFF(SECOND, '1970-01-01',
+           ISNULL(MAX(Modify_Date), '1990-01-01')) as bigint)
+FROM MstEmployeeMaster";
 
                 var command = new SqlCommand(query, connection);
                 var result = await command.ExecuteScalarAsync();
@@ -52,6 +52,8 @@ namespace ModuleManagementBackend.BAL.Services.CacheServices
         }
 
 
+
+
         public async Task<long> GetDataVersionForPolicyAsync()
         {
             try
@@ -60,7 +62,7 @@ namespace ModuleManagementBackend.BAL.Services.CacheServices
                 await connection.OpenAsync();
 
                 var query = @"
-        SELECT CAST(DATEDIFF_BIG(MICROSECOND, '1970-01-01', MAX(LastModified)) as bigint)
+        SELECT CAST(DATEDIFF_BIG(SECOND, '1970-01-01', MAX(LastModified)) as bigint)
         FROM (
             SELECT MAX(ISNULL(modifydate, '1990-01-01')) AS LastModified FROM DFCpolicy.tblPolices
             UNION ALL
