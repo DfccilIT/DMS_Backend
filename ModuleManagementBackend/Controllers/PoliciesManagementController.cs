@@ -34,16 +34,22 @@ namespace ModuleManagementBackend.API.Controllers
             }
         }
         [HttpGet("GetAllPolicies")]
-        [AllowAnonymous]
+       
         public async Task<ResponseModel> GetAllPolicies(bool onlyWhatNew = false)
         {
             var response = await _policyService.GetAllPolicies(onlyWhatNew);
             return response;
         }
 
-        
+        [HttpGet("GetFilterPolicy")]
 
-       
+        public async Task<ResponseModel> GetFilterPolicy(int? mode = null)
+        {
+            var response = await _policyService.GetPolicyDataAsync(mode);
+            return response;
+        }
+
+
         [HttpPost("AddPolicy")]
         public async Task<ResponseModel> AddPolicy([FromForm] AddPolicyDto dto)
         {

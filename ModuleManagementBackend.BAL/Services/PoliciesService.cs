@@ -42,94 +42,6 @@ namespace ModuleManagementBackend.BAL.Services
 
         #region Policies Methods
 
-
-        //public async Task<ResponseModel> GetAllPolicies()
-        //{
-        //    try
-        //    {
-        //        var cacheKey = "GetAllPolicies";
-        //        var versionCacheKey = $"{cacheKey}_version";
-
-
-        //        var currentDataVersion = await _dbChangeService.GetDataVersionForPolicyAsync();
-
-
-        //        var cachedVersion = await _cacheService.GetAsync<long?>(versionCacheKey);
-
-        //        if (cachedVersion == null || cachedVersion != currentDataVersion)
-        //        {
-        //            await _cacheService.RemoveAsync(cacheKey);
-        //            await _cacheService.SetAsync(versionCacheKey, currentDataVersion, TimeSpan.FromHours(2));
-
-        //            _logger.LogInformation("Policy data version changed, cache invalidated");
-        //        }
-
-        //        var responseModel = await _cacheService.GetOrSetAsync(
-        //            cacheKey,
-        //            async () =>
-        //            {
-        //                var allPolicies = await context.tblPolices.Where(x => x.status == 0).ToListAsync();
-        //                var allItems = await context.tblPolicyItems.Where(x => x.status == 0).ToListAsync();
-
-        //                var itemsLookup = allItems
-        //                    .GroupBy(i => i.fkPolId.Value)
-        //                    .ToDictionary(g => g.Key, g => g.OrderBy(i => i.OrderFactor).ToList());
-
-        //                List<PolicyDto> BuildTree(int parentId)
-        //                {
-        //                    return allPolicies
-        //                        .Where(p => p.ParentPolicyId == parentId)
-        //                        .Select(p => new PolicyDto
-        //                        {
-        //                            pkPolId = p.pkPolId,
-        //                            PolicyHead = p.PolicyHead,
-        //                            Children = BuildTree(p.pkPolId),
-        //                            PolicyItems = itemsLookup.TryGetValue(p.pkPolId, out var policyItems)
-        //                                ? policyItems.Select(i => new PolicyItemDto
-        //                                {
-        //                                    pkPolItemId = i.pkPolItemId,
-        //                                    itemSubject = i.itemSubject,
-        //                                    itemContent = i.itemContent,
-        //                                    itemDescription = i.itemDescription,
-        //                                    itemType = i.itemType,
-        //                                    docName = i.docName,
-        //                                    fileName = i.filName,
-        //                                    OrderFactor = i.OrderFactor,
-        //                                    Url = !string.IsNullOrEmpty(i.filName) ? $"{DocUrl}{i.pkPolItemId}" : ""
-        //                                }).ToList()
-        //                                : new List<PolicyItemDto>()
-        //                        })
-        //                        .ToList();
-        //                }
-
-        //                var result = BuildTree(0);
-
-        //                return new ResponseModel
-        //                {
-        //                    Message = "Policies fetched successfully.",
-        //                    StatusCode = HttpStatusCode.OK,
-        //                    Data = result,
-        //                    TotalRecords = result.Count
-        //                };
-        //            },
-        //            TimeSpan.FromMinutes(30),   
-        //            TimeSpan.FromHours(2)       
-        //        );
-
-        //        return responseModel;
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        _logger.LogError(ex, "Error in GetAllPolicies");
-
-        //        return new ResponseModel
-        //        {
-        //            Message = $"Error: {ex.Message}",
-        //            StatusCode = HttpStatusCode.InternalServerError
-        //        };
-        //    }
-        //}
-
         public async Task<ResponseModel> GetAllPolicies(bool onlyWhatNew = false)
         {
             try
@@ -620,7 +532,72 @@ namespace ModuleManagementBackend.BAL.Services
 
         #endregion
 
+        public async Task<ResponseModel> GetPolicyDataAsync(int? mode = null)
+        {
+            var response = new ResponseModel();
+            try
+            {
+                if (mode == null || mode == 0)
+                {
+                    
+                    var itemsWithoutHead = await context.tblPolicyItems
+                        .Where(i => context.tblPolices
+                            .Where(p => p.pkPolId == i.fkPolId && p.status == 0)
+                            .All(p => string.IsNullOrEmpty(p.PolicyHead)))
+                        .ToListAsync();
 
+                    var policiesWithoutItems = await context.tblPolices
+                        .Where(p => p.status == 0
+                                 && !context.tblPolicyItems.Any(i => i.fkPolId == p.pkPolId && i.status == 0))
+                        .ToListAsync();
+
+                    response.StatusCode = HttpStatusCode.OK;
+                    response.Message = "Both lists fetched successfully.";
+                    response.Data = new
+                    {
+                        ItemsWithoutHead = itemsWithoutHead,
+                        PoliciesWithoutItems = policiesWithoutItems
+                    };
+                    return response;
+                }
+
+                if (mode == 1)
+                {
+                    var items = await context.tblPolicyItems
+                        .Where(i => context.tblPolices
+                            .Where(p => p.pkPolId == i.fkPolId && p.status == 0)
+                            .All(p => string.IsNullOrEmpty(p.PolicyHead)))
+                        .ToListAsync();
+
+                    response.StatusCode = HttpStatusCode.OK;
+                    response.Message = "Policy items without a policy head fetched successfully.";
+                    response.Data = items;
+                }
+                else if (mode == 2) 
+                {
+                    var policies = await context.tblPolices
+                        .Where(p => p.status == 0
+                                 && !context.tblPolicyItems.Any(i => i.fkPolId == p.pkPolId && i.status == 0))
+                        .ToListAsync();
+
+                    response.StatusCode = HttpStatusCode.OK;
+                    response.Message = "Policies without any policy items fetched successfully.";
+                    response.Data = policies;
+                }
+                else
+                {
+                    response.StatusCode = HttpStatusCode.BadRequest;
+                    response.Message = "Invalid mode. Use 1 (ItemsWithoutHead), 2 (PoliciesWithoutItems), or 0 (Both).";
+                }
+            }
+            catch (Exception ex)
+            {
+                response.StatusCode = HttpStatusCode.InternalServerError;
+                response.Message = ex.Message;
+                response.Error = true;
+            }
+            return response;
+        }
 
 
 

@@ -17,8 +17,6 @@ namespace ModuleManagementBackend.API.Controllers
   
     [Route("api/[controller]")]
     [ApiController]
-
-    [AllowAnonymous]
     public class ModuleManagementController : ControllerBase
     {
         private readonly IModuleManagementService managementService;
@@ -78,7 +76,7 @@ namespace ModuleManagementBackend.API.Controllers
             return await managementService.ProcessEditReportingOfficerRequest(aprooveEmployee);
         }
 
-        [AllowAnonymous]
+        
         [HttpGet("ModuleMangement/GetDfccilDirctory")]
         public async Task<ResponseModel> GetDfccilDirctory(string? employeeCode = null)
         {
@@ -289,6 +287,18 @@ namespace ModuleManagementBackend.API.Controllers
         public async Task<ResponseModel> GetAllMasterData()
         {
             return await managementService.GetAllMastersAsync();
+        }
+
+        [HttpGet("GetEmployeeColumn")]
+        public async Task<ResponseModel> GetEmployeeColumn()
+        {
+            return await managementService.GetEmployeeMasterColumnsAsync();
+        }
+
+        [HttpGet("GetEmployeeList")]
+        public async Task<ResponseModel> GetEmployeeList(string columnNamesCsv,string? empCode=null)
+        {
+            return await managementService.GetSelectedEmployeeColumnsAsync(columnNamesCsv, empCode);
         }
     }
 

@@ -11,11 +11,10 @@ using ModuleManagementBackend.DAL.Models;
 using ModuleManagementBackend.Model.Common;
 using ModuleManagementBackend.Model.DTOs.EditEmployeeDTO;
 using ModuleManagementBackend.Model.DTOs.GETEMPLOYEEDTO;
-using Newtonsoft.Json;
 using System.Data;
+using System.Data.Common;
 using System.Net;
 using System.Text.RegularExpressions;
-using static ModuleManagementBackend.BAL.Services.ModuleManagementService;
 
 namespace ModuleManagementBackend.BAL.Services
 {
@@ -566,7 +565,7 @@ namespace ModuleManagementBackend.BAL.Services
                 return responseModel;
             }
         }
-       
+
         public async Task<ResponseModel> UpdateDfccilDirectory(UpdateEmployeeDto updateDto)
         {
             ResponseModel responseModel = new ResponseModel();
@@ -631,7 +630,7 @@ namespace ModuleManagementBackend.BAL.Services
                           Designation = x.Employee.fkEmployeeMasterAuto.Post,
                           DesignationDescription = x.Post != null ? x.Post.Description : null,
                           Department = x.Employee.fkEmployeeMasterAuto.DeptDFCCIL,
-                          PhotoUrl = !string.IsNullOrEmpty(x.Employee.photo) 
+                          PhotoUrl = !string.IsNullOrEmpty(x.Employee.photo)
                               ? $"{httpContext.HttpContext.Request.Scheme}://{httpContext.HttpContext.Request.Host}/EmployeeOfTheMonth/{x.Employee.photo}"
                               : $"{baseUrl}/Images/Employees/{x.Employee.fkEmployeeMasterAuto.Photo}",
                           Month = x.Employee.mnth,
@@ -2425,29 +2424,29 @@ namespace ModuleManagementBackend.BAL.Services
                 var cacheKey = $"dfccil_directory_{EmpCode ?? "all"}";
                 var versionCacheKey = $"{cacheKey}_version";
 
-               
+
                 var currentDataVersion = await _dbChangeService.GetDataVersionAsync();
 
-                
+
                 var cachedVersion = await _cacheService.GetAsync<long?>(versionCacheKey);
 
                 if (cachedVersion == null || cachedVersion != currentDataVersion)
                 {
-                   
+
                     await _cacheService.RemoveAsync(cacheKey);
 
-                    
+
                     await _cacheService.SetAsync(versionCacheKey, currentDataVersion, TimeSpan.FromHours(2));
 
                     _logger.LogInformation("Data version changed, cache invalidated for {CacheKey}", cacheKey);
                 }
 
-               
+
                 var responseModel = await _cacheService.GetOrSetAsync(
                     cacheKey,
                     async () => await FetchDirectoryFromDatabase(EmpCode),
-                    TimeSpan.FromMinutes(30),   
-                    TimeSpan.FromHours(2)       
+                    TimeSpan.FromMinutes(30),
+                    TimeSpan.FromHours(2)
                 );
 
                 return responseModel;
@@ -2560,9 +2559,9 @@ namespace ModuleManagementBackend.BAL.Services
                         response.Message = "Only JPG, JPEG, PNG, or GIF files are allowed.";
                         return response;
                     }
-                  var saveFolder = ((configuration["DeploymentModes"] ?? string.Empty) == "DFCCIL_UAT")
-    ? (configuration["EmployeeImagePathUat"] ?? string.Empty)
-    : (configuration["EmployeeImagePathProd"] ?? string.Empty);
+                    var saveFolder = ((configuration["DeploymentModes"] ?? string.Empty) == "DFCCIL_UAT")
+      ? (configuration["EmployeeImagePathUat"] ?? string.Empty)
+      : (configuration["EmployeeImagePathProd"] ?? string.Empty);
                     string fileName = $"{dto.EmployeeCode}_{DateTime.Now:yyyyMMdd_HHmmssfff}{fileExtension}";
                     string savePath = Path.Combine(saveFolder, fileName);
 
@@ -2584,7 +2583,7 @@ namespace ModuleManagementBackend.BAL.Services
 
 
                     employee.Photo = fileName;
-                   
+
 
                 }
 
@@ -2594,7 +2593,7 @@ namespace ModuleManagementBackend.BAL.Services
 
                 response.StatusCode = HttpStatusCode.OK;
                 response.Message = "AboutUs and photo updated successfully.";
-                response.Data = new { employee.EmployeeCode, employee.Photo, employee.AboutUs , employee.Modify_Date };
+                response.Data = new { employee.EmployeeCode, employee.Photo, employee.AboutUs, employee.Modify_Date };
 
                 return response;
             }
@@ -2613,18 +2612,18 @@ namespace ModuleManagementBackend.BAL.Services
                 var cacheKey = $"GetEmployeeProfile_{EmpCode ?? "X"}";
                 var versionCacheKey = $"{cacheKey}_version";
 
-               
+
                 var currentDataVersion = await _dbChangeService.GetDataVersionAsync();
 
-               
+
                 var cachedVersion = await _cacheService.GetAsync<long?>(versionCacheKey);
 
                 if (cachedVersion == null || cachedVersion != currentDataVersion)
                 {
-                   
+
                     await _cacheService.RemoveAsync(cacheKey);
 
-                   
+
                     await _cacheService.SetAsync(versionCacheKey, currentDataVersion, TimeSpan.FromHours(2));
 
                     _logger.LogInformation("Data version changed, cache invalidated");
@@ -2633,8 +2632,8 @@ namespace ModuleManagementBackend.BAL.Services
                 var responseModel = await _cacheService.GetOrSetAsync(
                     cacheKey,
                     async () => await GetEmployeeProfileData(EmpCode),
-                    TimeSpan.FromMinutes(30),   
-                    TimeSpan.FromHours(2)       
+                    TimeSpan.FromMinutes(30),
+                    TimeSpan.FromHours(2)
                 );
 
                 return responseModel;
@@ -2707,7 +2706,7 @@ namespace ModuleManagementBackend.BAL.Services
 
             try
             {
-                var EmployeeType = await context.MstEmployeeMasters.Where(x=>x.Status==0 && x.TOemploy!=null).Select(x => x.TOemploy).Distinct().ToListAsync();
+                var EmployeeType = await context.MstEmployeeMasters.Where(x => x.Status==0 && x.TOemploy!=null).Select(x => x.TOemploy).Distinct().ToListAsync();
 
                 var positionGrades = await context.mstPositionGreades
                     .OrderByDescending(p => p.PGOrder)
@@ -2747,7 +2746,7 @@ namespace ModuleManagementBackend.BAL.Services
                     Posts = posts,
                     Departments = departments,
                     Contractors = contractors,
-                    EmployeeTypes= EmployeeType
+                    EmployeeTypes = EmployeeType
                 };
 
                 response.StatusCode = HttpStatusCode.OK;
@@ -2764,10 +2763,11 @@ namespace ModuleManagementBackend.BAL.Services
             return response;
         }
 
-        public async Task<ResponseModel> GetSelectedEmployeeColumnsAsync(string columnNamesCsv)
+
+        public async Task<ResponseModel> GetSelectedEmployeeColumnsAsync(string columnNamesCsv, string? employeeCode = null)
         {
             var response = new ResponseModel();
-
+            var conncetion = dapper.GetDbconnection();
             try
             {
                 if (string.IsNullOrWhiteSpace(columnNamesCsv))
@@ -2777,37 +2777,17 @@ namespace ModuleManagementBackend.BAL.Services
                     return response;
                 }
 
-               
-                var requestedColumns = columnNamesCsv.Split(',')
-                    .Select(c => c.Trim())
-                    .Where(c => !string.IsNullOrEmpty(c))
-                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
+                var selectedColumns = columnNamesCsv.Split(",", StringSplitOptions.RemoveEmptyEntries)
+                                                    .Select(c => c.Trim())
+                                                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
                 
-                var allColumns = new List<string>();
-                using (var conn = context.Database.GetDbConnection())
-                {
-                    await conn.OpenAsync();
-                    using (var cmd = conn.CreateCommand())
-                    {
-                        cmd.CommandText = @"SELECT COLUMN_NAME 
-                                    FROM INFORMATION_SCHEMA.COLUMNS 
-                                    WHERE TABLE_NAME = 'MstEmployeeMaster'";
-                        using (var reader = await cmd.ExecuteReaderAsync())
-                        {
-                            while (await reader.ReadAsync())
-                            {
-                                allColumns.Add(reader.GetString(0));
-                            }
-                        }
-                    }
-                }
+                var allColumns = (await conncetion.QueryAsync<string>(
+                    @"SELECT COLUMN_NAME 
+                  FROM INFORMATION_SCHEMA.COLUMNS 
+                  WHERE TABLE_NAME = 'MstEmployeeMaster'")).ToList();
 
-                
-                var validColumns = requestedColumns
-                    .Where(c => allColumns.Contains(c, StringComparer.OrdinalIgnoreCase))
-                    .ToList();
-
+                var validColumns = selectedColumns.Intersect(allColumns).ToList();
                 if (!validColumns.Any())
                 {
                     response.StatusCode = HttpStatusCode.BadRequest;
@@ -2815,44 +2795,33 @@ namespace ModuleManagementBackend.BAL.Services
                     return response;
                 }
 
-                
-                var sql = $"SELECT {string.Join(",", validColumns)} FROM MstEmployeeMaster WHERE Status = 0";
+                var columnList = string.Join(",", validColumns);
 
-               
-                var results = new List<Dictionary<string, object>>();
-                using (var conn = context.Database.GetDbConnection())
+                var sql = $@"SELECT {columnList}
+                         FROM MstEmployeeMaster
+                         WHERE Status = 0";
+
+                if (!string.IsNullOrEmpty(employeeCode))
                 {
-                    await conn.OpenAsync();
-                    using (var cmd = conn.CreateCommand())
-                    {
-                        cmd.CommandText = sql;
-                        using (var reader = await cmd.ExecuteReaderAsync())
-                        {
-                            while (await reader.ReadAsync())
-                            {
-                                var row = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
-                                foreach (var col in validColumns)
-                                {
-                                    row[col] = reader[col];
-                                }
-                                results.Add(row);
-                            }
-                        }
-                    }
+                    sql += " AND EmployeeCode = @empCode";
                 }
 
+                var data = await conncetion.QueryAsync(sql, new { empCode = employeeCode });
+                var result = data.Select(row => (IDictionary<string, object>)row).ToList();
+
                 response.StatusCode = HttpStatusCode.OK;
-                response.Message = "Data fetched successfully.";
-                response.Data = results;
+                response.Message = "Employee data fetched successfully.";
+                response.Data = result;
             }
             catch (Exception ex)
             {
                 response.StatusCode = HttpStatusCode.InternalServerError;
-                response.Message = $"Error: {ex.Message}";
+                response.Message = ex.Message;
             }
 
             return response;
         }
+
 
         public async Task<ResponseModel> GetEmployeeMasterColumnsAsync()
         {
