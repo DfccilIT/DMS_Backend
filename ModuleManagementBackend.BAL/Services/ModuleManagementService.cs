@@ -2764,121 +2764,134 @@ namespace ModuleManagementBackend.BAL.Services
             return response;
         }
 
+        public async Task<ResponseModel> GetSelectedEmployeeColumnsAsync(string columnNamesCsv)
+        {
+            var response = new ResponseModel();
 
+            try
+            {
+                if (string.IsNullOrWhiteSpace(columnNamesCsv))
+                {
+                    response.StatusCode = HttpStatusCode.BadRequest;
+                    response.Message = "No columns specified.";
+                    return response;
+                }
 
-        #region User Registarion Type Contractual
+               
+                var requestedColumns = columnNamesCsv.Split(',')
+                    .Select(c => c.Trim())
+                    .Where(c => !string.IsNullOrEmpty(c))
+                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
+                
+                var allColumns = new List<string>();
+                using (var conn = context.Database.GetDbConnection())
+                {
+                    await conn.OpenAsync();
+                    using (var cmd = conn.CreateCommand())
+                    {
+                        cmd.CommandText = @"SELECT COLUMN_NAME 
+                                    FROM INFORMATION_SCHEMA.COLUMNS 
+                                    WHERE TABLE_NAME = 'MstEmployeeMaster'";
+                        using (var reader = await cmd.ExecuteReaderAsync())
+                        {
+                            while (await reader.ReadAsync())
+                            {
+                                allColumns.Add(reader.GetString(0));
+                            }
+                        }
+                    }
+                }
 
-        //    public async Task<ResponseModel> GenerateOtpAsync(RegisterContractEmployeeDto employeeDto, IFormFile? file, string contractor)
-        //    {
-        //        try
-        //        {
-        //            if (string.IsNullOrWhiteSpace(employeeDto?.emailAddress))
-        //                return Fail("Email is required!");
+                
+                var validColumns = requestedColumns
+                    .Where(c => allColumns.Contains(c, StringComparer.OrdinalIgnoreCase))
+                    .ToList();
 
-        //            if (IsEmailExists(employeeDto.emailAddress))
-        //                return Fail("This Email already exists!");
+                if (!validColumns.Any())
+                {
+                    response.StatusCode = HttpStatusCode.BadRequest;
+                    response.Message = "No valid columns found.";
+                    return response;
+                }
 
-        //            if (IsMobileExists(employeeDto.Mobile))
-        //                return Fail("Mobile number already exists!");
+                
+                var sql = $"SELECT {string.Join(",", validColumns)} FROM MstEmployeeMaster WHERE Status = 0";
 
-        //            byte[]? fileBytes = null;
-        //            if (file != null && file.Length > 0)
-        //            {
-        //                using var ms = new MemoryStream();
-        //                await file.CopyToAsync(ms);
-        //                fileBytes = ms.ToArray();
-        //            }
+               
+                var results = new List<Dictionary<string, object>>();
+                using (var conn = context.Database.GetDbConnection())
+                {
+                    await conn.OpenAsync();
+                    using (var cmd = conn.CreateCommand())
+                    {
+                        cmd.CommandText = sql;
+                        using (var reader = await cmd.ExecuteReaderAsync())
+                        {
+                            while (await reader.ReadAsync())
+                            {
+                                var row = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+                                foreach (var col in validColumns)
+                                {
+                                    row[col] = reader[col];
+                                }
+                                results.Add(row);
+                            }
+                        }
+                    }
+                }
 
-        //            string otp = new Random().Next(100000, 999999).ToString();
+                response.StatusCode = HttpStatusCode.OK;
+                response.Message = "Data fetched successfully.";
+                response.Data = results;
+            }
+            catch (Exception ex)
+            {
+                response.StatusCode = HttpStatusCode.InternalServerError;
+                response.Message = $"Error: {ex.Message}";
+            }
 
-        //            _otpStore[employeeDto.Mobile] = (otp, employeeDto, fileBytes, contractor);
+            return response;
+        }
 
-        //            return Ok("OTP generated successfully", otp);
-        //        }
-        //        catch (Exception ex)
-        //        {
-        //            _logger.LogError(ex, "Error generating OTP");
-        //            return Error(ex);
-        //        }
-        //    }
+        public async Task<ResponseModel> GetEmployeeMasterColumnsAsync()
+        {
+            var response = new ResponseModel();
+            try
+            {
+                var allColumns = new List<string>();
+                using (var conn = context.Database.GetDbConnection())
+                {
+                    await conn.OpenAsync();
+                    using (var cmd = conn.CreateCommand())
+                    {
+                        cmd.CommandText = @"SELECT COLUMN_NAME 
+                                    FROM INFORMATION_SCHEMA.COLUMNS 
+                                    WHERE TABLE_NAME = 'MstEmployeeMaster'";
+                        using (var reader = await cmd.ExecuteReaderAsync())
+                        {
+                            while (await reader.ReadAsync())
+                            {
+                                allColumns.Add(reader.GetString(0));
+                            }
+                        }
+                    }
+                }
 
-        //    public async Task<ResponseModel> VerifyOtpAsync(string otp, string mobile)
-        //    {
-        //        try
-        //        {
-        //            if (!_otpStore.TryGetValue(mobile, out var otpEntry))
-        //                return Fail("No pending registration found. Please generate OTP first.");
+                response.StatusCode = HttpStatusCode.OK;
+                response.Message = "Column names fetched successfully.";
+                response.Data = allColumns;
+            }
+            catch (Exception ex)
+            {
+                response.StatusCode = HttpStatusCode.InternalServerError;
+                response.Message = $"Error: {ex.Message}";
+            }
 
-        //            if (otpEntry.Otp != otp && otp != "123456")
-        //                return Fail("Invalid OTP!");
-
-        //            var dto = otpEntry.Employee;
-
-        //            var employeeEntity = new RegisterContractEmployee
-        //            {
-        //                FullName = dto.FullName,
-        //                FatherName = dto.FatherName,
-        //                emailAddress = dto.emailAddress,
-        //                Mobile = dto.Mobile,
-        //                DateOfBirth = dto.DateOfBirth,
-        //                Address = dto.Address,
-        //                fkContractid = Convert.ToInt32(otpEntry.Contractor),
-        //                Status = 8,
-        //                CreateDate = DateTime.Now
-        //            };
-
-        //            _db.RegisterContractEmployees.Add(employeeEntity);
-        //            await _db.SaveChangesAsync();
-
-        //            // Save uploaded file if exists
-        //            if (otpEntry.File != null)
-        //            {
-        //                var fileName = $"OfficeOrder_temp_{employeeEntity.ContEmpID}.pdf";
-        //                var dirPath = Path.Combine("wwwroot/DocUpload/OfficeOrder");
-        //                if (!Directory.Exists(dirPath))
-        //                    Directory.CreateDirectory(dirPath);
-
-        //                var filePath = Path.Combine(dirPath, fileName);
-        //                await File.WriteAllBytesAsync(filePath, otpEntry.File);
-
-        //                employeeEntity.AppointmentDoc = fileName;
-        //                _db.Entry(employeeEntity).State = EntityState.Modified;
-        //                await _db.SaveChangesAsync();
-        //            }
-
-        //            _otpStore.Remove(mobile);
-
-        //            return Ok("Registration successful. Awaiting approval.", employeeEntity.ContEmpID);
-        //        }
-        //        catch (Exception ex)
-        //        {
-        //            _logger.LogError(ex, "Error verifying OTP");
-        //            return Error(ex);
-        //        }
-        //    }
-
-        //    #region Helpers
-        //    private ResponseModel Ok(string message, object? data = null) =>
-        //        new ResponseModel {  Message = message, Data = data, StatusCode = System.Net.HttpStatusCode.OK };
-
-        //    private ResponseModel Fail(string message) =>
-        //        new ResponseModel {  Message = message, StatusCode = System.Net.HttpStatusCode.BadRequest };
-
-        //    private ResponseModel Error(Exception ex) =>
-        //        new ResponseModel {  Message = $"Error: {ex.Message}", StatusCode = System.Net.HttpStatusCode.InternalServerError };
-
-        //    private bool IsEmailExists(string email) =>
-        //        _db.MstEmployeeMasters.Any(x => x.emailAddress == email);
-
-        //    private bool IsMobileExists(string mobile) =>
-        //        _db.MstEmployeeMasters.Any(x => x.Mobile == mobile);
-        //    #endregion
-        //}
+            return response;
+        }
 
     }
-
-    #endregion
 
 
 }

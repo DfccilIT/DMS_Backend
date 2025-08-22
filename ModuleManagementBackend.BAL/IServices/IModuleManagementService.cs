@@ -58,5 +58,7 @@ namespace ModuleManagementBackend.BAL.IServices
         #endregion
         Task<ResponseModel> GetEmployeeProfile(string empCode);
         Task<ResponseModel> GetAllMastersAsync();
+        Task<ResponseModel> GetSelectedEmployeeColumnsAsync(string columnNamesCsv);
+        Task<ResponseModel> GetEmployeeMasterColumnsAsync();
     }
 }

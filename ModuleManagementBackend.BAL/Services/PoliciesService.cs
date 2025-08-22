@@ -248,12 +248,13 @@ namespace ModuleManagementBackend.BAL.Services
                 }
 
 
-                var existingPolicy = await context.tblPolices
-                    .FirstOrDefaultAsync(p =>
-                        p.PolicyHead.Trim().ToLower() == dto.PolicyHead.Trim().ToLower() &&
-                        p.ParentPolicyId == dto.ParentPolicyId &&
-                        p.status == 0
-                    );
+                var existingPolicy = await context.tblPolices.FirstOrDefaultAsync(p =>
+                    (string.IsNullOrEmpty(dto.PolicyHead) ||
+                        (p.PolicyHead != null && p.PolicyHead.Trim().ToLower() == dto.PolicyHead.Trim().ToLower()))
+                    && p.ParentPolicyId == dto.ParentPolicyId
+                    && p.status == 0
+                 );
+
 
                 if (existingPolicy != null)
                 {
@@ -300,7 +301,7 @@ namespace ModuleManagementBackend.BAL.Services
             var response = new ResponseModel();
             try
             {
-                var policy = await context.tblPolices.FirstOrDefaultAsync(x => x.pkPolId==id);
+                var policy = await context.tblPolices.FirstOrDefaultAsync(x => x.pkPolId == id);
                 if (policy == null)
                 {
                     response.Message = "Policy not found.";
@@ -308,8 +309,14 @@ namespace ModuleManagementBackend.BAL.Services
                     return response;
                 }
 
-                policy.PolicyHead = dto.PolicyHead;
-                policy.ParentPolicyId = dto.ParentPolicyId;
+                
+                if (!string.IsNullOrWhiteSpace(dto.PolicyHead))
+                    policy.PolicyHead = dto.PolicyHead;
+
+                if (dto.ParentPolicyId.HasValue) 
+                    policy.ParentPolicyId = dto.ParentPolicyId.Value;
+
+                
                 policy.modifyBy = LoginUserEmpCode;
                 policy.modifydate = DateTime.Now;
 
@@ -326,6 +333,7 @@ namespace ModuleManagementBackend.BAL.Services
             }
             return response;
         }
+
 
         public async Task<ResponseModel> DeletePolicy(int id)
         {

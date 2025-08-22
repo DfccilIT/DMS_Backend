@@ -26,15 +26,15 @@ namespace ModuleManagementBackend.Model.DTOs.PoliciesGenricDTO
         }
         public class AddPolicyDto
         {
-            public string PolicyHead { get; set; }
-            public int? ParentPolicyId { get; set; } = 0;
+            public string? PolicyHead { get; set; }
+            public int? ParentPolicyId { get; set; }
 
         }
 
         public class UpdatePolicyDto
         {
 
-            public string PolicyHead { get; set; }
+            public string? PolicyHead { get; set; }
             public int? ParentPolicyId { get; set; }
 
         }
