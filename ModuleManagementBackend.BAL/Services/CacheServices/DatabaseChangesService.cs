@@ -34,22 +34,30 @@ namespace ModuleManagementBackend.BAL.Services.CacheServices
                 using var connection = new SqlConnection(_connectionString);
                 await connection.OpenAsync();
 
-                var query = @"
-SELECT CAST(DATEDIFF(SECOND, '1970-01-01',
-           ISNULL(MAX(Modify_Date), '1990-01-01')) as bigint)
-FROM MstEmployeeMaster";
+                var query = @"SELECT MAX(CAST(Modify_Date AS datetime2)) FROM MstEmployeeMaster where status=0";
 
                 var command = new SqlCommand(query, connection);
                 var result = await command.ExecuteScalarAsync();
 
-                return (result != DBNull.Value) ? Convert.ToInt64(result) : DateTime.UtcNow.Ticks;
+                DateTime? maxModified = result != DBNull.Value ? (DateTime?)result : null;
+
+                var version = maxModified.HasValue
+                    ? maxModified.Value.Ticks
+                    : DateTime.UtcNow.Ticks;
+
+                _logger.LogInformation(
+                    "Cache version check (Modify_Date): MaxModified={MaxModified}, ReturningVersion={Version}",
+                    maxModified, version);
+
+                return version;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting data version");
+                _logger.LogError(ex, "Error getting data version from Modify_Date");
                 return DateTime.UtcNow.Ticks;
             }
         }
+
 
 
 
