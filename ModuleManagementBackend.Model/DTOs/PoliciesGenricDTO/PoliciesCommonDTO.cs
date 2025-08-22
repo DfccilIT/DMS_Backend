@@ -85,6 +85,7 @@ namespace ModuleManagementBackend.Model.DTOs.PoliciesGenricDTO
             public string itemType { get; set; }
             public string docName { get; set; }
             public string fileName { get; set; }
+            public bool WhatNew { get; set; }
             public string Url { get; set; }
             public double? OrderFactor { get; set; }
         }

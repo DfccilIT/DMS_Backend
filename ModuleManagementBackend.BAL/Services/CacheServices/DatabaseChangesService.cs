@@ -34,7 +34,7 @@ namespace ModuleManagementBackend.BAL.Services.CacheServices
                 using var connection = new SqlConnection(_connectionString);
                 await connection.OpenAsync();
 
-                var query = @"SELECT MAX(CAST(Modify_Date AS datetime2)) FROM MstEmployeeMaster where status=0";
+                var query = @"SELECT MAX(CAST(Modify_Date AS datetime2)) FROM MstEmployeeMaster";
 
                 var command = new SqlCommand(query, connection);
                 var result = await command.ExecuteScalarAsync();

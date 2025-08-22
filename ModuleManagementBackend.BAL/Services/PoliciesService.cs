@@ -103,6 +103,7 @@ namespace ModuleManagementBackend.BAL.Services
                                             itemType = i.itemType,
                                             docName = i.docName,
                                             fileName = i.filName,
+                                            WhatNew= i.WhatNew.Value,
                                             OrderFactor = i.OrderFactor,
                                             Url = !string.IsNullOrEmpty(i.filName) && i.itemType?.ToLower()!="url" ? $"{DocUrl}{i.pkPolItemId}" : i.filName
                                         }).ToList()
