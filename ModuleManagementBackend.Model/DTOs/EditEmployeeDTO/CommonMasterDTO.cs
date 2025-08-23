@@ -105,7 +105,7 @@ namespace ModuleManagementBackend.Model.DTOs.EditEmployeeDTO
 
     public class PagedResponseModel : ResponseModel
     {
-        public int TotalRecords { get; set; }
+       
         public int CurrentPage { get; set; }
         public int PageSize { get; set; }
         public int TotalPages { get; set; }

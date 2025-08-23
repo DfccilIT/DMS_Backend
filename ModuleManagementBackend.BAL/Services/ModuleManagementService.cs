@@ -2652,7 +2652,7 @@ namespace ModuleManagementBackend.BAL.Services
         //        };
         //    }
         //}
-        public async Task<ResponseModel> GetEmployeeProfile(string empCode)
+        public async Task<ResponseModel> GetEmployeeProfile(string EmpCode)
         {
             try
             {
@@ -2688,7 +2688,7 @@ namespace ModuleManagementBackend.BAL.Services
                 var responseModel = await _cacheService.GetOrSetAsync(
                     cacheKey,
                     async () => await GetEmployeeProfileData(empCode),
-                    TimeSpan.FromMinutes(30),
+                    TimeSpan.FromHours(2),
                     TimeSpan.FromHours(2)
                 );
 
@@ -2737,12 +2737,12 @@ namespace ModuleManagementBackend.BAL.Services
                     units = units.ToList(),
                     PositionGrades = Grade
                 };
-
+                count=count+1;
                 return new ResponseModel()
                 {
                     StatusCode=HttpStatusCode.OK,
                     Data=result,
-                    Message=$"Employee Details Fetched Successfully{count+1}."
+                    Message=$"Employee Details Fetched Successfully{count}."
 
 
                 };
