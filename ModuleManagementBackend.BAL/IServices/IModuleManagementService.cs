@@ -1,6 +1,11 @@
-﻿using ModuleManagementBackend.DAL.Models;
+﻿using ClosedXML.Excel;
+using DocumentFormat.OpenXml.InkML;
+using Microsoft.AspNetCore.Http;
+using ModuleManagementBackend.DAL.Models;
 using ModuleManagementBackend.Model.Common;
 using ModuleManagementBackend.Model.DTOs.EditEmployeeDTO;
+using System.Net;
+using static ModuleManagementBackend.Model.DTOs.HolidayCalenderDTO.HolidayCalenderCommonDTO;
 
 namespace ModuleManagementBackend.BAL.IServices
 {
@@ -56,9 +61,33 @@ namespace ModuleManagementBackend.BAL.IServices
         Task<ResponseModel> GetToDoListAsync(string employeeCode = "0");
         Task<ResponseModel> UploadAboutUsAsync(UploadAboutUsDto dto);
         #endregion
+
+        #region Employee Badge
         Task<ResponseModel> GetEmployeeProfile(string empCode);
         Task<ResponseModel> GetAllMastersAsync();
         Task<ResponseModel> GetSelectedEmployeeColumnsAsync(string columnNamesCsv, string? employeeCode = null);
         Task<ResponseModel> GetEmployeeMasterColumnsAsync();
+
+        #endregion
+
+        #region Holiday Calendar
+
+        Task<ResponseModel> GetAllHolidays(int? unitId = null, string? holidayType = null, string? unitName = null);
+
+        Task<ResponseModel> GetHolidaysByDateRange(DateTime? fromDate = null, DateTime? toDate = null, int? unitId = null);
+
+        Task<ResponseModel> CreateHoliday(CreateHolidayCalendarDto createHolidayDto, string loginUserId);
+
+        Task<ResponseModel> UpdateHoliday(UpdateHolidayCalendarDto updateHolidayDto, string loginUserId);
+
+        Task<ResponseModel> DeleteHoliday(int holidayId, string? loginUserId = null);
+
+        Task<ResponseModel> BulkCreateHolidays(List<CreateHolidayCalendarDto> holidays, string loginUserId);
+
+        Task<ResponseModel> UploadHolidaysFromExcel(IFormFile file, int unitId, string unitName, string LoginUserId);
+
+
+
+        #endregion
     }
 }

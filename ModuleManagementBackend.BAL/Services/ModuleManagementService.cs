@@ -1,4 +1,5 @@
-﻿using Dapper;
+﻿using ClosedXML.Excel;
+using Dapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
@@ -15,6 +16,7 @@ using System.Data;
 using System.Data.Common;
 using System.Net;
 using System.Text.RegularExpressions;
+using static ModuleManagementBackend.Model.DTOs.HolidayCalenderDTO.HolidayCalenderCommonDTO;
 
 namespace ModuleManagementBackend.BAL.Services
 {
@@ -2656,9 +2658,9 @@ namespace ModuleManagementBackend.BAL.Services
             {
                 var cacheKey = $"GetEmployeeProfile_{empCode ?? "X"}";
                 var versionCacheKey = $"{cacheKey}_version";
-                var globalVersionKey = "EmployeeProfile_DataVersion"; 
+                var globalVersionKey = "EmployeeProfile_DataVersion";
 
-                
+
                 var cachedDbVersion = await _cacheService.GetAsync<long?>(globalVersionKey);
                 if (cachedDbVersion == null)
                 {
@@ -2667,10 +2669,10 @@ namespace ModuleManagementBackend.BAL.Services
                     _logger.LogInformation("Fetched fresh DB version {Version} and cached it", cachedDbVersion);
                 }
 
-               
+
                 var cachedProfileVersion = await _cacheService.GetAsync<long?>(versionCacheKey);
 
-                
+
                 if (cachedProfileVersion == null || cachedProfileVersion != cachedDbVersion)
                 {
                     await _cacheService.RemoveAsync(cacheKey);
@@ -2682,7 +2684,7 @@ namespace ModuleManagementBackend.BAL.Services
                     );
                 }
 
-               
+
                 var responseModel = await _cacheService.GetOrSetAsync(
                     cacheKey,
                     async () => await GetEmployeeProfileData(empCode),
@@ -2690,7 +2692,7 @@ namespace ModuleManagementBackend.BAL.Services
                     TimeSpan.FromHours(2)
                 );
 
-              
+
 
                 return responseModel;
             }
@@ -2837,7 +2839,7 @@ namespace ModuleManagementBackend.BAL.Services
                                                     .Select(c => c.Trim())
                                                     .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-                
+
                 var allColumns = (await conncetion.QueryAsync<string>(
                     @"SELECT COLUMN_NAME 
                   FROM INFORMATION_SCHEMA.COLUMNS 
@@ -2915,6 +2917,481 @@ namespace ModuleManagementBackend.BAL.Services
 
             return response;
         }
+
+
+
+
+        #region HolidayCalender
+
+        public async Task<ResponseModel> GetAllHolidays(int? unitId = null, string? holidayType = null, string? unitName = null)
+        {
+            ResponseModel responseModel = new ResponseModel();
+            try
+            {
+                var query = context.MasterHolidayCalendars
+                    .Where(h => h.IsActive == true);
+
+                if (unitId.HasValue)
+                {
+                    query = query.Where(h => h.UnitId == unitId.Value);
+                }
+
+                if (!string.IsNullOrWhiteSpace(holidayType))
+                {
+                    query = query.Where(h => h.HolidayType == holidayType);
+                }
+
+                if (!string.IsNullOrWhiteSpace(unitName))
+                {
+                    query = query.Where(h => h.UnitName != null && h.UnitName.Contains(unitName));
+                }
+
+                var result = await query.Select(h => new HolidayCalendarDto
+                {
+                    HolidayId = h.HolidayId,
+                    SerialNumber = h.SerialNumber,
+                    HolidayDate = h.HolidayDate,
+                    HolidayDescription = h.HolidayDescription,
+                    HolidayType = h.HolidayType,
+                    DayOfWeek = h.DayOfWeek,
+                    UnitId = h.UnitId,
+                    UnitName = h.UnitName,
+                    IsActive = h.IsActive.Value,
+                    CreatedBy = h.CreatedBy,
+                    CreatedDate = h.CreatedDate,
+                    UpdatedBy = h.UpdatedBy,
+                    UpdatedDate = h.UpdatedDate
+                }).OrderBy(h => h.HolidayDate).ToListAsync();
+
+                responseModel.Message = "Data fetched successfully";
+                responseModel.StatusCode = HttpStatusCode.OK;
+                responseModel.Data = result;
+                responseModel.TotalRecords = result.Count;
+                return responseModel;
+            }
+            catch (Exception ex)
+            {
+                responseModel.Message = "Internal Server Error";
+                responseModel.StatusCode = HttpStatusCode.InternalServerError;
+                responseModel.Data = ex.Message;
+                return responseModel;
+            }
+        }
+
+        public async Task<ResponseModel> GetHolidaysByDateRange(DateTime? fromDate = null, DateTime? toDate = null, int? unitId = null)
+        {
+            ResponseModel responseModel = new ResponseModel();
+            try
+            {
+                var query = context.MasterHolidayCalendars
+                    .Where(h => h.IsActive == true);
+
+                if (fromDate.HasValue)
+                {
+                    query = query.Where(h => h.HolidayDate >= fromDate.Value);
+                }
+
+                if (toDate.HasValue)
+                {
+                    query = query.Where(h => h.HolidayDate <= toDate.Value);
+                }
+
+                if (unitId.HasValue)
+                {
+                    query = query.Where(h => h.UnitId == unitId.Value);
+                }
+
+                var result = await query.Select(h => new HolidayCalendarDto
+                {
+                    HolidayId = h.HolidayId,
+                    SerialNumber = h.SerialNumber,
+                    HolidayDate = h.HolidayDate,
+                    HolidayDescription = h.HolidayDescription,
+                    HolidayType = h.HolidayType,
+                    DayOfWeek = h.DayOfWeek,
+                    UnitId = h.UnitId,
+                    UnitName = h.UnitName,
+                    IsActive = h.IsActive.Value,
+                    CreatedBy = h.CreatedBy,
+                    CreatedDate = h.CreatedDate,
+                    UpdatedBy = h.UpdatedBy,
+                    UpdatedDate = h.UpdatedDate
+                }).OrderBy(h => h.HolidayDate).ToListAsync();
+
+                responseModel.Message = "Data fetched successfully";
+                responseModel.StatusCode = HttpStatusCode.OK;
+                responseModel.Data = result;
+                responseModel.TotalRecords = result.Count;
+                return responseModel;
+            }
+            catch (Exception ex)
+            {
+                responseModel.Message = "Internal Server Error";
+                responseModel.StatusCode = HttpStatusCode.InternalServerError;
+                responseModel.Data = ex.Message;
+                return responseModel;
+            }
+        }
+
+        public async Task<ResponseModel> CreateHoliday(CreateHolidayCalendarDto createHolidayDto,string loginUserId)
+        {
+            ResponseModel responseModel = new ResponseModel();
+            try
+            {
+
+                var existingHoliday = await context.MasterHolidayCalendars
+                    .FirstOrDefaultAsync(h => h.HolidayDate == createHolidayDto.HolidayDate
+                                           && h.UnitId == createHolidayDto.UnitId
+                                           && h.IsActive == true);
+
+                if (existingHoliday != null)
+                {
+                    responseModel.Message = "Holiday already exists for this date and unit";
+                    responseModel.StatusCode = HttpStatusCode.Conflict;
+                    return responseModel;
+                }
+
+                var holiday = new MasterHolidayCalendar
+                {
+                    HolidayDate = createHolidayDto.HolidayDate,
+                    HolidayDescription = createHolidayDto.HolidayDescription,
+                    HolidayType = createHolidayDto.HolidayType,
+                    DayOfWeek = createHolidayDto.DayOfWeek,
+                    UnitId = createHolidayDto.UnitId,
+                    UnitName = createHolidayDto.UnitName,
+                    IsActive = true,
+                    CreatedBy = loginUserId,
+                    CreatedDate = DateTime.Now
+                };
+
+                context.MasterHolidayCalendars.Add(holiday);
+                await context.SaveChangesAsync();
+
+                responseModel.Message = "Holiday created successfully";
+                responseModel.StatusCode = HttpStatusCode.OK;
+                responseModel.Data = holiday.HolidayId;
+                responseModel.TotalRecords = 1;
+                return responseModel;
+            }
+            catch (Exception ex)
+            {
+                responseModel.Message = "Internal Server Error";
+                responseModel.StatusCode = HttpStatusCode.InternalServerError;
+                responseModel.Data = ex.Message;
+                return responseModel;
+            }
+        }
+
+        public async Task<ResponseModel> UpdateHoliday(UpdateHolidayCalendarDto updateHolidayDto, string loginUserId)
+        {
+            ResponseModel responseModel = new ResponseModel();
+            try
+            {
+                var holiday = await context.MasterHolidayCalendars
+                    .FirstOrDefaultAsync(h => h.HolidayId == updateHolidayDto.HolidayId && h.IsActive == true);
+
+                if (holiday == null)
+                {
+                    responseModel.Message = "Holiday not found";
+                    responseModel.StatusCode = HttpStatusCode.NotFound;
+                    return responseModel;
+                }
+
+                holiday.HolidayDate = updateHolidayDto.HolidayDate;
+                holiday.HolidayDescription = updateHolidayDto.HolidayDescription;
+                holiday.HolidayType = updateHolidayDto.HolidayType;
+                holiday.DayOfWeek = updateHolidayDto.DayOfWeek;
+                holiday.UnitId = updateHolidayDto.UnitId;
+                holiday.UnitName = updateHolidayDto.UnitName;
+                holiday.UpdatedBy = loginUserId;
+                holiday.UpdatedDate = DateTime.Now;
+
+                context.MasterHolidayCalendars.Update(holiday);
+                await context.SaveChangesAsync();
+
+                responseModel.Message = "Holiday updated successfully";
+                responseModel.StatusCode = HttpStatusCode.OK;
+                responseModel.Data = holiday.HolidayId;
+                responseModel.TotalRecords = 1;
+                return responseModel;
+            }
+            catch (Exception ex)
+            {
+                responseModel.Message = "Internal Server Error";
+                responseModel.StatusCode = HttpStatusCode.InternalServerError;
+                responseModel.Data = ex.Message;
+                return responseModel;
+            }
+        }
+
+        public async Task<ResponseModel> DeleteHoliday(int holidayId, string? loginUserId = null)
+        {
+            ResponseModel responseModel = new ResponseModel();
+            try
+            {
+                var holiday = await context.MasterHolidayCalendars
+                    .FirstOrDefaultAsync(h => h.HolidayId == holidayId && h.IsActive == true);
+
+                if (holiday == null)
+                {
+                    responseModel.Message = "Holiday not found";
+                    responseModel.StatusCode = HttpStatusCode.NotFound;
+                    return responseModel;
+                }
+
+
+                holiday.IsActive = false;
+                holiday.UpdatedBy = loginUserId;
+                holiday.UpdatedDate = DateTime.Now;
+
+                context.MasterHolidayCalendars.Update(holiday);
+                await context.SaveChangesAsync();
+
+                responseModel.Message = "Holiday deleted successfully";
+                responseModel.StatusCode = HttpStatusCode.OK;
+                responseModel.Data = holidayId;
+                responseModel.TotalRecords = 1;
+                return responseModel;
+            }
+            catch (Exception ex)
+            {
+                responseModel.Message = "Internal Server Error";
+                responseModel.StatusCode = HttpStatusCode.InternalServerError;
+                responseModel.Data = ex.Message;
+                return responseModel;
+            }
+        }
+
+        public async Task<ResponseModel> BulkCreateHolidays(List<CreateHolidayCalendarDto> holidays,string loginUserId)
+        {
+            ResponseModel responseModel = new ResponseModel();
+            try
+            {
+                var holidayEntities = new List<MasterHolidayCalendar>();
+
+                foreach (var holidayDto in holidays)
+                {
+
+                    var existingHoliday = await context.MasterHolidayCalendars
+                        .FirstOrDefaultAsync(h => h.HolidayDate == holidayDto.HolidayDate
+                                               && h.UnitId == holidayDto.UnitId
+                                               && h.IsActive == true);
+
+                    if (existingHoliday == null)
+                    {
+                        var holiday = new MasterHolidayCalendar
+                        {
+
+                            HolidayDate = holidayDto.HolidayDate,
+                            HolidayDescription = holidayDto.HolidayDescription,
+                            HolidayType = holidayDto.HolidayType,
+                            DayOfWeek = holidayDto.DayOfWeek,
+                            UnitId = holidayDto.UnitId,
+                            UnitName = holidayDto.UnitName,
+                            IsActive = true,
+                            CreatedBy = loginUserId,
+                            CreatedDate = DateTime.Now
+                        };
+                        holidayEntities.Add(holiday);
+                    }
+                }
+
+                if (holidayEntities.Any())
+                {
+                    context.MasterHolidayCalendars.AddRange(holidayEntities);
+                    await context.SaveChangesAsync();
+                }
+
+                responseModel.Message = $"{holidayEntities.Count} holidays created successfully";
+                responseModel.StatusCode = HttpStatusCode.OK;
+                responseModel.Data = holidayEntities.Select(h => h.HolidayId).ToList();
+                responseModel.TotalRecords = holidayEntities.Count;
+                return responseModel;
+            }
+            catch (Exception ex)
+            {
+                responseModel.Message = "Internal Server Error";
+                responseModel.StatusCode = HttpStatusCode.InternalServerError;
+                responseModel.Data = ex.Message;
+                return responseModel;
+            }
+        }
+
+        public async Task<ResponseModel> UploadHolidaysFromExcel(IFormFile file, int unitId, string unitName, string loginUserId)
+        {
+            var responseModel = new ResponseModel();
+            try
+            {
+                if (file == null || file.Length == 0)
+                    return new ResponseModel { Message = "Please select a valid Excel file", StatusCode = HttpStatusCode.BadRequest };
+
+                var fileExtension = Path.GetExtension(file.FileName).ToLower();
+                if (fileExtension != ".xlsx" && fileExtension != ".xls")
+                    return new ResponseModel { Message = "Only Excel files (.xlsx, .xls) are allowed", StatusCode = HttpStatusCode.BadRequest };
+
+                if (!await context.UnitNameDetails.AnyAsync(u => u.Id == unitId && u.IsActive))
+                    return new ResponseModel { Message = "Invalid Unit ID", StatusCode = HttpStatusCode.BadRequest };
+
+                var holidaysToCreate = new List<CreateHolidayCalendarDto>();
+                var validationErrors = new List<string>();
+                int processedCount = 0, duplicateCount = 0;
+
+                using var stream = new MemoryStream();
+                await file.CopyToAsync(stream);
+
+                using var workbook = new XLWorkbook(stream);
+                var worksheet = workbook.Worksheets.FirstOrDefault();
+                if (worksheet == null)
+                    return new ResponseModel { Message = "No worksheet found in the Excel file", StatusCode = HttpStatusCode.BadRequest };
+
+               
+                int headerRow = 0;
+                var usedRange = worksheet.RangeUsed();
+                if (usedRange != null)
+                {
+                    for (int row = 1; row <= Math.Min(10, usedRange.LastRow().RowNumber()); row++)
+                    {
+                        var colDate = worksheet.Cell(row, 3).GetValue<string>();
+                        var colDesc = worksheet.Cell(row, 4).GetValue<string>();
+
+                        if (!string.IsNullOrEmpty(colDate) && colDate.Contains("Date") &&
+                            !string.IsNullOrEmpty(colDesc) && colDesc.Contains("Holiday Description"))
+                        {
+                            headerRow = row;
+                            break;
+                        }
+                    }
+                }
+
+                if (headerRow == 0)
+                    return new ResponseModel
+                    {
+                        Message = "Invalid Excel format. Expected headers: Date, Holiday Description, Holiday Type, Day",
+                        StatusCode = HttpStatusCode.BadRequest
+                    };
+
+                int totalRows = usedRange?.LastRow()?.RowNumber() ?? 0;
+
+                for (int row = headerRow + 1; row <= totalRows; row++)
+                {
+                    try
+                    {
+                        var dateCell = worksheet.Cell(row, 3);
+                        var descriptionCell = worksheet.Cell(row, 4);
+                        var typeCell = worksheet.Cell(row, 5);
+                        var dayCell = worksheet.Cell(row, 6);
+
+                        if (dateCell.IsEmpty())
+                            continue;
+
+                        
+                        if (!DateTime.TryParse(dateCell.GetValue<string>(), out DateTime holidayDate))
+                        {
+                            validationErrors.Add($"Row {row}: Invalid Date format");
+                            continue;
+                        }
+
+                        var description = descriptionCell.GetValue<string>()?.Trim();
+                        var holidayType = typeCell.GetValue<string>()?.Trim();
+                        var dayOfWeek = string.IsNullOrEmpty(dayCell.GetValue<string>())
+                            ? holidayDate.DayOfWeek.ToString()
+                            : dayCell.GetValue<string>().Trim();
+
+                        if (string.IsNullOrEmpty(description))
+                        {
+                            validationErrors.Add($"Row {row}: Holiday Description is required");
+                            continue;
+                        }
+
+                        if (holidayType != "GH" && holidayType != "RH")
+                        {
+                            validationErrors.Add($"Row {row}: Holiday Type must be 'GH' or 'RH'");
+                            continue;
+                        }
+
+                        if (await context.MasterHolidayCalendars.AnyAsync(h =>
+                           h.UnitId == unitId &&
+                           h.IsActive.Value &&
+                           h.HolidayDate >= holidayDate.Date &&
+                           h.HolidayDate < holidayDate.Date.AddDays(1)))
+                        {
+                            duplicateCount++;
+                            validationErrors.Add($"Row {row}: Holiday already exists for {holidayDate:yyyy-MM-dd}");
+                            continue;
+                        }
+
+                       
+                        if (holidaysToCreate.Any(h => h.HolidayDate.Date == holidayDate.Date))
+                        {
+                            validationErrors.Add($"Row {row}: Duplicate date {holidayDate:yyyy-MM-dd} in Excel file");
+                            continue;
+                        }
+
+                        holidaysToCreate.Add(new CreateHolidayCalendarDto
+                        {
+                            HolidayDate = holidayDate,
+                            HolidayDescription = description,
+                            HolidayType = holidayType,
+                            DayOfWeek = dayOfWeek,
+                            UnitId = unitId,
+                            UnitName = unitName
+                           
+                        });
+
+                        processedCount++;
+                    }
+                    catch (Exception ex)
+                    {
+                        validationErrors.Add($"Row {row}: Error processing row - {ex.Message}");
+                    }
+                }
+
+                int createdCount = 0;
+                if (holidaysToCreate.Any())
+                {
+                    var bulkCreateResult = await BulkCreateHolidays(holidaysToCreate,loginUserId);
+                    if (bulkCreateResult.StatusCode == HttpStatusCode.OK)
+                        createdCount = holidaysToCreate.Count;
+                    else
+                        return new ResponseModel
+                        {
+                            Message = "Error creating holidays: " + bulkCreateResult.Message,
+                            StatusCode = HttpStatusCode.InternalServerError,
+                            Data = bulkCreateResult.Data
+                        };
+                }
+
+                var result = new
+                {
+                    TotalRecordsProcessed = processedCount,
+                    HolidaysCreated = createdCount,
+                    DuplicatesFound = duplicateCount,
+                    ValidationErrors = validationErrors,
+                    Success = createdCount > 0
+                };
+
+                return new ResponseModel
+                {
+                    Message = $"Excel upload completed. {createdCount} holidays created successfully",
+                    StatusCode = HttpStatusCode.OK,
+                    Data = result,
+                    TotalRecords = createdCount
+                };
+            }
+            catch (Exception ex)
+            {
+                return new ResponseModel
+                {
+                    Message = "Error processing Excel file",
+                    StatusCode = HttpStatusCode.InternalServerError,
+                    Data = ex.Message
+                };
+            }
+        }
+
+
+
+        #endregion
 
     }
 

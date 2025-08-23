@@ -24,6 +24,10 @@
          "ObjectType": 0
       },
       {
+         "Name": "[dbo].[MasterHolidayCalendar]",
+         "ObjectType": 0
+      },
+      {
          "Name": "[dbo].[MstContractEmployeeMaster]",
          "ObjectType": 0
       },

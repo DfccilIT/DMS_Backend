@@ -20,6 +20,7 @@ namespace ModuleManagementBackend.DAL.Models
 
         public virtual DbSet<EditEmployeeDetail> EditEmployeeDetails { get; set; }
         public virtual DbSet<EmployeeDependentDocument> EmployeeDependentDocuments { get; set; }
+        public virtual DbSet<MasterHolidayCalendar> MasterHolidayCalendars { get; set; }
         public virtual DbSet<MstContractEmployeeMaster> MstContractEmployeeMasters { get; set; }
         public virtual DbSet<MstContractMaster> MstContractMasters { get; set; }
         public virtual DbSet<MstDepartment> MstDepartments { get; set; }
@@ -128,6 +129,50 @@ namespace ModuleManagementBackend.DAL.Models
                     .WithMany(p => p.EmployeeDependentDocuments)
                     .HasForeignKey(d => d.fkDependentId)
                     .HasConstraintName("FK_EmployeeDependentDocuments_Dependent");
+            });
+
+            modelBuilder.Entity<MasterHolidayCalendar>(entity =>
+            {
+                entity.HasKey(e => e.HolidayId)
+                    .HasName("PK__MasterHo__2D35D57A8945D795");
+
+                entity.ToTable("MasterHolidayCalendar");
+
+                entity.HasIndex(e => e.HolidayDate, "IX_HolidayCalendar_HolidayDate");
+
+                entity.HasIndex(e => e.HolidayType, "IX_HolidayCalendar_HolidayType");
+
+                entity.HasIndex(e => e.IsActive, "IX_HolidayCalendar_IsActive");
+
+                entity.HasIndex(e => e.UnitId, "IX_HolidayCalendar_UnitId");
+
+                entity.Property(e => e.CreatedBy).HasMaxLength(50);
+
+                entity.Property(e => e.CreatedDate).HasDefaultValueSql("(getdate())");
+
+                entity.Property(e => e.DayOfWeek)
+                    .IsRequired()
+                    .HasMaxLength(20);
+
+                entity.Property(e => e.HolidayDate).HasColumnType("date");
+
+                entity.Property(e => e.HolidayDescription)
+                    .IsRequired()
+                    .HasMaxLength(255);
+
+                entity.Property(e => e.HolidayType)
+                    .IsRequired()
+                    .HasMaxLength(10);
+
+                entity.Property(e => e.IsActive)
+                    .IsRequired()
+                    .HasDefaultValueSql("((1))");
+
+                entity.Property(e => e.UnitName)
+                    .IsRequired()
+                    .HasMaxLength(100);
+
+                entity.Property(e => e.UpdatedBy).HasMaxLength(50);
             });
 
             modelBuilder.Entity<MstContractEmployeeMaster>(entity =>
