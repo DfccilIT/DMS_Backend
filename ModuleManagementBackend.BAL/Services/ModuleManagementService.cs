@@ -2656,7 +2656,7 @@ namespace ModuleManagementBackend.BAL.Services
         {
             try
             {
-                var cacheKey = $"GetEmployeeProfile_{empCode ?? "X"}";
+                var cacheKey = $"GetEmployeeProfile_{EmpCode ?? "X"}";
                 var versionCacheKey = $"{cacheKey}_version";
                 var globalVersionKey = "EmployeeProfile_DataVersion";
 
@@ -2680,14 +2680,14 @@ namespace ModuleManagementBackend.BAL.Services
 
                     _logger.LogInformation(
                         "EmployeeProfile cache invalidated for EmpCode {EmpCode}. DBVersion={DbVersion}, CachedProfileVersion={ProfileVersion}",
-                        empCode, cachedDbVersion, cachedProfileVersion
+                        EmpCode, cachedDbVersion, cachedProfileVersion
                     );
                 }
 
 
                 var responseModel = await _cacheService.GetOrSetAsync(
                     cacheKey,
-                    async () => await GetEmployeeProfileData(empCode),
+                    async () => await GetEmployeeProfileData(EmpCode),
                     TimeSpan.FromHours(2),
                     TimeSpan.FromHours(2)
                 );
@@ -2698,7 +2698,7 @@ namespace ModuleManagementBackend.BAL.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error in GetEmployeeProfile for EmpCode {EmpCode}", empCode);
+                _logger.LogError(ex, "Error in GetEmployeeProfile for EmpCode {EmpCode}", EmpCode);
                 return new ResponseModel
                 {
                     Message = $"An error occurred: {ex.Message}",
