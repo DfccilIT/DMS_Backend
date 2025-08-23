@@ -2605,44 +2605,98 @@ namespace ModuleManagementBackend.BAL.Services
             }
         }
 
-        public async Task<ResponseModel> GetEmployeeProfile(string EmpCode)
+        //public async Task<ResponseModel> GetEmployeeProfile(string EmpCode)
+        //{
+        //    try
+        //    {
+        //        var cacheKey = $"GetEmployeeProfile_{EmpCode ?? "X"}";
+        //        var versionCacheKey = $"{cacheKey}_version";
+
+
+        //        var currentDataVersion = await _dbChangeService.GetDataVersionAsync();
+
+
+        //        var cachedVersion = await _cacheService.GetAsync<long?>(versionCacheKey);
+
+        //        if (cachedVersion == null || cachedVersion != currentDataVersion)
+        //        {
+
+        //            await _cacheService.RemoveAsync(cacheKey);
+
+
+        //            await _cacheService.SetAsync(versionCacheKey, currentDataVersion, TimeSpan.FromHours(2));
+
+        //            _logger.LogInformation("Data version changed, cache invalidated");
+        //        }
+
+        //        var responseModel = await _cacheService.GetOrSetAsync(
+        //            cacheKey,
+        //            async () => await GetEmployeeProfileData(EmpCode),
+        //            TimeSpan.FromMinutes(30),
+        //            TimeSpan.FromHours(2)
+        //        );
+        //       // responseModel.Message=$"Data:{currentDataVersion},Cache:{cachedVersion}";
+
+
+        //        return responseModel;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, "Error in GetEmployeeProfile");
+        //        return new ResponseModel
+        //        {
+        //            Message = $"An error occurred: {ex.Message}",
+        //            StatusCode = HttpStatusCode.InternalServerError
+        //        };
+        //    }
+        //}
+        public async Task<ResponseModel> GetEmployeeProfile(string empCode)
         {
             try
             {
-                var cacheKey = $"GetEmployeeProfile_{EmpCode ?? "X"}";
+                var cacheKey = $"GetEmployeeProfile_{empCode ?? "X"}";
                 var versionCacheKey = $"{cacheKey}_version";
+                var globalVersionKey = "EmployeeProfile_DataVersion"; 
 
-
-                var currentDataVersion = await _dbChangeService.GetDataVersionAsync();
-
-
-                var cachedVersion = await _cacheService.GetAsync<long?>(versionCacheKey);
-
-                if (cachedVersion == null || cachedVersion != currentDataVersion)
+                
+                var cachedDbVersion = await _cacheService.GetAsync<long?>(globalVersionKey);
+                if (cachedDbVersion == null)
                 {
-
-                    await _cacheService.RemoveAsync(cacheKey);
-
-
-                    await _cacheService.SetAsync(versionCacheKey, currentDataVersion, TimeSpan.FromHours(2));
-
-                    _logger.LogInformation("Data version changed, cache invalidated");
+                    cachedDbVersion = await _dbChangeService.GetDataVersionAsync();
+                    await _cacheService.SetAsync(globalVersionKey, cachedDbVersion, TimeSpan.FromMinutes(5));
+                    _logger.LogInformation("Fetched fresh DB version {Version} and cached it", cachedDbVersion);
                 }
 
+               
+                var cachedProfileVersion = await _cacheService.GetAsync<long?>(versionCacheKey);
+
+                
+                if (cachedProfileVersion == null || cachedProfileVersion != cachedDbVersion)
+                {
+                    await _cacheService.RemoveAsync(cacheKey);
+                    await _cacheService.SetAsync(versionCacheKey, cachedDbVersion, TimeSpan.FromHours(2));
+
+                    _logger.LogInformation(
+                        "EmployeeProfile cache invalidated for EmpCode {EmpCode}. DBVersion={DbVersion}, CachedProfileVersion={ProfileVersion}",
+                        empCode, cachedDbVersion, cachedProfileVersion
+                    );
+                }
+
+               
                 var responseModel = await _cacheService.GetOrSetAsync(
                     cacheKey,
-                    async () => await GetEmployeeProfileData(EmpCode),
+                    async () => await GetEmployeeProfileData(empCode),
                     TimeSpan.FromMinutes(30),
                     TimeSpan.FromHours(2)
                 );
-               // responseModel.Message=$"Data:{currentDataVersion},Cache:{cachedVersion}";
-                
+
+              
 
                 return responseModel;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error in GetEmployeeProfile");
+                _logger.LogError(ex, "Error in GetEmployeeProfile for EmpCode {EmpCode}", empCode);
                 return new ResponseModel
                 {
                     Message = $"An error occurred: {ex.Message}",
