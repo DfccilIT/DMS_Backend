@@ -6,6 +6,7 @@ using ModuleManagementBackend.BAL.IServices;
 using ModuleManagementBackend.BAL.IServices.ICacheServices;
 using ModuleManagementBackend.DAL.Models;
 using ModuleManagementBackend.Model.Common;
+using System.Diagnostics.Metrics;
 using System.Net;
 using static ModuleManagementBackend.Model.DTOs.PoliciesGenricDTO.PoliciesCommonDTO;
 
@@ -42,6 +43,7 @@ namespace ModuleManagementBackend.BAL.Services
 
         #region Policies Methods
 
+        public static long Counter = 0;
         public async Task<ResponseModel> GetAllPolicies(bool onlyWhatNew = false)
         {
             try
@@ -69,8 +71,8 @@ namespace ModuleManagementBackend.BAL.Services
                         var allPolicies = await context.tblPolices
                             .Where(x => x.status == 0)
                             .ToListAsync();
+                        Counter= Interlocked.Increment(ref Counter);
 
-                      
                         var allItemsQuery = context.tblPolicyItems.Where(x => x.status == 0);
 
                         if (onlyWhatNew)
@@ -118,8 +120,8 @@ namespace ModuleManagementBackend.BAL.Services
                         return new ResponseModel
                         {
                             Message = onlyWhatNew
-                                ? "WhatNew policies fetched successfully."
-                                : "Policies fetched successfully.",
+                                ? $"WhatNew policies fetched successfully.{Counter}"
+                                : $"Policies fetched successfully.{Counter}",
                             StatusCode = HttpStatusCode.OK,
                             Data = result,
                             TotalRecords = result.Count
