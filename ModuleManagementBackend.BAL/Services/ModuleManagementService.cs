@@ -2658,25 +2658,18 @@ namespace ModuleManagementBackend.BAL.Services
             {
                 var cacheKey = $"GetEmployeeProfile_{EmpCode ?? "X"}";
                 var versionCacheKey = $"{cacheKey}_version";
-                var globalVersionKey = "EmployeeProfile_DataVersion";
+                
 
 
-                var cachedDbVersion = await _cacheService.GetAsync<long?>(globalVersionKey);
-                if (cachedDbVersion == null)
-                {
-                    cachedDbVersion = await _dbChangeService.GetDataVersionAsync();
-                    await _cacheService.SetAsync(globalVersionKey, cachedDbVersion, TimeSpan.FromMinutes(5));
-                    _logger.LogInformation("Fetched fresh DB version {Version} and cached it", cachedDbVersion);
-                }
-
-
+               
+                var cachedDbVersion = await _dbChangeService.GetDataVersionAsync();
                 var cachedProfileVersion = await _cacheService.GetAsync<long?>(versionCacheKey);
 
 
                 if (cachedProfileVersion == null || cachedProfileVersion != cachedDbVersion)
                 {
                     await _cacheService.RemoveAsync(cacheKey);
-                    await _cacheService.SetAsync(versionCacheKey, cachedDbVersion, TimeSpan.FromHours(2));
+                    await _cacheService.SetAsync(versionCacheKey, cachedDbVersion, TimeSpan.FromHours(3));
 
                     _logger.LogInformation(
                         "EmployeeProfile cache invalidated for EmpCode {EmpCode}. DBVersion={DbVersion}, CachedProfileVersion={ProfileVersion}",
@@ -2706,12 +2699,12 @@ namespace ModuleManagementBackend.BAL.Services
                 };
             }
         }
-
+        private static int count = 0;
         public async Task<ResponseModel> GetEmployeeProfileData(string empCode)
         {
             try
             {
-                var count = 0;
+                
                 using var connection = dapper.GetConnection();
 
                 using var multi = await connection.QueryMultipleAsync(
@@ -2737,7 +2730,7 @@ namespace ModuleManagementBackend.BAL.Services
                     units = units.ToList(),
                     PositionGrades = Grade
                 };
-                count=count+1;
+                var currentCount = Interlocked.Increment(ref count);
                 return new ResponseModel()
                 {
                     StatusCode=HttpStatusCode.OK,
@@ -3033,7 +3026,7 @@ namespace ModuleManagementBackend.BAL.Services
             }
         }
 
-        public async Task<ResponseModel> CreateHoliday(CreateHolidayCalendarDto createHolidayDto,string loginUserId)
+        public async Task<ResponseModel> CreateHoliday(CreateHolidayCalendarDto createHolidayDto, string loginUserId)
         {
             ResponseModel responseModel = new ResponseModel();
             try
@@ -3162,7 +3155,7 @@ namespace ModuleManagementBackend.BAL.Services
             }
         }
 
-        public async Task<ResponseModel> BulkCreateHolidays(List<CreateHolidayCalendarDto> holidays,string loginUserId)
+        public async Task<ResponseModel> BulkCreateHolidays(List<CreateHolidayCalendarDto> holidays, string loginUserId)
         {
             ResponseModel responseModel = new ResponseModel();
             try
@@ -3244,7 +3237,7 @@ namespace ModuleManagementBackend.BAL.Services
                 if (worksheet == null)
                     return new ResponseModel { Message = "No worksheet found in the Excel file", StatusCode = HttpStatusCode.BadRequest };
 
-               
+
                 int headerRow = 0;
                 var usedRange = worksheet.RangeUsed();
                 if (usedRange != null)
@@ -3284,7 +3277,7 @@ namespace ModuleManagementBackend.BAL.Services
                         if (dateCell.IsEmpty())
                             continue;
 
-                        
+
                         if (!DateTime.TryParse(dateCell.GetValue<string>(), out DateTime holidayDate))
                         {
                             validationErrors.Add($"Row {row}: Invalid Date format");
@@ -3320,7 +3313,7 @@ namespace ModuleManagementBackend.BAL.Services
                             continue;
                         }
 
-                       
+
                         if (holidaysToCreate.Any(h => h.HolidayDate.Date == holidayDate.Date))
                         {
                             validationErrors.Add($"Row {row}: Duplicate date {holidayDate:yyyy-MM-dd} in Excel file");
@@ -3335,7 +3328,7 @@ namespace ModuleManagementBackend.BAL.Services
                             DayOfWeek = dayOfWeek,
                             UnitId = unitId,
                             UnitName = unitName
-                           
+
                         });
 
                         processedCount++;
@@ -3349,7 +3342,7 @@ namespace ModuleManagementBackend.BAL.Services
                 int createdCount = 0;
                 if (holidaysToCreate.Any())
                 {
-                    var bulkCreateResult = await BulkCreateHolidays(holidaysToCreate,loginUserId);
+                    var bulkCreateResult = await BulkCreateHolidays(holidaysToCreate, loginUserId);
                     if (bulkCreateResult.StatusCode == HttpStatusCode.OK)
                         createdCount = holidaysToCreate.Count;
                     else
