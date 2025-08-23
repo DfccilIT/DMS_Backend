@@ -2711,7 +2711,7 @@ namespace ModuleManagementBackend.BAL.Services
         {
             try
             {
-                var count = 1;
+                var count = 0;
                 using var connection = dapper.GetConnection();
 
                 using var multi = await connection.QueryMultipleAsync(
