@@ -45,8 +45,8 @@ namespace ModuleManagementBackend.Model.DTOs.PoliciesGenricDTO
             public int FkPolId { get; set; }
             public string ItemSubject { get; set; }
             public string ItemType { get; set; }
-            public string ItemContent { get; set; }
-            public string ItemDescription { get; set; }
+            public string? ItemContent { get; set; }
+            public string? ItemDescription { get; set; }
             public DateTime? OfficeOrderDate { get; set; }
             public double? OrderFactor { get; set; }
             public bool? whatNew { get; set; } = false;
