@@ -36,7 +36,7 @@ namespace ModuleManagementBackend.API.Controllers
 
         [HttpGet]
         [Route("GetAllHolidays")]
-        [AllowAnonymous]
+        
         public async Task<ActionResult<ResponseModel>> GetAllHolidays(
             int? unitId = null,
             string? holidayType = null,
@@ -157,7 +157,7 @@ namespace ModuleManagementBackend.API.Controllers
 
         [HttpGet]
         [Route("GetCurrentYearHolidays")]
-        [AllowAnonymous]
+       
         public async Task<ActionResult<ResponseModel>> GetCurrentYearHolidays(int? unitId = null)
         {
             var currentYear = DateTime.Now.Year;
@@ -171,7 +171,7 @@ namespace ModuleManagementBackend.API.Controllers
 
         [HttpGet]
         [Route("GetUpcomingHolidays")]
-        [AllowAnonymous]
+      
         public async Task<ActionResult<ResponseModel>> GetUpcomingHolidays(int? unitId = null)
         {
             var fromDate = DateTime.Now.Date;
@@ -184,7 +184,7 @@ namespace ModuleManagementBackend.API.Controllers
 
         [HttpGet]
         [Route("GetHolidaysByMonth")]
-        [AllowAnonymous]
+       
         public async Task<ActionResult<ResponseModel>> GetHolidaysByMonth(
             int year,
             int month,
@@ -199,7 +199,7 @@ namespace ModuleManagementBackend.API.Controllers
 
         [HttpGet]
         [Route("GetGazettedHolidays")]
-        [AllowAnonymous]
+       
         public async Task<ActionResult<ResponseModel>> GetGazettedHolidays(
             int? unitId = null,
             string? unitName = null)
@@ -211,7 +211,7 @@ namespace ModuleManagementBackend.API.Controllers
 
         [HttpGet]
         [Route("GetRestrictedHolidays")]
-        [AllowAnonymous]
+       
         public async Task<ActionResult<ResponseModel>> GetRestrictedHolidays(
             int? unitId = null,
             string? unitName = null)
