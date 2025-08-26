@@ -301,6 +301,41 @@ namespace ModuleManagementBackend.API.Controllers
         {
             return await managementService.GetSelectedEmployeeColumnsAsync(columnNamesCsv, empCode);
         }
-    }
 
+
+      
+        [HttpPost("generate-otp")]
+        public async Task<ResponseModel> GenerateOtp([FromBody] GenerateOtpDto dto)
+        {
+            var result = await managementService.GenerateOtpAsync(dto.UserEmpCode, dto.NewMobileNumber);
+            return result;
+        }
+
+       
+        [HttpPost("change-mobile-number")]
+        public async Task<ResponseModel> ChangeMobileNumber([FromBody] ChangeMobileNumberDto dto)
+        {
+            var result = await managementService.ChangeMobileNumberAsync(dto.UserEmpCode, dto.NewMobileNumber, dto.Otp);
+            return  result;
+        }
+
+       
+        [HttpPost("request-email-change")]
+        public async Task<ResponseModel> RequestEmailChange([FromBody] RequestEmailDto dto)
+        {
+            var result = await managementService.RequestEmailChangeAsync(dto.UserEmpCode, dto.NewEmail);
+            return result;
+        }
+
+        
+        [HttpGet("verify-email-change")]
+        public async Task<ResponseModel> VerifyEmailChange([FromQuery] Guid token)
+        {
+            var result = await managementService.VerifyEmailChangeAsync(token);
+            return  result;
+        }
+    }
+   
 }
+
+

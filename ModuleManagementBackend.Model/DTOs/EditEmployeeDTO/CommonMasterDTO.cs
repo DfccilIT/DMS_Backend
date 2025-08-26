@@ -3,6 +3,7 @@ using ModuleManagementBackend.Model.Common;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Principal;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -27,7 +28,7 @@ namespace ModuleManagementBackend.Model.DTOs.EditEmployeeDTO
         public string? PersonalMobile { get; set; }
         public string? ExtnNo { get; set; }
         public string? UpdatedBy { get; set; }
-      
+
     }
 
     public class EmployeeOfTheMonthDto
@@ -36,7 +37,7 @@ namespace ModuleManagementBackend.Model.DTOs.EditEmployeeDTO
         public int Month { get; set; }
         public int Year { get; set; }
         public string? CreatedBy { get; set; }
-        public IFormFile? photo { get; set; } 
+        public IFormFile? photo { get; set; }
     }
 
     public class NoticeBoardDto
@@ -49,10 +50,10 @@ namespace ModuleManagementBackend.Model.DTOs.EditEmployeeDTO
     }
 
 
-    
+
     public class AddDependentDto
     {
-        public string EmployeeCode { get; set; }     
+        public string EmployeeCode { get; set; }
         public string Relation { get; set; }
         public string DName { get; set; }
         public string Gender { get; set; }
@@ -60,7 +61,7 @@ namespace ModuleManagementBackend.Model.DTOs.EditEmployeeDTO
         public List<DependtentsDocuments>? DocumentFiles { get; set; }
     }
 
-    public class  DependtentsDocuments
+    public class DependtentsDocuments
     {
         public IFormFile? DocumentFile { get; set; }
         public string? DocumentType { get; set; }
@@ -105,7 +106,7 @@ namespace ModuleManagementBackend.Model.DTOs.EditEmployeeDTO
 
     public class PagedResponseModel : ResponseModel
     {
-       
+
         public int CurrentPage { get; set; }
         public int PageSize { get; set; }
         public int TotalPages { get; set; }
@@ -145,14 +146,25 @@ namespace ModuleManagementBackend.Model.DTOs.EditEmployeeDTO
     public class UploadAboutUsDto
     {
         public string EmployeeCode { get; set; }
-        public string ?AboutUs { get; set; }
-        public IFormFile PhotoFile { get; set; }  
+        public string? AboutUs { get; set; }
+        public IFormFile PhotoFile { get; set; }
+    }
+    public class GenerateOtpDto
+    {
+        public string UserEmpCode { get; set; }
+        public string NewMobileNumber { get; set; }
     }
 
-    public class RegisterContractEmployeeDto
+    public class ChangeMobileNumberDto
     {
-    
-    
-    
+        public string UserEmpCode { get; set; }
+        public string NewMobileNumber { get; set; }
+        public string Otp { get; set; }
+    }
+
+    public class RequestEmailDto
+    {
+        public string UserEmpCode { get; set; }
+        public string NewEmail { get; set; }
     }
 }

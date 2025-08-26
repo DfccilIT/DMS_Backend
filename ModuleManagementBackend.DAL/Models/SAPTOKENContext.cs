@@ -19,6 +19,7 @@ namespace ModuleManagementBackend.DAL.Models
         }
 
         public virtual DbSet<EditEmployeeDetail> EditEmployeeDetails { get; set; }
+        public virtual DbSet<EmailChangeRequest> EmailChangeRequests { get; set; }
         public virtual DbSet<EmployeeDependentDocument> EmployeeDependentDocuments { get; set; }
         public virtual DbSet<MasterHolidayCalendar> MasterHolidayCalendars { get; set; }
         public virtual DbSet<MstContractEmployeeMaster> MstContractEmployeeMasters { get; set; }
@@ -33,6 +34,7 @@ namespace ModuleManagementBackend.DAL.Models
         public virtual DbSet<UnitNameDetail> UnitNameDetails { get; set; }
         public virtual DbSet<kraUser> kraUsers { get; set; }
         public virtual DbSet<mstPositionGreade> mstPositionGreades { get; set; }
+        public virtual DbSet<tblDeviceOTP> tblDeviceOTPs { get; set; }
         public virtual DbSet<tblDownLoadLog> tblDownLoadLogs { get; set; }
         public virtual DbSet<tblEmployeeOfTheMonth> tblEmployeeOfTheMonths { get; set; }
         public virtual DbSet<tblNoticeBoard> tblNoticeBoards { get; set; }
@@ -102,6 +104,23 @@ namespace ModuleManagementBackend.DAL.Models
                 entity.Property(e => e.remarks).HasMaxLength(100);
 
                 entity.Property(e => e.status).HasDefaultValueSql("((99))");
+            });
+
+            modelBuilder.Entity<EmailChangeRequest>(entity =>
+            {
+                entity.Property(e => e.CreatedAt)
+                    .HasColumnType("datetime")
+                    .HasDefaultValueSql("(getdate())");
+
+                entity.Property(e => e.ExpiryTime).HasColumnType("datetime");
+
+                entity.Property(e => e.NewEmail)
+                    .IsRequired()
+                    .HasMaxLength(150);
+
+                entity.Property(e => e.UserEmpCode)
+                    .IsRequired()
+                    .HasMaxLength(50);
             });
 
             modelBuilder.Entity<EmployeeDependentDocument>(entity =>
@@ -552,6 +571,20 @@ namespace ModuleManagementBackend.DAL.Models
                     .HasName("PK__mstPosit__5336982EE41A4F15");
 
                 entity.Property(e => e.PositionGrade).HasMaxLength(255);
+            });
+
+            modelBuilder.Entity<tblDeviceOTP>(entity =>
+            {
+                entity.HasKey(e => e.pkDeviceOTPid)
+                    .HasName("PK__tblDevic__AD131EAA07600CBF");
+
+                entity.ToTable("tblDeviceOTP", "API");
+
+                entity.Property(e => e.CreateDate).HasColumnType("datetime");
+
+                entity.Property(e => e.Expiration).HasColumnType("datetime");
+
+                entity.Property(e => e.status).HasDefaultValueSql("((0))");
             });
 
             modelBuilder.Entity<tblDownLoadLog>(entity =>

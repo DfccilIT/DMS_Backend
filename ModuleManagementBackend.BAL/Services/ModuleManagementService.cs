@@ -2658,10 +2658,10 @@ namespace ModuleManagementBackend.BAL.Services
             {
                 var cacheKey = $"GetEmployeeProfile_{EmpCode ?? "X"}";
                 var versionCacheKey = $"{cacheKey}_version";
-                
 
 
-               
+
+
                 var cachedDbVersion = await _dbChangeService.GetDataVersionAsync();
                 var cachedProfileVersion = await _cacheService.GetAsync<long?>(versionCacheKey);
 
@@ -2704,7 +2704,7 @@ namespace ModuleManagementBackend.BAL.Services
         {
             try
             {
-                
+
                 using var connection = dapper.GetConnection();
 
                 using var multi = await connection.QueryMultipleAsync(
@@ -3382,6 +3382,218 @@ namespace ModuleManagementBackend.BAL.Services
             }
         }
 
+
+
+        #endregion
+
+        #region Mobile And Email Update
+
+        public async Task<ResponseModel> ChangeMobileNumberAsync(string userEmpCode, string newMobileNumber, string otp)
+        {
+            var response = new ResponseModel();
+            try
+            {
+
+                var user = await context.MstEmployeeMasters.FirstOrDefaultAsync(u => u.EmployeeCode == userEmpCode);
+                if (user == null)
+                {
+                    response.Message = "User not found.";
+                    response.StatusCode = HttpStatusCode.NotFound;
+                    response.Error = true;
+                    return response;
+                }
+
+
+                var otpRecord = await context.tblDeviceOTPs
+                    .OrderByDescending(o => o.CreateDate)
+                    .FirstOrDefaultAsync(o => o.UserId == userEmpCode && o.status==0);
+
+                if (otpRecord == null || otpRecord.Otp != otp)
+                {
+                    response.Message = "Invalid OTP.";
+                    response.StatusCode = HttpStatusCode.BadRequest;
+                    response.Error = true;
+                    return response;
+                }
+
+                if (otpRecord.Expiration < DateTime.Now)
+                {
+                    response.Message = "OTP expired.";
+                    response.StatusCode = HttpStatusCode.BadRequest;
+                    response.Error = true;
+                    return response;
+                }
+
+
+                user.Mobile = newMobileNumber;
+                user.Modify_By = userEmpCode;
+                user.Modify_Date = DateTime.Now;
+                 otpRecord.status = 9;
+
+                context.MstEmployeeMasters.Update(user);
+                await context.SaveChangesAsync();
+
+                response.Message = "Mobile number updated successfully.";
+                response.StatusCode = HttpStatusCode.OK;
+                response.Data = new { user.EmployeeCode, user.Mobile };
+            }
+            catch (Exception ex)
+            {
+                response.Message = $"Error: {ex.Message}";
+                response.StatusCode = HttpStatusCode.InternalServerError;
+                response.Error = true;
+                response.ErrorDetail = ex;
+            }
+            return response;
+        }
+        public async Task<ResponseModel> GenerateOtpAsync(string userEmpCode, string newMobileNumber)
+        {
+            var response = new ResponseModel();
+            try
+            {
+                var otp = new Random().Next(100000, 999999).ToString();
+
+                var otpRecord = new tblDeviceOTP
+                {
+                    UserId = userEmpCode,
+                    Otp = otp,
+                    CreateDate = DateTime.Now,
+                    Expiration = DateTime.Now.AddMinutes(5)
+                };
+
+                await context.tblDeviceOTPs.AddAsync(otpRecord);
+                await context.SaveChangesAsync();
+
+
+
+                response.Message = "OTP generated and sent successfully.";
+                response.StatusCode = HttpStatusCode.OK;
+                response.Data = new { Mobile = newMobileNumber, Otp = otp };
+            }
+            catch (Exception ex)
+            {
+                response.Message = $"Error: {ex.Message}";
+                response.StatusCode = HttpStatusCode.InternalServerError;
+                response.Error = true;
+                response.ErrorDetail = ex;
+            }
+            return response;
+        }
+        public async Task<ResponseModel> RequestEmailChangeAsync(string userEmpCode, string newEmail)
+        {
+            var response = new ResponseModel();
+            try
+            {
+                var user = await context.MstEmployeeMasters.FirstOrDefaultAsync(u => u.EmployeeCode == userEmpCode && u.Status==0);
+                if (user == null)
+                {
+                    return new ResponseModel
+                    {
+                        Message = "User not found.",
+                        StatusCode = HttpStatusCode.NotFound,
+                        Error = true
+                    };
+                }
+
+
+                var token = Guid.NewGuid();
+
+                var request = new EmailChangeRequest
+                {
+                    UserEmpCode = userEmpCode,
+                    NewEmail = newEmail,
+                    Token = token,
+                    CreatedAt = DateTime.Now,
+                    ExpiryTime = DateTime.Now.AddHours(24),
+                    IsUsed = false
+                };
+
+                await context.EmailChangeRequests.AddAsync(request);
+                await context.SaveChangesAsync();
+
+                var EmailLink = ((configuration["DeploymentModes"] ?? string.Empty) == "DFCCIL_UAT")
+                               ? (configuration["OfficialEmailChangeVerificationLink_UAT"] ?? string.Empty)
+                               : (configuration["OfficialEmailChangeVerificationLink_Prod"] ?? string.Empty);
+                var verifyLink = EmailLink+token;
+
+
+
+                response.Message = "Verification link sent to new email.";
+                response.StatusCode = HttpStatusCode.OK;
+                response.Data = new { newEmail, verifyLink };
+            }
+            catch (Exception ex)
+            {
+                response.Message = $"Error: {ex.Message}";
+                response.StatusCode = HttpStatusCode.InternalServerError;
+                response.Error = true;
+                response.ErrorDetail = ex;
+            }
+            return response;
+        }
+        public async Task<ResponseModel> VerifyEmailChangeAsync(Guid token)
+        {
+            var response = new ResponseModel();
+            try
+            {
+                var request = await context.EmailChangeRequests
+                    .FirstOrDefaultAsync(r => r.Token == token);
+
+                if (request == null || request.IsUsed)
+                {
+                    return new ResponseModel
+                    {
+                        Message = "Invalid or already used token.",
+                        StatusCode = HttpStatusCode.BadRequest,
+                        Error = true
+                    };
+                }
+
+                if (request.ExpiryTime < DateTime.Now)
+                {
+                    return new ResponseModel
+                    {
+                        Message = "Verification link expired.",
+                        StatusCode = HttpStatusCode.BadRequest,
+                        Error = true
+                    };
+                }
+
+
+                var user = await context.MstEmployeeMasters.FirstOrDefaultAsync(u => u.EmployeeCode == request.UserEmpCode && u.Status==0);
+                if (user == null)
+                {
+                    return new ResponseModel
+                    {
+                        Message = "User not found.",
+                        StatusCode = HttpStatusCode.NotFound,
+                        Error = true
+                    };
+                }
+
+                user.emailAddress = request.NewEmail;
+                user.Modify_Date = DateTime.Now;
+                user.Modify_By = user.EmployeeCode;
+
+                request.IsUsed = true;
+
+                context.MstEmployeeMasters.Update(user);
+                context.EmailChangeRequests.Update(request);
+                await context.SaveChangesAsync();
+
+                response.Message = "Official email updated successfully.";
+                response.StatusCode = HttpStatusCode.OK;
+                response.Data = new { user.EmployeeCode, user.emailAddress };
+            }
+            catch (Exception ex)
+            {
+                response.Message = $"Error: {ex.Message}";
+                response.StatusCode = HttpStatusCode.InternalServerError;
+                response.Error = true;
+                response.ErrorDetail = ex;
+            }
+            return response;
+        }
 
 
         #endregion

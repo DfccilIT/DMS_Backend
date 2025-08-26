@@ -89,5 +89,13 @@ namespace ModuleManagementBackend.BAL.IServices
 
 
         #endregion
+
+        #region Mobile And Email Change Requests
+
+        Task<ResponseModel> ChangeMobileNumberAsync(string userEmpCode, string newMobileNumber, string otp);
+        Task<ResponseModel> GenerateOtpAsync(string userEmpCode, string newMobileNumber);
+        Task<ResponseModel> RequestEmailChangeAsync(string userEmpCode, string newEmail);
+        Task<ResponseModel> VerifyEmailChangeAsync(Guid token);
+        #endregion
     }
 }

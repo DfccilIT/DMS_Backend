@@ -16,7 +16,15 @@
    "T4TemplatePath": null,
    "Tables": [
       {
+         "Name": "[API].[tblDeviceOTP]",
+         "ObjectType": 0
+      },
+      {
          "Name": "[dbo].[EditEmployeeDetails]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[EmailChangeRequests]",
          "ObjectType": 0
       },
       {
