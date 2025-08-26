@@ -14,11 +14,15 @@ namespace ModuleManagementBackend.API.Controllers
     {
         private readonly IModuleManagementService _holidayService;
         private readonly IHttpContextAccessor httpContext;
+        private readonly IConfiguration configuration;
+        private readonly string _apiKey;
 
-        public HolidayCalanderManagerController(IModuleManagementService holidayService, IHttpContextAccessor httpContext)
+        public HolidayCalanderManagerController(IModuleManagementService holidayService, IHttpContextAccessor httpContext, IConfiguration configuration)
         {
             _holidayService = holidayService;
             this.httpContext=httpContext;
+            this.configuration=configuration;
+            _apiKey=configuration["ApiKey"]??string.Empty;
         }
         private string loginUserId
         {
@@ -42,8 +46,37 @@ namespace ModuleManagementBackend.API.Controllers
             return Ok(result);
         }
 
-       
-       
+        [HttpGet]
+        [Route("GetAllHolidaysV2")]
+        [AllowAnonymous]
+        public async Task<ResponseModel> GetAllHolidaysV2(int? unitId = null, string? holidayType = null, string? unitName = null, [FromHeader(Name = "APIKey")] string apiKey = null)
+        {
+            if (apiKey != _apiKey)
+            {
+                return new ResponseModel
+                {
+                    StatusCode = System.Net.HttpStatusCode.Unauthorized,
+                    Message = "Invalid API Key"
+                };
+            }
+
+            var response = new ResponseModel();
+            try
+            {
+                response = await _holidayService.GetAllHolidays(unitId, holidayType, unitName);
+                return response;
+            }
+            catch (Exception ex)
+            {
+                response.StatusCode = System.Net.HttpStatusCode.InternalServerError;
+                response.Message = "An error occurred while processing the request.";
+                response.Error = true;
+                response.ErrorDetail = ex;
+                return response;
+            }
+        }
+
+
         [HttpGet]
         [Route("GetHolidaysByDateRange")]
         [AllowAnonymous]
@@ -56,8 +89,8 @@ namespace ModuleManagementBackend.API.Controllers
             return Ok(result);
         }
 
-       
-       
+
+
         [HttpPost]
         [Route("CreateHoliday")]
         public async Task<ActionResult<ResponseModel>> CreateHoliday([FromBody] CreateHolidayCalendarDto createHolidayDto)
@@ -72,11 +105,11 @@ namespace ModuleManagementBackend.API.Controllers
                 });
             }
 
-            var result = await _holidayService.CreateHoliday(createHolidayDto,loginUserId);
+            var result = await _holidayService.CreateHoliday(createHolidayDto, loginUserId);
             return Ok(result);
         }
 
-       
+
         [HttpPut]
         [Route("UpdateHoliday")]
         public async Task<ActionResult<ResponseModel>> UpdateHoliday([FromBody] UpdateHolidayCalendarDto updateHolidayDto)
@@ -103,7 +136,7 @@ namespace ModuleManagementBackend.API.Controllers
             return Ok(result);
         }
 
-       
+
         [HttpPost]
         [Route("BulkCreateHolidays")]
         public async Task<ActionResult<ResponseModel>> BulkCreateHolidays([FromBody] List<CreateHolidayCalendarDto> holidays)
@@ -121,7 +154,7 @@ namespace ModuleManagementBackend.API.Controllers
             var result = await _holidayService.BulkCreateHolidays(holidays, loginUserId);
             return Ok(result);
         }
-       
+
         [HttpGet]
         [Route("GetCurrentYearHolidays")]
         [AllowAnonymous]
@@ -135,7 +168,7 @@ namespace ModuleManagementBackend.API.Controllers
             return Ok(result);
         }
 
-       
+
         [HttpGet]
         [Route("GetUpcomingHolidays")]
         [AllowAnonymous]
@@ -148,7 +181,7 @@ namespace ModuleManagementBackend.API.Controllers
             return Ok(result);
         }
 
-        
+
         [HttpGet]
         [Route("GetHolidaysByMonth")]
         [AllowAnonymous]
@@ -175,7 +208,7 @@ namespace ModuleManagementBackend.API.Controllers
             return Ok(result);
         }
 
-       
+
         [HttpGet]
         [Route("GetRestrictedHolidays")]
         [AllowAnonymous]

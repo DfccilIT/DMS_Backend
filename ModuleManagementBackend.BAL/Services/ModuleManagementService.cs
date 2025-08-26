@@ -30,6 +30,7 @@ namespace ModuleManagementBackend.BAL.Services
         private readonly IDatabaseChangesService _dbChangeService;
         private readonly ILogger<ModuleManagementService> _logger;
         private readonly string baseUrl;
+       
 
         public ModuleManagementService(SAPTOKENContext _context, IDapperService _dapper, IHttpContextAccessor _httpContext, IConfiguration _configuration, ICacheService CacheService, IDatabaseChangesService DbChangeService, ILogger<ModuleManagementService> logger)
         {
@@ -38,11 +39,12 @@ namespace ModuleManagementBackend.BAL.Services
             httpContext=_httpContext;
             configuration=_configuration;
             baseUrl = ((configuration["DeploymentModes"] ?? string.Empty) == "DFCCIL_UAT")
-    ? (configuration["BasePathUat"] ?? string.Empty)
-    : (configuration["BasePathProd"] ?? string.Empty);
+             ? (configuration["BasePathUat"] ?? string.Empty)
+             : (configuration["BasePathProd"] ?? string.Empty);
             _cacheService = CacheService;
             _dbChangeService = DbChangeService;
             _logger = logger;
+           
         }
 
         public async Task<ResponseModel> EditEmployeeProfileAsync(EditEmployeeDto dto)
@@ -3428,7 +3430,7 @@ namespace ModuleManagementBackend.BAL.Services
                 user.Mobile = newMobileNumber;
                 user.Modify_By = userEmpCode;
                 user.Modify_Date = DateTime.Now;
-                 otpRecord.status = 9;
+                otpRecord.status = 9;
 
                 context.MstEmployeeMasters.Update(user);
                 await context.SaveChangesAsync();
