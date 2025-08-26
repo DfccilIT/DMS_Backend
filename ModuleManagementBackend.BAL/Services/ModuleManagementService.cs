@@ -3588,7 +3588,7 @@ namespace ModuleManagementBackend.BAL.Services
 
                 response.Message = "Official email updated successfully.";
                 response.StatusCode = HttpStatusCode.OK;
-                response.Data = new { user.EmployeeCode, user.emailAddress };
+                response.Data = user.emailAddress ;
             }
             catch (Exception ex)
             {
