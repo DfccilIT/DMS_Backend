@@ -329,6 +329,7 @@ namespace ModuleManagementBackend.API.Controllers
 
         
         [HttpGet("verify-email-change")]
+        [AllowAnonymous]
         public async Task<ResponseModel> VerifyEmailChange([FromQuery] Guid token)
         {
             var result = await managementService.VerifyEmailChangeAsync(token);
