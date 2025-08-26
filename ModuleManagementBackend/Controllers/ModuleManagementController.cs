@@ -327,13 +327,29 @@ namespace ModuleManagementBackend.API.Controllers
             return result;
         }
 
-        
+
         [HttpGet("verify-email-change")]
         [AllowAnonymous]
-        public async Task<ResponseModel> VerifyEmailChange([FromQuery] Guid token)
+        public async Task<IActionResult> VerifyEmailChange([FromQuery] Guid token)
         {
             var result = await managementService.VerifyEmailChangeAsync(token);
-            return  result;
+
+           
+            string baseUrl = $"{Request.Scheme}://{Request.Host}/email-change/result.html";
+            string redirectUrl;
+
+            if (result.StatusCode == HttpStatusCode.OK)
+            {
+               
+                redirectUrl = $"{baseUrl}?status=success&email={Uri.EscapeDataString(result.Data?.ToString() ?? "")}";
+            }
+            else
+            {
+              
+                redirectUrl = $"{baseUrl}?status=error&msg={Uri.EscapeDataString(result.Message ?? "Verification failed")}";
+            }
+
+            return Redirect(redirectUrl);
         }
     }
    

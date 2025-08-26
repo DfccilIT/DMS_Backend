@@ -5,6 +5,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.Protocols;
 using ModuleManagementBackend.BAL.IServices;
 using ModuleManagementBackend.BAL.IServices.ICacheServices;
 using ModuleManagementBackend.DAL.DapperServices;
@@ -15,6 +16,8 @@ using ModuleManagementBackend.Model.DTOs.GETEMPLOYEEDTO;
 using System.Data;
 using System.Data.Common;
 using System.Net;
+using System.Net.Mail;
+using System.Security.Principal;
 using System.Text.RegularExpressions;
 using static ModuleManagementBackend.Model.DTOs.HolidayCalenderDTO.HolidayCalenderCommonDTO;
 
@@ -3517,7 +3520,7 @@ namespace ModuleManagementBackend.BAL.Services
                                ? (configuration["OfficialEmailChangeVerificationLink_UAT"] ?? string.Empty)
                                : (configuration["OfficialEmailChangeVerificationLink_Prod"] ?? string.Empty);
                 var verifyLink = EmailLink+token;
-
+                var send = await SendEmailNotificationAsync(newEmail, user.UserName, verifyLink);
 
 
                 response.Message = "Verification link sent to new email.";
@@ -3596,6 +3599,76 @@ namespace ModuleManagementBackend.BAL.Services
             }
             return response;
         }
+
+
+
+        private async Task<ResponseModel> SendEmailNotificationAsync(string email, string userName, string verificationLink)
+        {
+            var response = new ResponseModel();
+
+            try
+            {
+                if (string.IsNullOrWhiteSpace(email))
+                {
+                    response.StatusCode = HttpStatusCode.BadRequest;
+                    response.Message = "Recipient email is required.";
+                    return response;
+                }
+
+                ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12; 
+
+
+
+                var smtpServer = configuration["MailSettingsProd:Server"] ?? string.Empty;
+                var port = int.Parse(configuration["MailSettingsProd:Port"]??"0");
+                var senderEmail = configuration["MailSettingsProd:SenderEmail"]??string.Empty;
+                var password = configuration["MailSettingsProd:Password"]??string.Empty;
+
+                string subject = "Confirm Your Email Change Request";
+                string body = $@"
+            <p>Hello {userName},</p>
+            <p>We received a request to change the email address associated with your account.<br/>
+            To confirm and complete this update, please click the link below:</p>
+            <p><a href='{verificationLink}' target='_blank' style='font-size:16px; font-weight:bold; color:#1a73e8;'>👉 Update My Email Address</a></p>
+            <p>If you did not request this change, you can safely ignore this message — your email address will remain the same.</p>
+            <p>For security reasons, this link will expire in <b>24 hours</b>.</p>
+            <p>Thanks,<br/>The DFCCIL Team</p>
+        ";
+
+                using (var client = new SmtpClient(smtpServer, port))
+                {
+                    client.EnableSsl = true;
+                    client.Credentials = new NetworkCredential(senderEmail, password);
+
+                    using (var message = new MailMessage())
+                    {
+                        message.From = new MailAddress(senderEmail);
+                        message.To.Add(email);
+                        message.Subject = subject;
+                        message.Body = body;
+                        message.IsBodyHtml = true;
+
+                        await client.SendMailAsync(message);
+                    }
+                }
+
+                response.StatusCode = HttpStatusCode.OK;
+                response.Message = $"Verification email sent successfully to {email}.";
+                response.Data = new { Email = email, Link = verificationLink };
+            }
+            catch (Exception ex)
+            {
+                response.StatusCode = HttpStatusCode.InternalServerError;
+                response.Message = "Failed to send email notification.";
+                response.Error = true;
+                response.ErrorDetail = ex;
+            }
+
+            return response;
+        }
+
+
+
 
 
         #endregion

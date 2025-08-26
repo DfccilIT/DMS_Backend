@@ -1,0 +1,95 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Email Change Result</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f7fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+            max-width: 450px;
+            text-align: center;
+        }
+
+        .success {
+            color: #2e7d32;
+        }
+
+        .error {
+            color: #c62828;
+        }
+
+        .btn {
+            margin-top: 1rem;
+            padding: 0.6rem 1.2rem;
+            border: none;
+            border-radius: 6px;
+            background: #1976d2;
+            color: white;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+            .btn:hover {
+                background: #1565c0;
+            }
+    </style>
+</head>
+<body>
+    <div class="card" id="resultCard">
+        <h2 id="statusTitle"></h2>
+        <p id="statusMessage"></p>
+        <button class="btn" onclick="goHome()">Go to Homepage</button>
+    </div>
+
+    <script>
+    function getQueryParams() {
+      const params = {};
+      const queryString = window.location.search.substring(1);
+      const pairs = queryString.split("&");
+      for (let pair of pairs) {
+        const [key, value] = pair.split("=");
+        if (key) params[key] = decodeURIComponent(value || "");
+      }
+      return params;
+    }
+
+    function renderResult() {
+      const params = getQueryParams();
+      const statusTitle = document.getElementById("statusTitle");
+      const statusMessage = document.getElementById("statusMessage");
+
+      if (params.status === "success") {
+        statusTitle.innerText = "✅ Email Verified Successfully!";
+        statusTitle.classList.add("success");
+        statusMessage.innerText =
+          `Your email (${params.email || "updated email"}) has been verified.`;
+      } else {
+        statusTitle.innerText = "❌ Verification Failed!";
+        statusTitle.classList.add("error");
+        statusMessage.innerText =
+          params.msg || "The verification link may be expired or invalid.";
+      }
+    }
+
+    function goHome() {
+      window.location.href = "https://dms.dfccil.com"; 
+    }
+
+    renderResult();
+    </script>
+</body>
+</html>
