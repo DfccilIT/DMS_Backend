@@ -14,5 +14,6 @@ namespace ModuleManagementBackend.DAL.Models
         public DateTime CreatedAt { get; set; }
         public DateTime ExpiryTime { get; set; }
         public bool IsUsed { get; set; }
+        public string OldEmail { get; set; }
     }
 }

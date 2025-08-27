@@ -2468,8 +2468,6 @@ namespace ModuleManagementBackend.BAL.Services
                 };
             }
         }
-
-
         private async Task<ResponseModel> FetchDirectoryFromDatabase(string? EmpCode)
         {
             _logger.LogInformation("Fetching directory data from database for EmpCode: {EmpCode}", EmpCode ?? "all");
@@ -2818,8 +2816,6 @@ namespace ModuleManagementBackend.BAL.Services
 
             return response;
         }
-
-
         public async Task<ResponseModel> GetSelectedEmployeeColumnsAsync(string columnNamesCsv, string? employeeCode = null)
         {
             var response = new ResponseModel();
@@ -2877,8 +2873,6 @@ namespace ModuleManagementBackend.BAL.Services
 
             return response;
         }
-
-
         public async Task<ResponseModel> GetEmployeeMasterColumnsAsync()
         {
             var response = new ResponseModel();
@@ -2915,9 +2909,6 @@ namespace ModuleManagementBackend.BAL.Services
 
             return response;
         }
-
-
-
 
         #region HolidayCalender
 
@@ -3508,6 +3499,7 @@ namespace ModuleManagementBackend.BAL.Services
                     UserEmpCode = userEmpCode,
                     NewEmail = newEmail,
                     Token = token,
+                    OldEmail=user.emailAddress,
                     CreatedAt = DateTime.Now,
                     ExpiryTime = DateTime.Now.AddHours(24),
                     IsUsed = false
@@ -3600,8 +3592,6 @@ namespace ModuleManagementBackend.BAL.Services
             return response;
         }
 
-
-
         private async Task<ResponseModel> SendEmailNotificationAsync(string email, string userName, string verificationLink)
         {
             var response = new ResponseModel();
@@ -3667,8 +3657,76 @@ namespace ModuleManagementBackend.BAL.Services
             return response;
         }
 
+        #endregion
 
+        #region KRA Reporting Officer
 
+        public async Task<ResponseModel> GetKraReporingOfficer(string empCode, DateTime startDate, DateTime endDate)
+        {
+            var responseModel = new ResponseModel();
+
+            try
+            {
+                var autoId = await context.MstEmployeeMasters
+                    .Where(x => x.EmployeeCode == empCode)
+                    .Select(x => x.EmployeeMasterAutoId)
+                    .FirstOrDefaultAsync();
+
+              
+                var officersFromUsers = await context.kraUsers
+                    .Where(x =>
+                        x.fkAutoId == autoId &&
+                        x.ApprovedDate >= startDate &&
+                        x.ApprovedDate <= endDate)
+                    .Select(x => new
+                    {
+                      ReportingEmployeeCode=  x.reportingAutoId,
+                        x.reportingPost,
+                        x.reportingDept
+                    })
+                    .ToListAsync();
+
+             
+                var officersFromLogs = await context.kraUserlogs
+                    .Where(x =>
+                        x.status == 9 &&
+                        x.fkAutoId == autoId &&
+                        x.modifydate >= startDate &&
+                        x.modifydate <= endDate)
+                    .Select(x => new
+                    {
+                        ReportingEmployeeCode= x.reportingAutoId,
+                        x.reportingPost,
+                        x.reportingDept
+                    })
+                    .ToListAsync();
+
+                
+                var allOfficers = officersFromUsers
+                    .Concat(officersFromLogs)
+                    .Where(o => o.ReportingEmployeeCode != null)
+                    .GroupBy(o => o.ReportingEmployeeCode)
+                    .Select(g => g.First())          
+                    .ToList();
+
+                responseModel.Message = allOfficers.Any()
+                    ? "Data fetched successfully"
+                    : "No records found";
+
+                responseModel.StatusCode = HttpStatusCode.OK;
+                responseModel.Data = allOfficers;
+                responseModel.TotalRecords = allOfficers.Count;
+            }
+            catch (Exception ex)
+            {
+                responseModel.Message = "Internal Server Error";
+                responseModel.StatusCode = HttpStatusCode.InternalServerError;
+                responseModel.Error = true;
+                responseModel.ErrorDetail = ex;
+            }
+
+            return responseModel;
+        }
 
 
         #endregion

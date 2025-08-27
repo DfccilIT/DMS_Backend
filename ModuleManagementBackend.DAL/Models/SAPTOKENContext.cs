@@ -27,12 +27,15 @@ namespace ModuleManagementBackend.DAL.Models
         public virtual DbSet<MstDepartment> MstDepartments { get; set; }
         public virtual DbSet<MstEmployeeDependent> MstEmployeeDependents { get; set; }
         public virtual DbSet<MstEmployeeMaster> MstEmployeeMasters { get; set; }
+        public virtual DbSet<MstEmployeeMaster_Log> MstEmployeeMaster_Logs { get; set; }
         public virtual DbSet<MstPost> MstPosts { get; set; }
         public virtual DbSet<MstUnit> MstUnits { get; set; }
         public virtual DbSet<RegisterContractEmployee> RegisterContractEmployees { get; set; }
         public virtual DbSet<SMSLogDetail> SMSLogDetails { get; set; }
         public virtual DbSet<UnitNameDetail> UnitNameDetails { get; set; }
         public virtual DbSet<kraUser> kraUsers { get; set; }
+        public virtual DbSet<kraUserlog> kraUserlogs { get; set; }
+        public virtual DbSet<kraformRejectedLog> kraformRejectedLogs { get; set; }
         public virtual DbSet<mstPositionGreade> mstPositionGreades { get; set; }
         public virtual DbSet<tblDeviceOTP> tblDeviceOTPs { get; set; }
         public virtual DbSet<tblDownLoadLog> tblDownLoadLogs { get; set; }
@@ -117,6 +120,10 @@ namespace ModuleManagementBackend.DAL.Models
                 entity.Property(e => e.NewEmail)
                     .IsRequired()
                     .HasMaxLength(150);
+
+                entity.Property(e => e.OldEmail)
+                    .HasMaxLength(500)
+                    .IsUnicode(false);
 
                 entity.Property(e => e.UserEmpCode)
                     .IsRequired()
@@ -425,6 +432,107 @@ namespace ModuleManagementBackend.DAL.Models
                 entity.Property(e => e.emailAddress).HasMaxLength(50);
             });
 
+            modelBuilder.Entity<MstEmployeeMaster_Log>(entity =>
+            {
+                entity.HasKey(e => e.EmployeeMasterLogAutoId);
+
+                entity.ToTable("MstEmployeeMaster_Log");
+
+                entity.Property(e => e.DITSDOARailway).HasMaxLength(255);
+
+                entity.Property(e => e.DOAbsconding).HasMaxLength(255);
+
+                entity.Property(e => e.DOAbsorption).HasColumnType("datetime");
+
+                entity.Property(e => e.DOB).HasColumnType("datetime");
+
+                entity.Property(e => e.DOJDFCCIL).HasColumnType("datetime");
+
+                entity.Property(e => e.DORecruiting).HasColumnType("datetime");
+
+                entity.Property(e => e.DOReemployment).HasMaxLength(255);
+
+                entity.Property(e => e.DORepatriation).HasMaxLength(255);
+
+                entity.Property(e => e.DORetirement).HasColumnType("datetime");
+
+                entity.Property(e => e.DOTEnds).HasMaxLength(255);
+
+                entity.Property(e => e.DOfirstPromotion).HasColumnType("datetime");
+
+                entity.Property(e => e.DOletter).HasMaxLength(255);
+
+                entity.Property(e => e.DOsecondPromotion).HasColumnType("datetime");
+
+                entity.Property(e => e.DOthirdPromotion).HasMaxLength(255);
+
+                entity.Property(e => e.DepExtensionuptodate).HasColumnType("datetime");
+
+                entity.Property(e => e.DepTenurecompletiondate).HasColumnType("datetime");
+
+                entity.Property(e => e.DeptDFCCIL).HasMaxLength(255);
+
+                entity.Property(e => e.DeputationTenure).HasColumnType("numeric(9, 2)");
+
+                entity.Property(e => e.EmpSubgroup).HasMaxLength(255);
+
+                entity.Property(e => e.EmployeeCode).HasMaxLength(50);
+
+                entity.Property(e => e.EthnicOrigin).HasMaxLength(255);
+
+                entity.Property(e => e.GazettedNonGazetted).HasMaxLength(255);
+
+                entity.Property(e => e.Gender).HasMaxLength(255);
+
+                entity.Property(e => e.GenericDesignation).HasMaxLength(255);
+
+                entity.Property(e => e.LastDesignation).HasMaxLength(255);
+
+                entity.Property(e => e.Location).HasMaxLength(255);
+
+                entity.Property(e => e.Mobile).HasMaxLength(50);
+
+                entity.Property(e => e.Modify_By).HasMaxLength(100);
+
+                entity.Property(e => e.Modify_Date).HasColumnType("datetime");
+
+                entity.Property(e => e.Modify_IP).HasMaxLength(100);
+
+                entity.Property(e => e.ParentRailway).HasMaxLength(255);
+
+                entity.Property(e => e.PersonnelArea).HasMaxLength(255);
+
+                entity.Property(e => e.PersonnelSubArea).HasMaxLength(255);
+
+                entity.Property(e => e.PositionGrade).HasMaxLength(255);
+
+                entity.Property(e => e.Positions).HasColumnType("numeric(9, 0)");
+
+                entity.Property(e => e.Post).HasMaxLength(255);
+
+                entity.Property(e => e.Pwd).HasMaxLength(100);
+
+                entity.Property(e => e.RBFileNo).HasMaxLength(255);
+
+                entity.Property(e => e.Religion).HasMaxLength(255);
+
+                entity.Property(e => e.ReportingOfficer).HasMaxLength(100);
+
+                entity.Property(e => e.Services).HasMaxLength(255);
+
+                entity.Property(e => e.Status).HasDefaultValueSql("((0))");
+
+                entity.Property(e => e.SubDeptDF).HasMaxLength(255);
+
+                entity.Property(e => e.TOemploy).HasMaxLength(255);
+
+                entity.Property(e => e.UserName).HasMaxLength(255);
+
+                entity.Property(e => e.UserType).HasDefaultValueSql("((0))");
+
+                entity.Property(e => e.emailAddress).HasMaxLength(50);
+            });
+
             modelBuilder.Entity<MstPost>(entity =>
             {
                 entity.HasNoKey();
@@ -563,6 +671,36 @@ namespace ModuleManagementBackend.DAL.Models
                     .WithMany(p => p.kraUsers)
                     .HasForeignKey(d => d.fkAutoId)
                     .HasConstraintName("FK__kraUser__fkAutoI__64B8AF6C");
+            });
+
+            modelBuilder.Entity<kraUserlog>(entity =>
+            {
+                entity.HasKey(e => e.pkkarUserLogId);
+
+                entity.ToTable("kraUserlog", "form");
+
+                entity.Property(e => e.modifydate).HasColumnType("datetime");
+            });
+
+            modelBuilder.Entity<kraformRejectedLog>(entity =>
+            {
+                entity.HasKey(e => e.pkkraformRejectedLog)
+                    .HasName("PK__kraformR__F7895E31660E95F5");
+
+                entity.ToTable("kraformRejectedLog", "form");
+
+                entity.Property(e => e.CreatedDate)
+                    .HasColumnType("datetime")
+                    .HasDefaultValueSql("(getdate())");
+
+                entity.Property(e => e.TargetDate).HasColumnType("date");
+
+                entity.Property(e => e.Weightage).HasColumnType("decimal(10, 2)");
+
+                entity.HasOne(d => d.fkUser)
+                    .WithMany(p => p.kraformRejectedLogs)
+                    .HasForeignKey(d => d.fkUserId)
+                    .HasConstraintName("FK__kraformRe__fkUse__2157A958");
             });
 
             modelBuilder.Entity<mstPositionGreade>(entity =>

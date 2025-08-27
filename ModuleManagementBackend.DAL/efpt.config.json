@@ -56,6 +56,10 @@
          "ObjectType": 0
       },
       {
+         "Name": "[dbo].[MstEmployeeMaster_Log]",
+         "ObjectType": 0
+      },
+      {
          "Name": "[dbo].[mstPositionGreades]",
          "ObjectType": 0
       },
@@ -104,7 +108,15 @@
          "ObjectType": 0
       },
       {
+         "Name": "[form].[kraformRejectedLog]",
+         "ObjectType": 0
+      },
+      {
          "Name": "[form].[kraUser]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[form].[kraUserlog]",
          "ObjectType": 0
       }
    ],

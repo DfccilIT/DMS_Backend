@@ -5,13 +5,8 @@ using System.Collections.Generic;
 
 namespace ModuleManagementBackend.DAL.Models
 {
-    public partial class kraUser
+    public partial class kraUserlog
     {
-        public kraUser()
-        {
-            kraformRejectedLogs = new HashSet<kraformRejectedLog>();
-        }
-
         public int pkKraUser { get; set; }
         public long? fkAutoId { get; set; }
         public string Session { get; set; }
@@ -24,12 +19,7 @@ namespace ModuleManagementBackend.DAL.Models
         public string reportingDept { get; set; }
         public string reportingpop { get; set; }
         public string remarks { get; set; }
-        public int? ReviseState { get; set; }
-        public DateTime? createdDate { get; set; }
-        public DateTime? ApprovedDate { get; set; }
-        public DateTime? modifiedDate { get; set; }
-
-        public virtual MstEmployeeMaster fkAuto { get; set; }
-        public virtual ICollection<kraformRejectedLog> kraformRejectedLogs { get; set; }
+        public int pkkarUserLogId { get; set; }
+        public DateTime? modifydate { get; set; }
     }
 }
