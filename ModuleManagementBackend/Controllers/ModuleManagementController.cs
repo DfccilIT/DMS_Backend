@@ -1,13 +1,9 @@
-﻿using Dapper;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ModuleManagementBackend.BAL.IServices;
-using ModuleManagementBackend.BAL.Services;
 using ModuleManagementBackend.DAL.DapperServices;
 using ModuleManagementBackend.Model.Common;
 using ModuleManagementBackend.Model.DTOs.EditEmployeeDTO;
-using ModuleManagementBackend.Model.DTOs.GETEMPLOYEEDTO;
-using System.Data;
 using System.Net;
 using static ModuleManagementBackend.BAL.Services.AccountService;
 
