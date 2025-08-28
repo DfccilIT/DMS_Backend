@@ -1604,7 +1604,7 @@ namespace ModuleManagementBackend.BAL.Services
                 existingDependent.updatedBy = loginUserEmpCode;
                 existingDependent.updatedDate = DateTime.Now.Date;
 
-              
+                context.MstEmployeeDependents.Update(existingDependent);
                 await context.SaveChangesAsync();
 
 
@@ -2607,6 +2607,8 @@ namespace ModuleManagementBackend.BAL.Services
                 return response;
             }
         }
+
+       
         public async Task<ResponseModel> GetEmployeeProfile(string EmpCode)
         {
             try
@@ -3044,7 +3046,7 @@ namespace ModuleManagementBackend.BAL.Services
                 holiday.UpdatedBy = loginUserId;
                 holiday.UpdatedDate = DateTime.Now;
 
-              
+                context.MasterHolidayCalendars.Update(holiday);
                 await context.SaveChangesAsync();
 
                 responseModel.Message = "Holiday updated successfully";
@@ -3081,7 +3083,7 @@ namespace ModuleManagementBackend.BAL.Services
                 holiday.UpdatedBy = loginUserId;
                 holiday.UpdatedDate = DateTime.Now;
 
-                
+                context.MasterHolidayCalendars.Update(holiday);
                 await context.SaveChangesAsync();
 
                 responseModel.Message = "Holiday deleted successfully";
@@ -3371,6 +3373,8 @@ namespace ModuleManagementBackend.BAL.Services
                 user.Modify_By = userEmpCode;
                 user.Modify_Date = DateTime.Now;
                 otpRecord.status = 9;
+
+                context.MstEmployeeMasters.Update(user);
                 await context.SaveChangesAsync();
 
                 response.Message = "Mobile number updated successfully.";
@@ -3518,7 +3522,8 @@ namespace ModuleManagementBackend.BAL.Services
 
                 request.IsUsed = true;
 
-               
+                context.MstEmployeeMasters.Update(user);
+                context.EmailChangeRequests.Update(request);
                 await context.SaveChangesAsync();
 
                 response.Message = "Official email updated successfully.";
@@ -3602,6 +3607,7 @@ namespace ModuleManagementBackend.BAL.Services
         #endregion
 
         #region KRA Reporting Officer
+
         public async Task<ResponseModel> GetKraReporingOfficer(string empCode, DateTime startDate, DateTime endDate)
         {
             var responseModel = new ResponseModel();
