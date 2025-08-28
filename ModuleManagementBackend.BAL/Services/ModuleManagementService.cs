@@ -33,7 +33,7 @@ namespace ModuleManagementBackend.BAL.Services
         private readonly IDatabaseChangesService _dbChangeService;
         private readonly ILogger<ModuleManagementService> _logger;
         private readonly string baseUrl;
-       
+
 
         public ModuleManagementService(SAPTOKENContext _context, IDapperService _dapper, IHttpContextAccessor _httpContext, IConfiguration _configuration, ICacheService CacheService, IDatabaseChangesService DbChangeService, ILogger<ModuleManagementService> logger)
         {
@@ -47,7 +47,7 @@ namespace ModuleManagementBackend.BAL.Services
             _cacheService = CacheService;
             _dbChangeService = DbChangeService;
             _logger = logger;
-           
+
         }
 
         public async Task<ResponseModel> EditEmployeeProfileAsync(EditEmployeeDto dto)
@@ -1653,13 +1653,19 @@ namespace ModuleManagementBackend.BAL.Services
                     return response;
                 }
                 string basePath = string.Empty;
+                string baseImagePath = string.Empty;
+                string baseDestinationImagePath = string.Empty;
                 if (configuration["DeploymentModes"]=="DFCCIL_UAT")
                 {
                     basePath = configuration["ContractEmployeeDocumentPathUat"] ?? string.Empty;
+                    baseImagePath = configuration["ContractEmployeeImagePathUat"] ?? string.Empty;
+                    baseDestinationImagePath = configuration["EmployeeImagePathUat"] ?? string.Empty;
                 }
                 else
                 {
                     basePath = configuration["ContractEmployeeDocumentPathProd"] ?? string.Empty;
+                    baseImagePath = configuration["ContractEmployeeImagePathProd"] ?? string.Empty;
+                    baseDestinationImagePath = configuration["EmployeeImagePathProd"] ?? string.Empty;
                 }
 
                 var oldFileName = existingEmployee.AppointmentDoc ?? string.Empty;
@@ -1682,6 +1688,30 @@ namespace ModuleManagementBackend.BAL.Services
                     existingEmployee.UpdatedDate = DateTime.Now;
 
 
+                    string sourcePath = baseImagePath+existingEmployee.ProfilePhoto;
+
+                    string fileName = $"{Guid.NewGuid()}{newEmpCode}{Path.GetExtension(existingEmployee.ProfilePhoto)}";
+                    string destinationPath = baseDestinationImagePath+fileName;
+
+                    try
+                    {
+
+                        string destDir = Path.GetDirectoryName(destinationPath);
+                        if (!Directory.Exists(destDir))
+                        {
+                            Directory.CreateDirectory(destDir);
+                        }
+
+
+                        File.Copy(sourcePath, destinationPath, true);
+
+                        Console.WriteLine("Image copied successfully!");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error: {ex.Message}");
+                    }
+
                     var mstEmployee = new MstEmployeeMaster
                     {
                         EmployeeCode = newEmpCode,
@@ -1694,6 +1724,7 @@ namespace ModuleManagementBackend.BAL.Services
                         Gender = existingEmployee.Gender,
                         DOB = existingEmployee.DOB,
                         DOJDFCCIL = existingEmployee.DOJDFCCIL,
+                        Photo= fileName,
                         Status = 0,
                         Modify_Date = DateTime.Now,
                         Modify_By = LoginUserId
@@ -1727,6 +1758,7 @@ namespace ModuleManagementBackend.BAL.Services
                     }
 
                     context.MstContractEmployeeMasters.Add(mstContract);
+
                 }
                 else
                 {
@@ -1796,7 +1828,8 @@ namespace ModuleManagementBackend.BAL.Services
                         e.CreateDate,
                         e.UpdatedDate,
                         e.UpdatedBy,
-                        AppointmentDoc = e.AppointmentDoc!=null ? $"{baseUrl}/DocUpload/OfficeOrder/{e.AppointmentDoc}" : null
+                        AppointmentDoc = e.AppointmentDoc!=null ? $"{baseUrl}/DocUpload/OfficeOrder/{e.AppointmentDoc}" : null,
+                        ImageUrl = e.ProfilePhoto!=null ? $"{baseUrl}/DocUpload/ProfilePhoto/{e.ProfilePhoto}" : null
                     })
                     .ToListAsync();
 
@@ -2608,7 +2641,7 @@ namespace ModuleManagementBackend.BAL.Services
             }
         }
 
-       
+
         public async Task<ResponseModel> GetEmployeeProfile(string EmpCode)
         {
             try
@@ -3528,7 +3561,7 @@ namespace ModuleManagementBackend.BAL.Services
 
                 response.Message = "Official email updated successfully.";
                 response.StatusCode = HttpStatusCode.OK;
-                response.Data = user.emailAddress ;
+                response.Data = user.emailAddress;
             }
             catch (Exception ex)
             {
@@ -3552,7 +3585,7 @@ namespace ModuleManagementBackend.BAL.Services
                     return response;
                 }
 
-                ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12; 
+                ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
 
 
 
@@ -3619,7 +3652,7 @@ namespace ModuleManagementBackend.BAL.Services
                     .Select(x => x.EmployeeMasterAutoId)
                     .FirstOrDefaultAsync();
                 var IsExistsinMaster = context.MstEmployeeMasters.Where(x => x.EmployeeMasterAutoId==autoId).FirstOrDefault();
-                
+
                 var officersFromUsers = await context.kraUsers
                     .Where(x =>
                         x.fkAutoId == autoId &&
@@ -3650,14 +3683,14 @@ namespace ModuleManagementBackend.BAL.Services
                     })
                     .ToListAsync();
 
-               
+
                 var allRecords = officersFromUsers
                     .Concat(officersFromLogs)
                     .Where(o => o.ReportingEmployeeCode != null)
                     .OrderBy(o => o.StartDate)
                     .ToList();
 
-                
+
                 var finalList = allRecords
                     .Select((o, i) => new
                     {

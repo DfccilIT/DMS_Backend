@@ -21,6 +21,7 @@ namespace ModuleManagementBackend.DAL.Models
         public string forwhat { get; set; }
         public string Remarks { get; set; }
         public string reportingOfficer { get; set; }
+        public string DueTo { get; set; }
 
         public virtual kraUser fkUser { get; set; }
     }

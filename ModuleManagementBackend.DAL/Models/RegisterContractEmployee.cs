@@ -25,6 +25,7 @@ namespace ModuleManagementBackend.DAL.Models
         public DateTime? UpdatedDate { get; set; }
         public string UpdatedBy { get; set; }
         public int? ParentOrganzation { get; set; }
+        public string ProfilePhoto { get; set; }
 
         public virtual MstContractMaster ParentOrganzationNavigation { get; set; }
         public virtual MstContractMaster fkContract { get; set; }
