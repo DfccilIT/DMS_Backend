@@ -349,7 +349,7 @@ namespace ModuleManagementBackend.API.Controllers
         }
 
         [HttpGet("GetReportingOfficers")]
-        [AllowAnonymous]
+       
         public async Task<ResponseModel> GetReportingOfficers(string empCode, DateTime startDate, DateTime endDate)
         {
             var result = await managementService.GetKraReporingOfficer(empCode, startDate, endDate);

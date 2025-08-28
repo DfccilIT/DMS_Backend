@@ -396,7 +396,6 @@ namespace ModuleManagementBackend.BAL.Services
 
             return response;
         }
-
         public async Task<ResponseModel> GetAllReportingOfficerRequest(string? employeeCode = null, string? location = null, string? userName = null)
         {
 
@@ -572,7 +571,6 @@ namespace ModuleManagementBackend.BAL.Services
                 return responseModel;
             }
         }
-
         public async Task<ResponseModel> UpdateDfccilDirectory(UpdateEmployeeDto updateDto)
         {
             ResponseModel responseModel = new ResponseModel();
@@ -1606,7 +1604,7 @@ namespace ModuleManagementBackend.BAL.Services
                 existingDependent.updatedBy = loginUserEmpCode;
                 existingDependent.updatedDate = DateTime.Now.Date;
 
-                context.MstEmployeeDependents.Update(existingDependent);
+              
                 await context.SaveChangesAsync();
 
 
@@ -1857,8 +1855,6 @@ namespace ModuleManagementBackend.BAL.Services
 
             return response;
         }
-
-        #endregion
         public ResponseModel GetEditEmployeeStatus(string EmployeeCode)
         {
             var response = new ResponseModel();
@@ -1897,6 +1893,9 @@ namespace ModuleManagementBackend.BAL.Services
 
             return response;
         }
+
+        #endregion
+
 
         #region Notifiaction Methods
         public async Task<PagedResponseModel> GetSMSLogDetailsPaginatedAsync(SMSLogRequest request)
@@ -2071,7 +2070,6 @@ namespace ModuleManagementBackend.BAL.Services
                 return response;
             }
         }
-
         public async Task<ResponseModel> GetToDoListAsync(string employeeCode = "0")
         {
             var response = new ResponseModel();
@@ -2609,52 +2607,6 @@ namespace ModuleManagementBackend.BAL.Services
                 return response;
             }
         }
-
-        //public async Task<ResponseModel> GetEmployeeProfile(string EmpCode)
-        //{
-        //    try
-        //    {
-        //        var cacheKey = $"GetEmployeeProfile_{EmpCode ?? "X"}";
-        //        var versionCacheKey = $"{cacheKey}_version";
-
-
-        //        var currentDataVersion = await _dbChangeService.GetDataVersionAsync();
-
-
-        //        var cachedVersion = await _cacheService.GetAsync<long?>(versionCacheKey);
-
-        //        if (cachedVersion == null || cachedVersion != currentDataVersion)
-        //        {
-
-        //            await _cacheService.RemoveAsync(cacheKey);
-
-
-        //            await _cacheService.SetAsync(versionCacheKey, currentDataVersion, TimeSpan.FromHours(2));
-
-        //            _logger.LogInformation("Data version changed, cache invalidated");
-        //        }
-
-        //        var responseModel = await _cacheService.GetOrSetAsync(
-        //            cacheKey,
-        //            async () => await GetEmployeeProfileData(EmpCode),
-        //            TimeSpan.FromMinutes(30),
-        //            TimeSpan.FromHours(2)
-        //        );
-        //       // responseModel.Message=$"Data:{currentDataVersion},Cache:{cachedVersion}";
-
-
-        //        return responseModel;
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        _logger.LogError(ex, "Error in GetEmployeeProfile");
-        //        return new ResponseModel
-        //        {
-        //            Message = $"An error occurred: {ex.Message}",
-        //            StatusCode = HttpStatusCode.InternalServerError
-        //        };
-        //    }
-        //}
         public async Task<ResponseModel> GetEmployeeProfile(string EmpCode)
         {
             try
@@ -2966,7 +2918,6 @@ namespace ModuleManagementBackend.BAL.Services
                 return responseModel;
             }
         }
-
         public async Task<ResponseModel> GetHolidaysByDateRange(DateTime? fromDate = null, DateTime? toDate = null, int? unitId = null)
         {
             ResponseModel responseModel = new ResponseModel();
@@ -3021,7 +2972,6 @@ namespace ModuleManagementBackend.BAL.Services
                 return responseModel;
             }
         }
-
         public async Task<ResponseModel> CreateHoliday(CreateHolidayCalendarDto createHolidayDto, string loginUserId)
         {
             ResponseModel responseModel = new ResponseModel();
@@ -3070,7 +3020,6 @@ namespace ModuleManagementBackend.BAL.Services
                 return responseModel;
             }
         }
-
         public async Task<ResponseModel> UpdateHoliday(UpdateHolidayCalendarDto updateHolidayDto, string loginUserId)
         {
             ResponseModel responseModel = new ResponseModel();
@@ -3095,7 +3044,7 @@ namespace ModuleManagementBackend.BAL.Services
                 holiday.UpdatedBy = loginUserId;
                 holiday.UpdatedDate = DateTime.Now;
 
-                context.MasterHolidayCalendars.Update(holiday);
+              
                 await context.SaveChangesAsync();
 
                 responseModel.Message = "Holiday updated successfully";
@@ -3112,7 +3061,6 @@ namespace ModuleManagementBackend.BAL.Services
                 return responseModel;
             }
         }
-
         public async Task<ResponseModel> DeleteHoliday(int holidayId, string? loginUserId = null)
         {
             ResponseModel responseModel = new ResponseModel();
@@ -3133,7 +3081,7 @@ namespace ModuleManagementBackend.BAL.Services
                 holiday.UpdatedBy = loginUserId;
                 holiday.UpdatedDate = DateTime.Now;
 
-                context.MasterHolidayCalendars.Update(holiday);
+                
                 await context.SaveChangesAsync();
 
                 responseModel.Message = "Holiday deleted successfully";
@@ -3150,7 +3098,6 @@ namespace ModuleManagementBackend.BAL.Services
                 return responseModel;
             }
         }
-
         public async Task<ResponseModel> BulkCreateHolidays(List<CreateHolidayCalendarDto> holidays, string loginUserId)
         {
             ResponseModel responseModel = new ResponseModel();
@@ -3205,7 +3152,6 @@ namespace ModuleManagementBackend.BAL.Services
                 return responseModel;
             }
         }
-
         public async Task<ResponseModel> UploadHolidaysFromExcel(IFormFile file, int unitId, string unitName, string loginUserId)
         {
             var responseModel = new ResponseModel();
@@ -3425,8 +3371,6 @@ namespace ModuleManagementBackend.BAL.Services
                 user.Modify_By = userEmpCode;
                 user.Modify_Date = DateTime.Now;
                 otpRecord.status = 9;
-
-                context.MstEmployeeMasters.Update(user);
                 await context.SaveChangesAsync();
 
                 response.Message = "Mobile number updated successfully.";
@@ -3574,8 +3518,7 @@ namespace ModuleManagementBackend.BAL.Services
 
                 request.IsUsed = true;
 
-                context.MstEmployeeMasters.Update(user);
-                context.EmailChangeRequests.Update(request);
+               
                 await context.SaveChangesAsync();
 
                 response.Message = "Official email updated successfully.";
@@ -3591,7 +3534,6 @@ namespace ModuleManagementBackend.BAL.Services
             }
             return response;
         }
-
         private async Task<ResponseModel> SendEmailNotificationAsync(string email, string userName, string verificationLink)
         {
             var response = new ResponseModel();
@@ -3660,7 +3602,6 @@ namespace ModuleManagementBackend.BAL.Services
         #endregion
 
         #region KRA Reporting Officer
-
         public async Task<ResponseModel> GetKraReporingOfficer(string empCode, DateTime startDate, DateTime endDate)
         {
             var responseModel = new ResponseModel();
@@ -3671,22 +3612,23 @@ namespace ModuleManagementBackend.BAL.Services
                     .Where(x => x.EmployeeCode == empCode)
                     .Select(x => x.EmployeeMasterAutoId)
                     .FirstOrDefaultAsync();
-
-              
+                var IsExistsinMaster = context.MstEmployeeMasters.Where(x => x.EmployeeMasterAutoId==autoId).FirstOrDefault();
+                
                 var officersFromUsers = await context.kraUsers
                     .Where(x =>
                         x.fkAutoId == autoId &&
                         x.ApprovedDate >= startDate &&
-                        x.ApprovedDate <= endDate)
+                        x.ApprovedDate <= endDate &&
+                       (IsExistsinMaster.ReportingOfficer==x.reportingAutoId))
                     .Select(x => new
                     {
-                      ReportingEmployeeCode=  x.reportingAutoId,
+                        ReportingEmployeeCode = x.reportingAutoId,
                         x.reportingPost,
-                        x.reportingDept
+                        x.reportingDept,
+                        StartDate = IsExistsinMaster.Modify_Date
                     })
                     .ToListAsync();
 
-             
                 var officersFromLogs = await context.kraUserlogs
                     .Where(x =>
                         x.status == 9 &&
@@ -3695,27 +3637,39 @@ namespace ModuleManagementBackend.BAL.Services
                         x.modifydate <= endDate)
                     .Select(x => new
                     {
-                        ReportingEmployeeCode= x.reportingAutoId,
+                        ReportingEmployeeCode = x.reportingAutoId,
                         x.reportingPost,
-                        x.reportingDept
+                        x.reportingDept,
+                        StartDate = x.modifydate
                     })
                     .ToListAsync();
 
-                
-                var allOfficers = officersFromUsers
+               
+                var allRecords = officersFromUsers
                     .Concat(officersFromLogs)
                     .Where(o => o.ReportingEmployeeCode != null)
-                    .GroupBy(o => o.ReportingEmployeeCode)
-                    .Select(g => g.First())          
+                    .OrderBy(o => o.StartDate)
                     .ToList();
 
-                responseModel.Message = allOfficers.Any()
+                
+                var finalList = allRecords
+                    .Select((o, i) => new
+                    {
+                        o.ReportingEmployeeCode,
+                        o.reportingPost,
+                        o.reportingDept,
+                        FromDate = o.StartDate,
+                        ToDate = (i < allRecords.Count - 1) ? allRecords[i + 1].StartDate : (DateTime?)null
+                    })
+                    .ToList();
+
+                responseModel.Message = finalList.Any()
                     ? "Data fetched successfully"
                     : "No records found";
 
                 responseModel.StatusCode = HttpStatusCode.OK;
-                responseModel.Data = allOfficers;
-                responseModel.TotalRecords = allOfficers.Count;
+                responseModel.Data = finalList;
+                responseModel.TotalRecords = finalList.Count;
             }
             catch (Exception ex)
             {
