@@ -187,9 +187,9 @@ namespace ModuleManagementBackend.BAL.Services
                 }
 
                
-                Compare("employeeCode", x.mm.EmployeeCode, x.ee.EmployeeCode);
-                Compare("userName", x.mm.UserName, x.ee.UserName);
-                Compare("gender", x.mm.Gender, x.ee.Gender);
+                Compare("employeeCode", x.mm.EmployeeCode, x.ee.EmployeeCode,alwaysInclude: true);
+                Compare("userName", x.mm.UserName, x.ee.UserName,alwaysInclude: true);
+                Compare("gender", x.mm.Gender, x.ee.Gender, alwaysInclude: true);
                 Compare("designation", x.mm.Post, x.ee.Designation, alwaysInclude: true); 
                 Compare("positionGrade", x.mm.PositionGrade, x.ee.PositionGrade);
                 Compare("department", x.mm.DeptDFCCIL, x.ee.Department, alwaysInclude: true); 
