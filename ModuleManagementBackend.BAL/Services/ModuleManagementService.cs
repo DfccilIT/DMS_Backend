@@ -93,11 +93,11 @@ namespace ModuleManagementBackend.BAL.Services
                 (dto.DateOfAnniversary.HasValue && dto.DateOfAnniversary != master.AnniversaryDate) ||
                 (dto.DateOfJoining.HasValue && dto.DateOfJoining != master.DOJDFCCIL) ||
                 (!string.IsNullOrWhiteSpace(dto.Location) && dto.Location != master.Location) ||
-                (!string.IsNullOrWhiteSpace(dto.Mobile) && dto.Mobile != master.Mobile) ||
-                (!string.IsNullOrWhiteSpace(dto.Email) && dto.Email != master.emailAddress) ||
-                (!string.IsNullOrWhiteSpace(dto.PersonalEmailId) && dto.PersonalEmailId != master.PersonalEmailAddress) ||
-                (!string.IsNullOrWhiteSpace(dto.Toemploy) && dto.Toemploy != master.TOemploy) ||
-                (!string.IsNullOrWhiteSpace(dto.ExtensionNo) && dto.ExtensionNo != master.ExtnNo);
+                //(!string.IsNullOrWhiteSpace(dto.Mobile) && dto.Mobile != master.Mobile) ||
+                //(!string.IsNullOrWhiteSpace(dto.Email) && dto.Email != master.emailAddress) ||
+                //(!string.IsNullOrWhiteSpace(dto.PersonalEmailId) && dto.PersonalEmailId != master.PersonalEmailAddress) ||
+                (!string.IsNullOrWhiteSpace(dto.Toemploy) && dto.Toemploy != master.TOemploy);
+                //(!string.IsNullOrWhiteSpace(dto.ExtensionNo) && dto.ExtensionNo != master.ExtnNo);
 
             if (!isDifferent)
             {
@@ -119,11 +119,11 @@ namespace ModuleManagementBackend.BAL.Services
                 DateOfAnniversary = dto.DateOfAnniversary,
                 DateOfJoining = dto.DateOfJoining,
                 Location = dto.Location,
-                Mobile = dto.Mobile,
-                Email = dto.Email,
-                PersonalEmailId = dto.PersonalEmailId,
+                //Mobile = dto.Mobile,
+                //Email = dto.Email,
+                //PersonalEmailId = dto.PersonalEmailId,
                 Toemploy = dto.Toemploy,
-                ExtensionNo = dto.ExtensionNo,
+                //ExtensionNo = dto.ExtensionNo,
                 status = 99,
                 remarks = "Pending update",
                 TableName = "P"
@@ -137,100 +137,90 @@ namespace ModuleManagementBackend.BAL.Services
             response.Data = entity;
             return response;
         }
-        public async Task<ResponseModel> GetAllEditEmployeeRequests(string? employeeCode = null, string? location = null, string? userName = null, string? empcode = null, string? autoId = null)
+        public async Task<ResponseModel> GetAllEditEmployeeRequests(
+      string? employeeCode = null,
+      string? location = null,
+      string? userName = null,
+      string? empcode = null,
+      string? autoId = null)
         {
-
-
             ResponseModel responseModel = new ResponseModel();
 
-
-
-
             var query = context.EditEmployeeDetails
-             .Join(context.MstEmployeeMasters,
-                   ee => ee.EmployeeCode,
-                   mm => mm.EmployeeCode,
-                   (ee, mm) => new { ee, mm })
-
-
-                .Where(e => e.ee.status == 99 && e.ee.TableName=="P");
-
+                .Join(context.MstEmployeeMasters,
+                    ee => ee.EmployeeCode,
+                    mm => mm.EmployeeCode,
+                    (ee, mm) => new { ee, mm })
+                .Where(e => e.ee.status == 99 && e.ee.TableName == "P");
 
             if (!string.IsNullOrWhiteSpace(employeeCode))
-            {
                 query = query.Where(e => e.ee.EmployeeCode == employeeCode);
-            }
 
             if (!string.IsNullOrWhiteSpace(location))
-            {
                 query = query.Where(e => e.ee.Location != null && e.ee.Location.Contains(location));
-            }
 
             if (!string.IsNullOrWhiteSpace(userName))
-            {
                 query = query.Where(e => e.ee.UserName != null && e.ee.UserName.Contains(userName));
-            }
 
-            var result = await query.Select(x => new
+            var tempResult = await query
+                .OrderByDescending(x => x.ee.EdtEmpDetID)
+                .ToListAsync();
+
+            var result = tempResult.Select(x =>
             {
-                RequestId = x.ee.EdtEmpDetID,
-                OldRecored = new
+                var oldData = new Dictionary<string, object?>();
+                var newData = new Dictionary<string, object?>();
+
+                string Normalize(object? val)
                 {
-                    x.mm.EmployeeCode,
-                    x.mm.UserName,
-                    x.mm.Gender,
-                    Designation = x.mm.Post,
-                    x.mm.PositionGrade,
-                    Department = x.mm.DeptDFCCIL,
-                    //SubDepartment = x.mm.SubDeptDF,
-                    x.mm.DOB,
-                    DateOfAnniversary = x.mm.AnniversaryDate,
-                    DateOfJoining = x.mm.DOJDFCCIL,
-                    x.mm.Location,
-                    //SubArea = x.mm.PersonnelSubArea,
-                    x.mm.Mobile,
-                    x.mm.emailAddress,
-                    x.mm.PersonalEmailAddress,
-                    TOemploy = x.mm.TOemploy,
-                    x.mm.AboutUs,
-                    x.mm.Photo,
-                    x.mm.ReportingOfficer,
-                    ExtensionNo = x.mm.ExtnNo,
+                    if (val == null) return "";
+                    return val.ToString()?.Trim().ToLower() ?? "";
+                }
 
-                },
-                NewRecords = new
+                void Compare(string field, object? oldVal, object? newVal, bool alwaysInclude = false)
                 {
-                    x.ee.EmployeeCode,
-                    x.ee.UserName,
-                    x.ee.Gender,
-                    x.ee.Designation,
-                    x.ee.PositionGrade,
-                    x.ee.Department,
-                    //x.ee.SubDepartment,
-                    x.ee.DOB,
-                    x.ee.DateOfAnniversary,
-                    x.ee.DateOfJoining,
-                    x.ee.Location,
-                    //x.ee.SubArea,
-                    x.ee.Mobile,
-                    emailAddress = x.ee.Email,
-                    PersonalEmailAddress = x.ee.PersonalEmailId,
-                    TOemploy = x.ee.Toemploy,
-                    x.ee.AboutUs,
-                    x.ee.Photo,
-                    x.ee.ReportingOfficer,
-                    x.ee.ExtensionNo,
-                },
-            }).OrderByDescending(x => x.RequestId).ToListAsync();
+                    if (alwaysInclude || Normalize(oldVal) != Normalize(newVal))
+                    {
+                        oldData[field] = oldVal;
+                        newData[field] = newVal;
+                    }
+                }
 
+               
+                Compare("employeeCode", x.mm.EmployeeCode, x.ee.EmployeeCode);
+                Compare("userName", x.mm.UserName, x.ee.UserName);
+                Compare("gender", x.mm.Gender, x.ee.Gender);
+                Compare("designation", x.mm.Post, x.ee.Designation, alwaysInclude: true); 
+                Compare("positionGrade", x.mm.PositionGrade, x.ee.PositionGrade);
+                Compare("department", x.mm.DeptDFCCIL, x.ee.Department, alwaysInclude: true); 
+                Compare("dob", x.mm.DOB, x.ee.DOB);
+                Compare("dateOfAnniversary", x.mm.AnniversaryDate, x.ee.DateOfAnniversary);
+                Compare("dateOfJoining", x.mm.DOJDFCCIL, x.ee.DateOfJoining);
+                Compare("location", x.mm.Location, x.ee.Location);
+                Compare("mobile", x.mm.Mobile, x.ee.Mobile);
+                Compare("emailAddress", x.mm.emailAddress, x.ee.Email);
+                Compare("personalEmailAddress", x.mm.PersonalEmailAddress, x.ee.PersonalEmailId);
+                Compare("tOemploy", x.mm.TOemploy, x.ee.Toemploy);
+                Compare("aboutUs", x.mm.AboutUs, x.ee.AboutUs);
+                Compare("photo", x.mm.Photo, x.ee.Photo);
+                Compare("reportingOfficer", x.mm.ReportingOfficer, x.ee.ReportingOfficer);
+                Compare("extensionNo", x.mm.ExtnNo, x.ee.ExtensionNo);
 
-            responseModel.Message="Data fetched successfully";
-            responseModel.StatusCode=System.Net.HttpStatusCode.OK;
+                return new
+                {
+                    RequestId = x.ee.EdtEmpDetID,
+                    OldRecored = oldData,
+                    NewRecords = newData
+                };
+            }).ToList();
+
+            responseModel.Message = "Data fetched successfully";
+            responseModel.StatusCode = System.Net.HttpStatusCode.OK;
             responseModel.Data = result;
-            responseModel.TotalRecords= result.Count;
+            responseModel.TotalRecords = result.Count;
             return responseModel;
-
         }
+
         public async Task<ResponseModel> ProcessEditEmployeeRequest(AprooveEmployeeReportDto request)
         {
             var response = new ResponseModel();

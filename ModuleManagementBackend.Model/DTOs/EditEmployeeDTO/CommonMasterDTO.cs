@@ -127,11 +127,11 @@ namespace ModuleManagementBackend.Model.DTOs.EditEmployeeDTO
         public DateTime? DateOfJoining { get; set; }
 
         public string Location { get; set; }
-        public string Mobile { get; set; }
-        public string Email { get; set; }
-        public string PersonalEmailId { get; set; }
+       // public string Mobile { get; set; }
+        //public string Email { get; set; }
+       // public string PersonalEmailId { get; set; }
         public string Toemploy { get; set; }
-        public string ExtensionNo { get; set; }
+       // public string ExtensionNo { get; set; }
     }
     public class EditEmployeeReportDto
     {
