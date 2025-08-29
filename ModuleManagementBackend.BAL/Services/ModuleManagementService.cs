@@ -214,15 +214,11 @@ namespace ModuleManagementBackend.BAL.Services
                 Compare("dateOfAnniversary", x.mm.AnniversaryDate, x.ee.DateOfAnniversary);
                 Compare("dateOfJoining", x.mm.DOJDFCCIL, x.ee.DateOfJoining);
                
-                Compare("mobile", x.mm.Mobile, x.ee.Mobile);
-                Compare("emailAddress", x.mm.emailAddress, x.ee.Email);
-                Compare("personalEmailAddress", x.mm.PersonalEmailAddress, x.ee.PersonalEmailId);
+               
                 Compare("tOemploy", x.mm.TOemploy, x.ee.Toemploy);
                 Compare("aboutUs", x.mm.AboutUs, x.ee.AboutUs);
                 Compare("photo", x.mm.Photo, x.ee.Photo);
-                Compare("reportingOfficer", x.mm.ReportingOfficer, x.ee.ReportingOfficer);
-                Compare("extensionNo", x.mm.ExtnNo, x.ee.ExtensionNo);
-
+              
                 return new
                 {
                     RequestId = x.ee.EdtEmpDetID,
