@@ -138,11 +138,11 @@ namespace ModuleManagementBackend.BAL.Services
             return response;
         }
         public async Task<ResponseModel> GetAllEditEmployeeRequests(
-      string? employeeCode = null,
-      string? location = null,
-      string? userName = null,
-      string? empcode = null,
-      string? autoId = null)
+    string? employeeCode = null,
+    string? location = null,
+    string? userName = null,
+    string? empcode = null,
+    string? autoId = null)
         {
             ResponseModel responseModel = new ResponseModel();
 
@@ -179,24 +179,41 @@ namespace ModuleManagementBackend.BAL.Services
 
                 void Compare(string field, object? oldVal, object? newVal, bool alwaysInclude = false)
                 {
-                    if (alwaysInclude || Normalize(oldVal) != Normalize(newVal))
+                    if (alwaysInclude)
                     {
+                        
                         oldData[field] = oldVal;
-                        newData[field] = newVal;
+
+                        
+                        if (Normalize(oldVal) != Normalize(newVal))
+                        {
+                            newData[field] = newVal;
+                        }
+                    }
+                    else
+                    {
+                       
+                        if (Normalize(oldVal) != Normalize(newVal))
+                        {
+                            oldData[field] = oldVal;
+                            newData[field] = newVal;
+                        }
                     }
                 }
 
                
-                Compare("employeeCode", x.mm.EmployeeCode, x.ee.EmployeeCode,alwaysInclude: true);
-                Compare("userName", x.mm.UserName, x.ee.UserName,alwaysInclude: true);
-                Compare("gender", x.mm.Gender, x.ee.Gender, alwaysInclude: true);
-                Compare("designation", x.mm.Post, x.ee.Designation, alwaysInclude: true); 
+                Compare("employeeCode", x.mm.EmployeeCode, x.ee.EmployeeCode, alwaysInclude: true);
+                Compare("userName", x.mm.UserName, x.ee.UserName, alwaysInclude: true);
+                Compare("designation", x.mm.Post, x.ee.Designation, alwaysInclude: true);
+                Compare("department", x.mm.DeptDFCCIL, x.ee.Department, alwaysInclude: true);
+                Compare("location", x.mm.Location, x.ee.Location,alwaysInclude:true);
+
+                Compare("gender", x.mm.Gender, x.ee.Gender);
                 Compare("positionGrade", x.mm.PositionGrade, x.ee.PositionGrade);
-                Compare("department", x.mm.DeptDFCCIL, x.ee.Department, alwaysInclude: true); 
                 Compare("dob", x.mm.DOB, x.ee.DOB);
                 Compare("dateOfAnniversary", x.mm.AnniversaryDate, x.ee.DateOfAnniversary);
                 Compare("dateOfJoining", x.mm.DOJDFCCIL, x.ee.DateOfJoining);
-                Compare("location", x.mm.Location, x.ee.Location);
+               
                 Compare("mobile", x.mm.Mobile, x.ee.Mobile);
                 Compare("emailAddress", x.mm.emailAddress, x.ee.Email);
                 Compare("personalEmailAddress", x.mm.PersonalEmailAddress, x.ee.PersonalEmailId);
@@ -220,6 +237,7 @@ namespace ModuleManagementBackend.BAL.Services
             responseModel.TotalRecords = result.Count;
             return responseModel;
         }
+
 
         public async Task<ResponseModel> ProcessEditEmployeeRequest(AprooveEmployeeReportDto request)
         {
