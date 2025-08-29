@@ -108,7 +108,13 @@ namespace ModuleManagementBackend.BAL.Services
                                             WhatNew= i.WhatNew==null?false:true,
                                             OrderFactor = i.OrderFactor,
                                             OfficeOrderDate=i.officeOrderDate,
-                                            Url = !string.IsNullOrEmpty(i.filName) && i.itemType?.ToLower()!="url" ? $"{DocUrl}{i.pkPolItemId}" : i.filName
+                                            //Url = !string.IsNullOrEmpty(i.filName) && i.itemType?.ToLower()!="url" ? $"{DocUrl}{i.pkPolItemId}" : i.filName
+
+                                            Url = !string.IsNullOrEmpty(i.filName) && i.itemType?.ToLower() != "url"
+                                                                   ? (i.filName.StartsWith("https", StringComparison.OrdinalIgnoreCase)
+                                                                   ? i.filName  
+                                                                   : $"{DocUrl}{i.pkPolItemId}") 
+                                                                    : i.filName
                                         }).ToList()
                                         : new List<PolicyItemDto>()
                                 })
