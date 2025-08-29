@@ -93,11 +93,9 @@ namespace ModuleManagementBackend.BAL.Services
                 (dto.DateOfAnniversary.HasValue && dto.DateOfAnniversary != master.AnniversaryDate) ||
                 (dto.DateOfJoining.HasValue && dto.DateOfJoining != master.DOJDFCCIL) ||
                 (!string.IsNullOrWhiteSpace(dto.Location) && dto.Location != master.Location) ||
-                //(!string.IsNullOrWhiteSpace(dto.Mobile) && dto.Mobile != master.Mobile) ||
-                //(!string.IsNullOrWhiteSpace(dto.Email) && dto.Email != master.emailAddress) ||
-                //(!string.IsNullOrWhiteSpace(dto.PersonalEmailId) && dto.PersonalEmailId != master.PersonalEmailAddress) ||
+               
                 (!string.IsNullOrWhiteSpace(dto.Toemploy) && dto.Toemploy != master.TOemploy);
-                //(!string.IsNullOrWhiteSpace(dto.ExtensionNo) && dto.ExtensionNo != master.ExtnNo);
+                
 
             if (!isDifferent)
             {
@@ -119,11 +117,7 @@ namespace ModuleManagementBackend.BAL.Services
                 DateOfAnniversary = dto.DateOfAnniversary,
                 DateOfJoining = dto.DateOfJoining,
                 Location = dto.Location,
-                //Mobile = dto.Mobile,
-                //Email = dto.Email,
-                //PersonalEmailId = dto.PersonalEmailId,
                 Toemploy = dto.Toemploy,
-                //ExtensionNo = dto.ExtensionNo,
                 status = 99,
                 remarks = "Pending update",
                 TableName = "P"
@@ -137,6 +131,8 @@ namespace ModuleManagementBackend.BAL.Services
             response.Data = entity;
             return response;
         }
+
+
         public async Task<ResponseModel> GetAllEditEmployeeRequests(
     string? employeeCode = null,
     string? location = null,
@@ -207,7 +203,7 @@ namespace ModuleManagementBackend.BAL.Services
                 Compare("designation", x.mm.Post, x.ee.Designation, alwaysInclude: true);
                 Compare("department", x.mm.DeptDFCCIL, x.ee.Department, alwaysInclude: true);
                 Compare("location", x.mm.Location, x.ee.Location,alwaysInclude:true);
-
+                Compare("tOemploy", x.mm.TOemploy, x.ee.Toemploy, alwaysInclude: true);
                 Compare("gender", x.mm.Gender, x.ee.Gender);
                 Compare("positionGrade", x.mm.PositionGrade, x.ee.PositionGrade);
                 Compare("dob", x.mm.DOB, x.ee.DOB);
@@ -215,9 +211,6 @@ namespace ModuleManagementBackend.BAL.Services
                 Compare("dateOfJoining", x.mm.DOJDFCCIL, x.ee.DateOfJoining);
                
                
-                Compare("tOemploy", x.mm.TOemploy, x.ee.Toemploy);
-                Compare("aboutUs", x.mm.AboutUs, x.ee.AboutUs);
-                Compare("photo", x.mm.Photo, x.ee.Photo);
               
                 return new
                 {
@@ -234,6 +227,53 @@ namespace ModuleManagementBackend.BAL.Services
             return responseModel;
         }
 
+        public async Task<ResponseModel> UpdatePersonalEmailAsync(string employeeCode, string newPersonalEmail,string loginUserId)
+        {
+            var response = new ResponseModel();
+
+            if (string.IsNullOrWhiteSpace(employeeCode))
+            {
+                response.StatusCode = HttpStatusCode.BadRequest;
+                response.Message = "Employee code is required.";
+                return response;
+            }
+
+            if (string.IsNullOrWhiteSpace(newPersonalEmail))
+            {
+                response.StatusCode = HttpStatusCode.BadRequest;
+                response.Message = "Personal email is required.";
+                return response;
+            }
+
+            var master = await context.MstEmployeeMasters
+                .FirstOrDefaultAsync(m => m.EmployeeCode.Equals(employeeCode, StringComparison.OrdinalIgnoreCase));
+
+            if (master == null)
+            {
+                response.StatusCode = HttpStatusCode.NotFound;
+                response.Message = "Employee not found.";
+                return response;
+            }
+
+            if (string.Equals(master.PersonalEmailAddress, newPersonalEmail, StringComparison.OrdinalIgnoreCase))
+            {
+                response.StatusCode = HttpStatusCode.OK;
+                response.Message = "No changes required. Personal email is already same.";
+                return response;
+            }
+
+            
+            master.PersonalEmailAddress = newPersonalEmail;
+            master.Modify_Date = DateTime.UtcNow;   
+            master.Modify_By = loginUserId;           
+
+            await context.SaveChangesAsync();
+
+            response.StatusCode = HttpStatusCode.OK;
+            response.Message = "Personal email updated successfully.";
+            response.Data = master.PersonalEmailAddress;
+            return response;
+        }
 
         public async Task<ResponseModel> ProcessEditEmployeeRequest(AprooveEmployeeReportDto request)
         {

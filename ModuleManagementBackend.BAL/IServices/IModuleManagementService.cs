@@ -22,6 +22,7 @@ namespace ModuleManagementBackend.BAL.IServices
         Task<ResponseModel> GetAllEmployeeOfTheMonth();
         Task<ResponseModel> GetCurrentEmployeeOfTheMonth();
         Task<ResponseModel> AddEmployeeOfTheMonth(EmployeeOfTheMonthDto dto);
+        Task<ResponseModel> UpdatePersonalEmailAsync(string employeeCode, string newPersonalEmail, string loginUserId);
 
 
         #region NOTICE BOARD

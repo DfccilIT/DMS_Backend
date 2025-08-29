@@ -4,7 +4,9 @@ using ModuleManagementBackend.BAL.IServices;
 using ModuleManagementBackend.DAL.DapperServices;
 using ModuleManagementBackend.Model.Common;
 using ModuleManagementBackend.Model.DTOs.EditEmployeeDTO;
+using Newtonsoft.Json.Linq;
 using System.Net;
+using System.Text.Json;
 using static ModuleManagementBackend.BAL.Services.AccountService;
 
 namespace ModuleManagementBackend.API.Controllers
@@ -13,7 +15,7 @@ namespace ModuleManagementBackend.API.Controllers
   
     [Route("api/[controller]")]
     [ApiController]
-    [AllowAnonymous]
+   
     public class ModuleManagementController : ControllerBase
     {
         private readonly IModuleManagementService managementService;
@@ -41,6 +43,12 @@ namespace ModuleManagementBackend.API.Controllers
         public async Task<ResponseModel> EditEmployeeProfile(EditEmployeeDto dto)
         {
             return await managementService.EditEmployeeProfileAsync(dto);
+        }
+
+        [HttpPost("UpdatePersonalEmail")]
+        public async Task<ResponseModel> UpdatePersonalEmail([FromBody]RequestEmailDto dto)
+        {
+            return await managementService.UpdatePersonalEmailAsync(dto.UserEmpCode, dto.NewEmail, LoginUserId);
         }
 
         [HttpGet("ModuleMangement/GetAllEditEmployeeRequest")]
