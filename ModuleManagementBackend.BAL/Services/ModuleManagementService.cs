@@ -2752,23 +2752,23 @@ namespace ModuleManagementBackend.BAL.Services
 
                 var employee = employees.ToList();
 
-                var Grade = context.mstPositionGreades.Select(x => new
-                {
-                    x.PositionGrade,
-                    x.PGOrder
-                }).OrderByDescending(x => x.PGOrder).ToList();
+                //var Grade = context.mstPositionGreades.Select(x => new
+                //{
+                //    x.PositionGrade,
+                //    x.PGOrder
+                //}).OrderByDescending(x => x.PGOrder).ToList();
 
-                var result = new
-                {
-                    employee = employee,
-                    units = units.ToList(),
-                    PositionGrades = Grade
-                };
+                //var result = new
+                //{
+                //    employee = employee,
+                //    units = units.ToList(),
+                //    PositionGrades = Grade
+                //};
                 var currentCount = Interlocked.Increment(ref count);
                 return new ResponseModel()
                 {
                     StatusCode=HttpStatusCode.OK,
-                    Data=result,
+                    Data=employee,
                     Message=$"Employee Details Fetched Successfully{count}."
 
 
