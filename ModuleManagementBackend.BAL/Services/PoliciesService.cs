@@ -108,15 +108,15 @@ namespace ModuleManagementBackend.BAL.Services
         //                                    itemType = i.itemType,
         //                                    docName = i.docName,
         //                                    fileName = i.filName,
-        //                                    WhatNew= i.WhatNew==null?false:true,
+        //                                    WhatNew= i.WhatNew==null ? false : true,
         //                                    OrderFactor = i.OrderFactor,
         //                                    OfficeOrderDate=i.officeOrderDate,
         //                                    //Url = !string.IsNullOrEmpty(i.filName) && i.itemType?.ToLower()!="url" ? $"{DocUrl}{i.pkPolItemId}" : i.filName
 
         //                                    Url = !string.IsNullOrEmpty(i.filName) && i.itemType?.ToLower() != "url"
         //                                                           ? (i.filName.StartsWith("https", StringComparison.OrdinalIgnoreCase)
-        //                                                           ? i.filName  
-        //                                                           : $"{DocUrl}{i.pkPolItemId}") 
+        //                                                           ? i.filName
+        //                                                           : $"{DocUrl}{i.pkPolItemId}")
         //                                                            : i.filName
         //                                }).ToList()
         //                                : new List<PolicyItemDto>()
@@ -136,8 +136,8 @@ namespace ModuleManagementBackend.BAL.Services
         //                    TotalRecords = result.Count
         //                };
         //            },
-        //            TimeSpan.FromMinutes(30),   
-        //            TimeSpan.FromHours(2)       
+        //            TimeSpan.FromMinutes(30),
+        //            TimeSpan.FromHours(2)
         //        );
 
         //        return responseModel;
@@ -179,10 +179,12 @@ namespace ModuleManagementBackend.BAL.Services
                         var allPolicies = await context.tblPolices
                             .Where(x => x.status == 0)
                             .ToListAsync();
-
                         Counter = Interlocked.Increment(ref Counter);
 
-                        var allItemsQuery = context.tblPolicyItems.Where(x => x.status == 0);
+                        // Filter policy items if `onlyWhatNew` is true
+                        var allItemsQuery = context.tblPolicyItems
+                            .Where(x => x.status == 0)
+                            .AsQueryable();
 
                         if (onlyWhatNew)
                         {
@@ -195,15 +197,16 @@ namespace ModuleManagementBackend.BAL.Services
                             .GroupBy(i => i.fkPolId.Value)
                             .ToDictionary(g => g.Key, g => g.OrderBy(i => i.OrderFactor).ToList());
 
-                        
+                        // Recursive function to build policy tree
                         List<PolicyDto> BuildTree(int parentId)
                         {
                             return allPolicies
-                                .Where(p => p.ParentPolicyId == parentId)
+                                .Where(p => p.ParentPolicyId == parentId)  // Only include policies with matching parent ID
                                 .Select(p => new PolicyDto
                                 {
                                     pkPolId = p.pkPolId,
                                     PolicyHead = p.PolicyHead,
+                                    // Recursively build child policies
                                     Children = BuildTree(p.pkPolId),
                                     PolicyItems = itemsLookup.TryGetValue(p.pkPolId, out var policyItems)
                                         ? policyItems.Select(i => new PolicyItemDto
@@ -226,12 +229,17 @@ namespace ModuleManagementBackend.BAL.Services
                                         }).ToList()
                                         : new List<PolicyItemDto>()
                                 })
-                                .Where(p => !onlyWhatNew || p.PolicyItems.Any()) 
-                                .Where(p => !onlyWhatNew || p.Children.Any()) 
+                                // Only include policies if:
+                                // 1. `onlyWhatNew` is false (all policies should be included),
+                                // 2. OR if `onlyWhatNew` is true, the policy itself or any of its children have `WhatNew == true`
+                                .Where(p =>
+                                    !onlyWhatNew ||
+                                    p.PolicyItems.Any(i => i.WhatNew == true) ||
+                                    p.Children.Any(c => c.PolicyItems.Any(i => i.WhatNew == true)))
                                 .ToList();
                         }
 
-                        var result = BuildTree(0);
+                        var result = BuildTree(0);  // Start recursion with root policies (parentId = 0)
 
                         return new ResponseModel
                         {
@@ -260,6 +268,12 @@ namespace ModuleManagementBackend.BAL.Services
                 };
             }
         }
+
+
+
+
+
+
 
         public async Task<ResponseModel> AddPolicy(AddPolicyDto dto, string loginUserEmpCode)
         {
