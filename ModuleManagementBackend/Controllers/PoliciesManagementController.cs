@@ -114,6 +114,13 @@ namespace ModuleManagementBackend.API.Controllers
             return File(response.FileBytes, response.MimeType);
         }
 
+        //[HttpGet("GetAllPoliciesv2")]
+
+        //public async Task<ResponseModel> GetAllPoliciesv2(bool onlyWhatNew = false)
+        //{
+        //    var response = await _policyService.GetAllPoliciesWithItemsAndChildren();
+        //    return response;
+        //}
     }
 
 }

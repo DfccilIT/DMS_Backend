@@ -22,6 +22,7 @@ namespace ModuleManagementBackend.BAL.IServices
         Task<ResponseModel> DeletePolicyItem(int id);
         Task<FileResponseModel> DownloadPolicyAsync(int policyItemId, string employeeId);
         Task<ResponseModel> GetPolicyDataAsync(int? mode = null);
+        Task<ResponseModel> GetAllPoliciesWithItemsAndChildren();
     }
 
 }
