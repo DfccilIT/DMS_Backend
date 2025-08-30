@@ -2847,10 +2847,67 @@ namespace ModuleManagementBackend.BAL.Services
 
             return response;
         }
+        //public async Task<ResponseModel> GetSelectedEmployeeColumnsAsync(string columnNamesCsv, string? employeeCode = null)
+        //{
+        //    var response = new ResponseModel();
+        //    var conncetion = dapper.GetDbconnection();
+        //    try
+        //    {
+        //        if (string.IsNullOrWhiteSpace(columnNamesCsv))
+        //        {
+        //            response.StatusCode = HttpStatusCode.BadRequest;
+        //            response.Message = "No columns specified.";
+        //            return response;
+        //        }
+
+        //        var selectedColumns = columnNamesCsv.Split(",", StringSplitOptions.RemoveEmptyEntries)
+        //                                            .Select(c => c.Trim())
+        //                                            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+
+        //        var allColumns = (await conncetion.QueryAsync<string>(
+        //            @"SELECT COLUMN_NAME 
+        //          FROM INFORMATION_SCHEMA.COLUMNS 
+        //          WHERE TABLE_NAME = 'MstEmployeeMaster'")).ToList();
+
+        //        var validColumns = selectedColumns.Intersect(allColumns).ToList();
+        //        if (!validColumns.Any())
+        //        {
+        //            response.StatusCode = HttpStatusCode.BadRequest;
+        //            response.Message = "No valid columns found.";
+        //            return response;
+        //        }
+
+        //        var columnList = string.Join(",", validColumns);
+
+        //        var sql = $@"SELECT {columnList}
+        //                 FROM MstEmployeeMaster
+        //                 WHERE Status = 0";
+
+        //        if (!string.IsNullOrEmpty(employeeCode))
+        //        {
+        //            sql += " AND EmployeeCode = @empCode";
+        //        }
+
+        //        var data = await conncetion.QueryAsync(sql, new { empCode = employeeCode });
+        //        var result = data.Select(row => (IDictionary<string, object>)row).ToList();
+
+        //        response.StatusCode = HttpStatusCode.OK;
+        //        response.Message = "Employee data fetched successfully.";
+        //        response.Data = result;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        response.StatusCode = HttpStatusCode.InternalServerError;
+        //        response.Message = ex.Message;
+        //    }
+
+        //    return response;
+        //}
+
         public async Task<ResponseModel> GetSelectedEmployeeColumnsAsync(string columnNamesCsv, string? employeeCode = null)
         {
             var response = new ResponseModel();
-            var conncetion = dapper.GetDbconnection();
             try
             {
                 if (string.IsNullOrWhiteSpace(columnNamesCsv))
@@ -2860,50 +2917,91 @@ namespace ModuleManagementBackend.BAL.Services
                     return response;
                 }
 
-                var selectedColumns = columnNamesCsv.Split(",", StringSplitOptions.RemoveEmptyEntries)
-                                                    .Select(c => c.Trim())
-                                                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
+                var conncetion = dapper.GetDbconnection();
 
+                var cacheKey = $"GetSelectedEmployeeColumns_{employeeCode ?? "ALL"}";
+                var versionCacheKey = $"{cacheKey}_version";
 
-                var allColumns = (await conncetion.QueryAsync<string>(
-                    @"SELECT COLUMN_NAME 
-                  FROM INFORMATION_SCHEMA.COLUMNS 
-                  WHERE TABLE_NAME = 'MstEmployeeMaster'")).ToList();
+                var cachedDbVersion = await _dbChangeService.GetDataVersionAsync();
+                var cachedProfileVersion = await _cacheService.GetAsync<long?>(versionCacheKey);
 
-                var validColumns = selectedColumns.Intersect(allColumns).ToList();
-                if (!validColumns.Any())
+                if (cachedProfileVersion == null || cachedProfileVersion != cachedDbVersion)
                 {
-                    response.StatusCode = HttpStatusCode.BadRequest;
-                    response.Message = "No valid columns found.";
-                    return response;
+                    await _cacheService.RemoveAsync(cacheKey);
+                    await _cacheService.SetAsync(versionCacheKey, cachedDbVersion, TimeSpan.FromHours(3));
+
+                    _logger.LogInformation(
+                        "SelectedEmployeeColumns cache invalidated. DBVersion={DbVersion}, CachedProfileVersion={ProfileVersion}, Key={CacheKey}",
+                        cachedDbVersion, cachedProfileVersion, cacheKey
+                    );
                 }
 
-                var columnList = string.Join(",", validColumns);
+                response = await _cacheService.GetOrSetAsync(
+                    cacheKey,
+                    async () =>
+                    {
+                        var selectedColumns = columnNamesCsv.Split(",", StringSplitOptions.RemoveEmptyEntries)
+                                                             .Select(c => c.Trim())
+                                                             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-                var sql = $@"SELECT {columnList}
-                         FROM MstEmployeeMaster
-                         WHERE Status = 0";
+                     
+                        var allColumns = (await conncetion.QueryAsync<string>(
+                            @"SELECT COLUMN_NAME 
+                      FROM INFORMATION_SCHEMA.COLUMNS 
+                      WHERE TABLE_NAME = 'MstEmployeeMaster'")).ToList();
 
-                if (!string.IsNullOrEmpty(employeeCode))
-                {
-                    sql += " AND EmployeeCode = @empCode";
-                }
+                        
+                        var allowedColumns = new HashSet<string>(allColumns, StringComparer.OrdinalIgnoreCase);
 
-                var data = await conncetion.QueryAsync(sql, new { empCode = employeeCode });
-                var result = data.Select(row => (IDictionary<string, object>)row).ToList();
+                       
+                        var validColumns = selectedColumns.Intersect(allowedColumns).ToList();
 
-                response.StatusCode = HttpStatusCode.OK;
-                response.Message = "Employee data fetched successfully.";
-                response.Data = result;
+                        if (!validColumns.Any())
+                        {
+                            return new ResponseModel
+                            {
+                                StatusCode = HttpStatusCode.BadRequest,
+                                Message = "No valid columns found."
+                            };
+                        }
+
+                        
+                        var columnList = string.Join(",", validColumns);
+                        var sql = $@"SELECT {columnList}
+                             FROM MstEmployeeMaster
+                             WHERE Status = 0";
+
+                        if (!string.IsNullOrEmpty(employeeCode))
+                        {
+                            sql += " AND EmployeeCode = @empCode";
+                        }
+
+                        var data = await conncetion.QueryAsync(sql, new { empCode = employeeCode });
+                        var result = data.Select(row => (IDictionary<string, object>)row).ToList();
+
+                        return new ResponseModel
+                        {
+                            StatusCode = HttpStatusCode.OK,
+                            Message = "Employee data fetched successfully.",
+                            Data = result
+                        };
+                    },
+                    TimeSpan.FromHours(2),
+                    TimeSpan.FromHours(2)
+                );
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error in GetSelectedEmployeeColumnsAsync for employeeCode {EmployeeCode}", employeeCode);
                 response.StatusCode = HttpStatusCode.InternalServerError;
-                response.Message = ex.Message;
+                response.Message = $"An error occurred: {ex.Message}";
             }
 
             return response;
         }
+
+
+
         public async Task<ResponseModel> GetEmployeeMasterColumnsAsync()
         {
             var response = new ResponseModel();

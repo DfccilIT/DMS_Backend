@@ -295,12 +295,14 @@ namespace ModuleManagementBackend.API.Controllers
         }
 
         [HttpGet("GetEmployeeColumn")]
+        [AllowAnonymous]
         public async Task<ResponseModel> GetEmployeeColumn()
         {
             return await managementService.GetEmployeeMasterColumnsAsync();
         }
 
         [HttpGet("GetEmployeeList")]
+        [AllowAnonymous]
         public async Task<ResponseModel> GetEmployeeList(string columnNamesCsv, string? empCode = null)
         {
             return await managementService.GetSelectedEmployeeColumnsAsync(columnNamesCsv, empCode);
