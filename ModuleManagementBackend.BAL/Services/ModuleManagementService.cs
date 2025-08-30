@@ -2748,7 +2748,7 @@ namespace ModuleManagementBackend.BAL.Services
                 );
 
                 var employees = await multi.ReadAsync<EmployeeProfileDto>();
-                var units = await multi.ReadAsync<UnitDto>();
+                //var units = await multi.ReadAsync<UnitDto>();
 
                 var employee = employees.ToList();
 
