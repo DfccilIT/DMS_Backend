@@ -44,122 +44,13 @@ namespace ModuleManagementBackend.BAL.Services
         #region Policies Methods
 
         public static long Counter = 0;
-        //public async Task<ResponseModel> GetAllPolicies(bool onlyWhatNew = false)
-        //{
-        //    try
-        //    {
-        //        var cacheKey = onlyWhatNew ? "GetAllPolicies_WhatNew" : "GetAllPolicies";
-        //        var versionCacheKey = $"{cacheKey}_version";
-
-
-        //        var currentDataVersion = await _dbChangeService.GetDataVersionForPolicyAsync();
-        //        var cachedVersion = await _cacheService.GetAsync<long?>(versionCacheKey);
-
-        //        if (cachedVersion == null || cachedVersion != currentDataVersion)
-        //        {
-        //            await _cacheService.RemoveAsync(cacheKey);
-        //            await _cacheService.SetAsync(versionCacheKey, currentDataVersion, TimeSpan.FromHours(2));
-
-        //            _logger.LogInformation("Policy data version changed, cache invalidated");
-        //        }
-
-        //        var responseModel = await _cacheService.GetOrSetAsync(
-        //            cacheKey,
-        //            async () =>
-        //            {
-
-        //                var allPolicies = await context.tblPolices
-        //                    .Where(x => x.status == 0)
-        //                    .ToListAsync();
-        //                Counter= Interlocked.Increment(ref Counter);
-
-        //                var allItemsQuery = context.tblPolicyItems.Where(x => x.status == 0);
-
-        //                if (onlyWhatNew)
-        //                {
-        //                    allItemsQuery = allItemsQuery.Where(x => x.WhatNew == true);
-        //                }
-
-
-        //                var allItems = await allItemsQuery.ToListAsync();
-
-
-        //                var itemsLookup = allItems
-        //                    .GroupBy(i => i.fkPolId.Value)
-        //                    .ToDictionary(g => g.Key, g => g.OrderBy(i => i.OrderFactor).ToList());
-
-
-        //                List<PolicyDto> BuildTree(int parentId)
-        //                {
-        //                    return allPolicies
-        //                        .Where(p => p.ParentPolicyId == parentId)
-        //                        .Select(p => new PolicyDto
-        //                        {
-        //                            pkPolId = p.pkPolId,
-        //                            PolicyHead = p.PolicyHead,
-        //                            Children = BuildTree(p.pkPolId),
-        //                            PolicyItems = itemsLookup.TryGetValue(p.pkPolId, out var policyItems)
-        //                                ? policyItems.Select(i => new PolicyItemDto
-        //                                {
-        //                                    pkPolItemId = i.pkPolItemId,
-        //                                    itemSubject = i.itemSubject,
-        //                                    itemContent = i.itemContent,
-        //                                    itemDescription = i.itemDescription,
-        //                                    itemType = i.itemType,
-        //                                    docName = i.docName,
-        //                                    fileName = i.filName,
-        //                                    WhatNew= i.WhatNew==null ? false : true,
-        //                                    OrderFactor = i.OrderFactor,
-        //                                    OfficeOrderDate=i.officeOrderDate,
-        //                                    //Url = !string.IsNullOrEmpty(i.filName) && i.itemType?.ToLower()!="url" ? $"{DocUrl}{i.pkPolItemId}" : i.filName
-
-        //                                    Url = !string.IsNullOrEmpty(i.filName) && i.itemType?.ToLower() != "url"
-        //                                                           ? (i.filName.StartsWith("https", StringComparison.OrdinalIgnoreCase)
-        //                                                           ? i.filName
-        //                                                           : $"{DocUrl}{i.pkPolItemId}")
-        //                                                            : i.filName
-        //                                }).ToList()
-        //                                : new List<PolicyItemDto>()
-        //                        })
-        //                        .ToList();
-        //                }
-
-        //                var result = BuildTree(0);
-
-        //                return new ResponseModel
-        //                {
-        //                    Message = onlyWhatNew
-        //                        ? $"WhatNew policies fetched successfully.{Counter}"
-        //                        : $"Policies fetched successfully.{Counter}",
-        //                    StatusCode = HttpStatusCode.OK,
-        //                    Data = result,
-        //                    TotalRecords = result.Count
-        //                };
-        //            },
-        //            TimeSpan.FromMinutes(30),
-        //            TimeSpan.FromHours(2)
-        //        );
-
-        //        return responseModel;
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        _logger.LogError(ex, "Error in GetAllPolicies");
-
-        //        return new ResponseModel
-        //        {
-        //            Message = $"Error: {ex.Message}",
-        //            StatusCode = HttpStatusCode.InternalServerError
-        //        };
-        //    }
-        //}
-
         public async Task<ResponseModel> GetAllPolicies(bool onlyWhatNew = false)
         {
             try
             {
                 var cacheKey = onlyWhatNew ? "GetAllPolicies_WhatNew" : "GetAllPolicies";
                 var versionCacheKey = $"{cacheKey}_version";
+
 
                 var currentDataVersion = await _dbChangeService.GetDataVersionForPolicyAsync();
                 var cachedVersion = await _cacheService.GetAsync<long?>(versionCacheKey);
@@ -176,37 +67,36 @@ namespace ModuleManagementBackend.BAL.Services
                     cacheKey,
                     async () =>
                     {
+
                         var allPolicies = await context.tblPolices
                             .Where(x => x.status == 0)
                             .ToListAsync();
-                        Counter = Interlocked.Increment(ref Counter);
+                        Counter= Interlocked.Increment(ref Counter);
 
-                        // Filter policy items if `onlyWhatNew` is true
-                        var allItemsQuery = context.tblPolicyItems
-                            .Where(x => x.status == 0)
-                            .AsQueryable();
+                        var allItemsQuery = context.tblPolicyItems.Where(x => x.status == 0);
 
                         if (onlyWhatNew)
                         {
                             allItemsQuery = allItemsQuery.Where(x => x.WhatNew == true);
                         }
 
+
                         var allItems = await allItemsQuery.ToListAsync();
+
 
                         var itemsLookup = allItems
                             .GroupBy(i => i.fkPolId.Value)
                             .ToDictionary(g => g.Key, g => g.OrderBy(i => i.OrderFactor).ToList());
 
-                        // Recursive function to build policy tree
+
                         List<PolicyDto> BuildTree(int parentId)
                         {
                             return allPolicies
-                                .Where(p => p.ParentPolicyId == parentId)  // Only include policies with matching parent ID
+                                .Where(p => p.ParentPolicyId == parentId)
                                 .Select(p => new PolicyDto
                                 {
                                     pkPolId = p.pkPolId,
                                     PolicyHead = p.PolicyHead,
-                                    // Recursively build child policies
                                     Children = BuildTree(p.pkPolId),
                                     PolicyItems = itemsLookup.TryGetValue(p.pkPolId, out var policyItems)
                                         ? policyItems.Select(i => new PolicyItemDto
@@ -218,28 +108,23 @@ namespace ModuleManagementBackend.BAL.Services
                                             itemType = i.itemType,
                                             docName = i.docName,
                                             fileName = i.filName,
-                                            WhatNew = i.WhatNew == null ? false : true,
+                                            WhatNew= i.WhatNew==null ? false : true,
                                             OrderFactor = i.OrderFactor,
-                                            OfficeOrderDate = i.officeOrderDate,
+                                            OfficeOrderDate=i.officeOrderDate,
+                                            //Url = !string.IsNullOrEmpty(i.filName) && i.itemType?.ToLower()!="url" ? $"{DocUrl}{i.pkPolItemId}" : i.filName
+
                                             Url = !string.IsNullOrEmpty(i.filName) && i.itemType?.ToLower() != "url"
-                                                ? (i.filName.StartsWith("https", StringComparison.OrdinalIgnoreCase)
-                                                    ? i.filName
-                                                    : $"{DocUrl}{i.pkPolItemId}")
-                                                : i.filName
+                                                                   ? (i.filName.StartsWith("https", StringComparison.OrdinalIgnoreCase)
+                                                                   ? i.filName
+                                                                   : $"{DocUrl}{i.pkPolItemId}")
+                                                                    : i.filName
                                         }).ToList()
                                         : new List<PolicyItemDto>()
                                 })
-                                // Only include policies if:
-                                // 1. `onlyWhatNew` is false (all policies should be included),
-                                // 2. OR if `onlyWhatNew` is true, the policy itself or any of its children have `WhatNew == true`
-                                .Where(p =>
-                                    !onlyWhatNew ||
-                                    p.PolicyItems.Any(i => i.WhatNew == true) ||
-                                    p.Children.Any(c => c.PolicyItems.Any(i => i.WhatNew == true)))
                                 .ToList();
                         }
 
-                        var result = BuildTree(0);  // Start recursion with root policies (parentId = 0)
+                        var result = BuildTree(0);
 
                         return new ResponseModel
                         {
@@ -268,6 +153,121 @@ namespace ModuleManagementBackend.BAL.Services
                 };
             }
         }
+
+        //public async Task<ResponseModel> GetAllPolicies(bool onlyWhatNew = false)
+        //{
+        //    try
+        //    {
+        //        var cacheKey = onlyWhatNew ? "GetAllPolicies_WhatNew" : "GetAllPolicies";
+        //        var versionCacheKey = $"{cacheKey}_version";
+
+        //        var currentDataVersion = await _dbChangeService.GetDataVersionForPolicyAsync();
+        //        var cachedVersion = await _cacheService.GetAsync<long?>(versionCacheKey);
+
+        //        if (cachedVersion == null || cachedVersion != currentDataVersion)
+        //        {
+        //            await _cacheService.RemoveAsync(cacheKey);
+        //            await _cacheService.SetAsync(versionCacheKey, currentDataVersion, TimeSpan.FromHours(2));
+
+        //            _logger.LogInformation("Policy data version changed, cache invalidated");
+        //        }
+
+        //        var responseModel = await _cacheService.GetOrSetAsync(
+        //            cacheKey,
+        //            async () =>
+        //            {
+        //                var allPolicies = await context.tblPolices
+        //                    .Where(x => x.status == 0)
+        //                    .ToListAsync();
+        //                Counter = Interlocked.Increment(ref Counter);
+
+        //                // Filter policy items if `onlyWhatNew` is true
+        //                var allItemsQuery = context.tblPolicyItems
+        //                    .Where(x => x.status == 0)
+        //                    .AsQueryable();
+
+        //                if (onlyWhatNew)
+        //                {
+        //                    allItemsQuery = allItemsQuery.Where(x => x.WhatNew == true);
+        //                }
+
+        //                var allItems = await allItemsQuery.ToListAsync();
+
+        //                var itemsLookup = allItems
+        //                    .GroupBy(i => i.fkPolId.Value)
+        //                    .ToDictionary(g => g.Key, g => g.OrderBy(i => i.OrderFactor).ToList());
+
+        //                // Recursive function to build policy tree
+        //                List<PolicyDto> BuildTree(int parentId)
+        //                {
+        //                    return allPolicies
+        //                        .Where(p => p.ParentPolicyId == parentId)  // Only include policies with matching parent ID
+        //                        .Select(p => new PolicyDto
+        //                        {
+        //                            pkPolId = p.pkPolId,
+        //                            PolicyHead = p.PolicyHead,
+        //                            // Recursively build child policies
+        //                            Children = BuildTree(p.pkPolId),
+        //                            PolicyItems = itemsLookup.TryGetValue(p.pkPolId, out var policyItems)
+        //                                ? policyItems.Select(i => new PolicyItemDto
+        //                                {
+        //                                    pkPolItemId = i.pkPolItemId,
+        //                                    itemSubject = i.itemSubject,
+        //                                    itemContent = i.itemContent,
+        //                                    itemDescription = i.itemDescription,
+        //                                    itemType = i.itemType,
+        //                                    docName = i.docName,
+        //                                    fileName = i.filName,
+        //                                    WhatNew = i.WhatNew == null ? false : true,
+        //                                    OrderFactor = i.OrderFactor,
+        //                                    OfficeOrderDate = i.officeOrderDate,
+        //                                    Url = !string.IsNullOrEmpty(i.filName) && i.itemType?.ToLower() != "url"
+        //                                        ? (i.filName.StartsWith("https", StringComparison.OrdinalIgnoreCase)
+        //                                            ? i.filName
+        //                                            : $"{DocUrl}{i.pkPolItemId}")
+        //                                        : i.filName
+        //                                }).ToList()
+        //                                : new List<PolicyItemDto>()
+        //                        })
+        //                        // Only include policies if:
+        //                        // 1. `onlyWhatNew` is false (all policies should be included),
+        //                        // 2. OR if `onlyWhatNew` is true, the policy itself or any of its children have `WhatNew == true`
+        //                        .Where(p =>
+        //                            !onlyWhatNew ||
+        //                            p.PolicyItems.Any(i => i.WhatNew == true) ||
+        //                            p.Children.Any(c => c.PolicyItems.Any(i => i.WhatNew == true)))
+        //                        .ToList();
+        //                }
+
+        //                var result = BuildTree(0);  // Start recursion with root policies (parentId = 0)
+
+        //                return new ResponseModel
+        //                {
+        //                    Message = onlyWhatNew
+        //                        ? $"WhatNew policies fetched successfully.{Counter}"
+        //                        : $"Policies fetched successfully.{Counter}",
+        //                    StatusCode = HttpStatusCode.OK,
+        //                    Data = result,
+        //                    TotalRecords = result.Count
+        //                };
+        //            },
+        //            TimeSpan.FromMinutes(30),
+        //            TimeSpan.FromHours(2)
+        //        );
+
+        //        return responseModel;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, "Error in GetAllPolicies");
+
+        //        return new ResponseModel
+        //        {
+        //            Message = $"Error: {ex.Message}",
+        //            StatusCode = HttpStatusCode.InternalServerError
+        //        };
+        //    }
+        //}
 
 
 
