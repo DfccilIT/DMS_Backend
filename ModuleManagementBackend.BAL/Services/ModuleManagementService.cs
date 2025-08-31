@@ -2758,17 +2758,17 @@ namespace ModuleManagementBackend.BAL.Services
                 //    x.PGOrder
                 //}).OrderByDescending(x => x.PGOrder).ToList();
 
-                //var result = new
-                //{
-                //    employee = employee,
-                //    units = units.ToList(),
-                //    PositionGrades = Grade
-                //};
+                var result = new
+                {
+                    employee = employee
+                    //units = null,
+                    //PositionGrades = Grade
+                };
                 var currentCount = Interlocked.Increment(ref count);
                 return new ResponseModel()
                 {
                     StatusCode=HttpStatusCode.OK,
-                    Data=employee,
+                    Data=result,
                     Message=$"Employee Details Fetched Successfully{count}."
 
 
