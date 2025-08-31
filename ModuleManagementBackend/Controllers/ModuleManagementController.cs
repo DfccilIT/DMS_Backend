@@ -15,7 +15,7 @@ namespace ModuleManagementBackend.API.Controllers
   
     [Route("api/[controller]")]
     [ApiController]
-   
+    [AllowAnonymous]
     public class ModuleManagementController : ControllerBase
     {
         private readonly IModuleManagementService managementService;
