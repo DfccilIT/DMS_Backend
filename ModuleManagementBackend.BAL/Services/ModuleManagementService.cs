@@ -1749,6 +1749,11 @@ namespace ModuleManagementBackend.BAL.Services
 
                         File.Copy(sourcePath, destinationPath, true);
 
+                        if (File.Exists(sourcePath))
+                        {
+                            File.Delete(sourcePath);
+                        }
+
                         Console.WriteLine("Image copied successfully!");
                     }
                     catch (Exception ex)
