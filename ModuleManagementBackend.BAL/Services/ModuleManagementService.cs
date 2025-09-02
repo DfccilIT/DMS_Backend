@@ -1740,10 +1740,10 @@ namespace ModuleManagementBackend.BAL.Services
                     try
                     {
 
-                        string destDir = Path.GetDirectoryName(destinationPath);
+                        string? destDir = Convert.ToString(Path.GetDirectoryName(destinationPath));
                         if (!Directory.Exists(destDir))
                         {
-                            Directory.CreateDirectory(destDir);
+                            Directory.CreateDirectory(destDir??string.Empty);
                         }
 
 
