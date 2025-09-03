@@ -26,6 +26,7 @@ namespace ModuleManagementBackend.DAL.Models
         public string UpdatedBy { get; set; }
         public int? ParentOrganzation { get; set; }
         public string ProfilePhoto { get; set; }
+        public string NewlyGenratedEmployeeCode { get; set; }
 
         public virtual MstContractMaster ParentOrganzationNavigation { get; set; }
         public virtual MstContractMaster fkContract { get; set; }

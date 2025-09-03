@@ -1714,7 +1714,7 @@ namespace ModuleManagementBackend.BAL.Services
 
                 var oldFileName = existingEmployee.AppointmentDoc ?? string.Empty;
                 var oldFilePath = Path.Combine(basePath, oldFileName);
-
+                var NewlyGeneratedEmpCode = string.Empty;
                 if (request.IsApproved)
                 {
 
@@ -1725,12 +1725,12 @@ namespace ModuleManagementBackend.BAL.Services
                         .FirstOrDefault();
 
                     var newEmpCode = (Convert.ToInt32(latestEmpCode) + 1).ToString();
-
+                    NewlyGeneratedEmpCode=newEmpCode;
 
                     existingEmployee.Status = 0;
                     existingEmployee.UpdatedBy = LoginUserId;
                     existingEmployee.UpdatedDate = DateTime.Now;
-
+                    existingEmployee.NewlyGenratedEmployeeCode=newEmpCode;
 
                     string sourcePath = baseImagePath+existingEmployee.ProfilePhoto;
 
@@ -1836,13 +1836,9 @@ namespace ModuleManagementBackend.BAL.Services
 
                 await context.SaveChangesAsync();
 
-
-
-
-
-
                 response.Message = $"Request {(request.IsApproved ? "Approved" : "Rejected")} Successfully.";
                 response.StatusCode = HttpStatusCode.OK;
+                response.Data=NewlyGeneratedEmpCode;
                 return response;
             }
             catch (Exception ex)
@@ -1899,32 +1895,47 @@ namespace ModuleManagementBackend.BAL.Services
         {
             var response = new ResponseModel();
 
-
             try
             {
                 var requests = await context.RegisterContractEmployees
-                    .Where(e => e.Status == status)
-                    .Select(e => new
+                    .GroupJoin(
+                        context.MstEmployeeMasters,
+                        contract => contract.NewlyGenratedEmployeeCode,  
+                        emp => emp.EmployeeCode,                         
+                        (contract, emps) => new { contract, emps }
+                    )
+                    .SelectMany(
+                        x => x.emps.DefaultIfEmpty(),                    
+                        (x, emp) => new { x.contract, emp }
+                    )
+                    .Where(x => x.contract.Status == status)             
+                    .Select(x => new
                     {
-                        e.ContEmpID,
-                        e.UserName,
-                        e.DeptDFCCIL,
-                        e.Location,
-                        e.Mobile,
-                        e.emailAddress,
-                        e.TOemploy,
-                        e.Gender,
-                        e.DOB,
-                        e.DOJDFCCIL,
-                        e.Status,
-                        e.CreateDate,
-                        e.UpdatedDate,
-                        e.UpdatedBy,
-                        AppointmentDoc = e.AppointmentDoc!=null ? $"{baseUrl}/DocUpload/OfficeOrder/{e.AppointmentDoc}" : null
+                        x.contract.ContEmpID,
+                        x.contract.NewlyGenratedEmployeeCode,
+                        x.contract.UserName,
+                        x.contract.DeptDFCCIL,
+                        x.contract.Location,
+                        x.contract.Mobile,
+                        x.contract.emailAddress,
+                        x.contract.TOemploy,
+                        x.contract.Gender,
+                        x.contract.DOB,
+                        x.contract.DOJDFCCIL,
+                        x.contract.Status,
+                        x.contract.CreateDate,
+                        x.contract.UpdatedDate,
+                        x.contract.UpdatedBy,
+                        ProfilePhoto = status != 0
+                                        ? $"{baseUrl}/DocUpload/ProfilePhoto/{x.contract.ProfilePhoto}"
+                                        : (x.emp != null ? $"{baseUrl}/Images/Employees/{x.emp.Photo}" : null),
+                        AppointmentDoc = x.contract.AppointmentDoc != null
+                                        ? $"{baseUrl}/DocUpload/OfficeOrder/{x.contract.AppointmentDoc}"
+                                        : null
                     })
                     .ToListAsync();
 
-                response.Message = "Contratual Employee requests fetched successfully.";
+                response.Message = "Contractual Employee requests fetched successfully.";
                 response.StatusCode = HttpStatusCode.OK;
                 response.Data = requests;
                 response.TotalRecords = requests.Count;
@@ -1937,6 +1948,50 @@ namespace ModuleManagementBackend.BAL.Services
 
             return response;
         }
+
+
+        //public async Task<ResponseModel> GetAllContractualEmployeeList()
+        //{
+        //    var response = new ResponseModel();
+
+
+        //    try
+        //    {
+        //        var requests = await context.MstEmployeeMasters
+        //            .Where(e => e.Status == 0 && e.TOemploy.StartsWith("CONTR"))
+        //            .Select(e => new
+        //            {
+        //                e.EmployeeCode,
+        //                e.UserName,
+        //                e.DeptDFCCIL,
+        //                e.Location,
+        //                e.Mobile,
+        //                e.emailAddress,
+        //                e.TOemploy,
+        //                e.Gender,
+        //                e.DOB,
+        //                e.DOJDFCCIL,
+        //                e.Status,
+        //                e.Modify_Date,
+        //                e.Modify_By,
+        //                e.Photo,
+        //                AppointmentDoc = e.AppointmentDoc!=null ? $"{baseUrl}/DocUpload/OfficeOrder/{e.AppointmentDoc}" : null
+        //            })
+        //            .ToListAsync();
+
+        //        response.Message = "Contratual Employee requests fetched successfully.";
+        //        response.StatusCode = HttpStatusCode.OK;
+        //        response.Data = requests;
+        //        response.TotalRecords = requests.Count;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        response.Message = $"An error occurred: {ex.Message}";
+        //        response.StatusCode = HttpStatusCode.InternalServerError;
+        //    }
+
+        //    return response;
+        //}
         public ResponseModel GetEditEmployeeStatus(string EmployeeCode)
         {
             var response = new ResponseModel();

@@ -592,6 +592,8 @@ namespace ModuleManagementBackend.DAL.Models
 
                 entity.Property(e => e.Mobile).HasMaxLength(50);
 
+                entity.Property(e => e.NewlyGenratedEmployeeCode).HasMaxLength(200);
+
                 entity.Property(e => e.TOemploy).HasMaxLength(255);
 
                 entity.Property(e => e.UpdatedBy)
@@ -696,6 +698,10 @@ namespace ModuleManagementBackend.DAL.Models
                 entity.Property(e => e.TargetDate).HasColumnType("date");
 
                 entity.Property(e => e.Weightage).HasColumnType("decimal(10, 2)");
+
+                entity.Property(e => e.kraApprovedDate).HasColumnType("datetime");
+
+                entity.Property(e => e.kraSubmitDate).HasColumnType("datetime");
 
                 entity.HasOne(d => d.fkUser)
                     .WithMany(p => p.kraformRejectedLogs)

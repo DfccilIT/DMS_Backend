@@ -22,6 +22,15 @@ namespace ModuleManagementBackend.DAL.Models
         public string Remarks { get; set; }
         public string reportingOfficer { get; set; }
         public string DueTo { get; set; }
+        public int? kraStatus { get; set; }
+        public DateTime? kraSubmitDate { get; set; }
+        public DateTime? kraApprovedDate { get; set; }
+        public string reportingPost { get; set; }
+        public string reportingDept { get; set; }
+        public string reportingpop { get; set; }
+        public string userPost { get; set; }
+        public string userDept { get; set; }
+        public string pop { get; set; }
 
         public virtual kraUser fkUser { get; set; }
     }
