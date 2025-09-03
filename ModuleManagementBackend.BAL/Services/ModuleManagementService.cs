@@ -1897,48 +1897,99 @@ namespace ModuleManagementBackend.BAL.Services
 
             try
             {
-                var requests = await context.RegisterContractEmployees
-                    .GroupJoin(
-                        context.MstEmployeeMasters,
-                        contract => contract.NewlyGenratedEmployeeCode,  
-                        emp => emp.EmployeeCode,                         
-                        (contract, emps) => new { contract, emps }
-                    )
-                    .SelectMany(
-                        x => x.emps.DefaultIfEmpty(),                    
-                        (x, emp) => new { x.contract, emp }
-                    )
-                    .Where(x => x.contract.Status == status)             
-                    .Select(x => new
-                    {
-                        x.contract.ContEmpID,
-                        x.contract.NewlyGenratedEmployeeCode,
-                        x.contract.UserName,
-                        x.contract.DeptDFCCIL,
-                        x.contract.Location,
-                        x.contract.Mobile,
-                        x.contract.emailAddress,
-                        x.contract.TOemploy,
-                        x.contract.Gender,
-                        x.contract.DOB,
-                        x.contract.DOJDFCCIL,
-                        x.contract.Status,
-                        x.contract.CreateDate,
-                        x.contract.UpdatedDate,
-                        x.contract.UpdatedBy,
-                        ProfilePhoto = status != 0
-                                        ? $"{baseUrl}/DocUpload/ProfilePhoto/{x.contract.ProfilePhoto}"
-                                        : (x.emp != null ? $"{baseUrl}/Images/Employees/{x.emp.Photo}" : null),
-                        AppointmentDoc = x.contract.AppointmentDoc != null
-                                        ? $"{baseUrl}/DocUpload/OfficeOrder/{x.contract.AppointmentDoc}"
-                                        : null
-                    })
-                    .ToListAsync();
+                if (status == 0)
+                {
+                   
+                    var requests = await context.MstEmployeeMasters
+                        .Where(e => e.Status == 0 && e.TOemploy.ToLower() == "contractual")
+                        .GroupJoin(
+                            context.RegisterContractEmployees,
+                            emp => emp.EmployeeCode,
+                            contract => contract.NewlyGenratedEmployeeCode,
+                            (emp, contracts) => new { emp, contracts }
+                        )
+                        .SelectMany(
+                            x => x.contracts.DefaultIfEmpty(),
+                            (x, contract) => new
+                            {
+                                ContEmpID = contract != null ? (int?)contract.ContEmpID : null,
+                                x.emp.EmployeeCode,
+                                x.emp.UserName,
+                                x.emp.DeptDFCCIL,
+                                x.emp.Location,
+                                x.emp.Mobile,
+                                x.emp.emailAddress,
+                                x.emp.TOemploy,
+                                x.emp.Gender,
+                                x.emp.DOB,
+                                x.emp.DOJDFCCIL,
+                                x.emp.Status,
+                                x.emp.Modify_Date,
+                                x.emp.Modify_By,
+                                x.emp.ReportingOfficer,
 
-                response.Message = "Contractual Employee requests fetched successfully.";
-                response.StatusCode = HttpStatusCode.OK;
-                response.Data = requests;
-                response.TotalRecords = requests.Count;
+                                ProfilePhoto = x.emp.Photo != null
+                                    ? $"{baseUrl}/Images/Employees/{x.emp.Photo}"
+                                    : null,
+
+                                AppointmentDoc = contract != null && contract.AppointmentDoc != null
+                                    ? $"{baseUrl}/DocUpload/OfficeOrder/{contract.AppointmentDoc}"
+                                    : null,
+
+                                CreatedDate = contract==null?null: contract.CreateDate,
+                                ApprovedDate = contract==null ? null : contract.UpdatedDate,
+                                ApprovedBy = contract==null ? null : contract.UpdatedBy,
+                            }
+                        )
+                        .ToListAsync();
+
+                    response.Message = "Contractual Employee records (with left join contract info) fetched successfully.";
+                    response.StatusCode = HttpStatusCode.OK;
+                    response.Data = requests;
+                    response.TotalRecords = requests.Count;
+                }
+                else
+                {
+                    
+                    var requests = await context.RegisterContractEmployees
+                        .Where(c => c.Status == status)
+                        .Select(c => new
+                        {
+                            c.ContEmpID,
+                            EmployeeCode = c.NewlyGenratedEmployeeCode,
+                            c.UserName,
+                            c.DeptDFCCIL,
+                            c.Location,
+                            c.Mobile,
+                            c.emailAddress,
+                            TOemploy = "contractual",
+                            c.Gender,
+                            c.DOB,
+                            c.DOJDFCCIL,
+                            c.Status,
+                            Modify_Date = c.UpdatedDate,
+                            Modify_By = c.UpdatedBy,
+                            ReportingOfficer = (string)null,
+
+                            ProfilePhoto = c.ProfilePhoto != null
+                                ? $"{baseUrl}/DocUpload/ProfilePhoto/{c.ProfilePhoto}"
+                                : null,
+
+                            AppointmentDoc = c.AppointmentDoc != null
+                                ? $"{baseUrl}/DocUpload/OfficeOrder/{c.AppointmentDoc}"
+                                : null,
+
+                            CreatedDate = c.CreateDate,
+                            RejectedDate = c.UpdatedDate,
+                            RejectedBy = c.UpdatedBy,
+                        })
+                        .ToListAsync();
+
+                    response.Message = "Contractual Employee requests from RegisterContractEmployees fetched successfully.";
+                    response.StatusCode = HttpStatusCode.OK;
+                    response.Data = requests;
+                    response.TotalRecords = requests.Count;
+                }
             }
             catch (Exception ex)
             {
@@ -1950,48 +2001,10 @@ namespace ModuleManagementBackend.BAL.Services
         }
 
 
-        //public async Task<ResponseModel> GetAllContractualEmployeeList()
-        //{
-        //    var response = new ResponseModel();
 
 
-        //    try
-        //    {
-        //        var requests = await context.MstEmployeeMasters
-        //            .Where(e => e.Status == 0 && e.TOemploy.StartsWith("CONTR"))
-        //            .Select(e => new
-        //            {
-        //                e.EmployeeCode,
-        //                e.UserName,
-        //                e.DeptDFCCIL,
-        //                e.Location,
-        //                e.Mobile,
-        //                e.emailAddress,
-        //                e.TOemploy,
-        //                e.Gender,
-        //                e.DOB,
-        //                e.DOJDFCCIL,
-        //                e.Status,
-        //                e.Modify_Date,
-        //                e.Modify_By,
-        //                e.Photo,
-        //                AppointmentDoc = e.AppointmentDoc!=null ? $"{baseUrl}/DocUpload/OfficeOrder/{e.AppointmentDoc}" : null
-        //            })
-        //            .ToListAsync();
 
-        //        response.Message = "Contratual Employee requests fetched successfully.";
-        //        response.StatusCode = HttpStatusCode.OK;
-        //        response.Data = requests;
-        //        response.TotalRecords = requests.Count;
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        response.Message = $"An error occurred: {ex.Message}";
-        //        response.StatusCode = HttpStatusCode.InternalServerError;
-        //    }
-
-        //    return response;
-        //}
+       
         public ResponseModel GetEditEmployeeStatus(string EmployeeCode)
         {
             var response = new ResponseModel();
