@@ -79,7 +79,7 @@ namespace ModuleManagementBackend.API.Controllers
 
         [HttpGet]
         [Route("GetHolidaysByDateRange")]
-        [AllowAnonymous]
+        
         public async Task<ActionResult<ResponseModel>> GetHolidaysByDateRange(
             DateTime? fromDate = null,
             DateTime? toDate = null,

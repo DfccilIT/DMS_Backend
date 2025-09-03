@@ -19,12 +19,12 @@ namespace ModuleManagementBackend.API.Controllers
         }
 
 
-        [HttpPost("IsValidProgress")]
-        public async Task<ResponseModel> IsValidProgress(string Token, string EmpCode)
-        {
-            var response = await _accountRepository.IsValidProgress(Token, EmpCode);
-            return response;
-        }
+        //[HttpPost("IsValidProgress")]
+        //public async Task<ResponseModel> IsValidProgress(string Token, string EmpCode)
+        //{
+        //    var response = await _accountRepository.IsValidProgress(Token, EmpCode);
+        //    return response;
+        //}
 
 
         // Add this method to your existing AccountController.cs in the API project
@@ -37,7 +37,7 @@ namespace ModuleManagementBackend.API.Controllers
 
             try
             {
-                // Get user info from the filter (stored in HttpContext.Items)
+               
                 var currentUser = HttpContext.Items["CurrentUser"] as Root;
 
                 if (currentUser == null)
@@ -49,18 +49,18 @@ namespace ModuleManagementBackend.API.Controllers
 
                 var empCode = Convert.ToInt32(currentUser.username);
 
-                // Get employee details from your database (reusing your existing logic)
+               
                 var employeeDetails = await _accountRepository.GetEmployeeDetailsAsync(empCode);
 
                 if (employeeDetails != null)
                 {
-                    // Get roles from your database using your existing logic
+                   
                     var isSuperAdmin = _configuration["SuperAdmin"]?.ToString() == employeeDetails.empCode;
                     List<string> userRoles = new List<string>();
 
                     if (!isSuperAdmin)
                     {
-                        // Use your existing role fetching logic
+                        
                         var roles = await _accountRepository.GetUserRolesAsync(empCode);
                         userRoles = roles.Any() ? roles : new List<string> { "user" };
                     }
@@ -82,11 +82,10 @@ namespace ModuleManagementBackend.API.Controllers
                         Department = employeeDetails.department,
                         Level = employeeDetails.lavel,
                         Roles = userRoles,
-                        // Include SSO user info
+                        
                         SSOUserInfo = new
                         {
                             currentUser.username,
-                            // currentUser.username,
                             currentUser.UnitName,
                             currentUser.UnitId,
                             currentUser.Designation,
