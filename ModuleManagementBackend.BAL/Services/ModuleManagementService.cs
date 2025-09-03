@@ -15,6 +15,7 @@ using ModuleManagementBackend.Model.DTOs.EditEmployeeDTO;
 using ModuleManagementBackend.Model.DTOs.GETEMPLOYEEDTO;
 using System.Data;
 using System.Data.Common;
+using System.Diagnostics.Contracts;
 using System.Net;
 using System.Net.Mail;
 using System.Security.Principal;
@@ -1938,7 +1939,7 @@ namespace ModuleManagementBackend.BAL.Services
 
                                 CreatedDate = contract==null?null: contract.CreateDate,
                                 ApprovedDate = contract==null ? null : contract.UpdatedDate,
-                                ApprovedBy = contract==null ? null : contract.UpdatedBy,
+                                ApprovedBy = contract==null ? null :context.MstEmployeeMasters.Where(x=>x.EmployeeCode== contract.UpdatedBy).Select(x=>x.UserName).FirstOrDefault(),
                             }
                         )
                         .ToListAsync();
@@ -1981,7 +1982,7 @@ namespace ModuleManagementBackend.BAL.Services
 
                             CreatedDate = c.CreateDate,
                             ApprovedDate = c.UpdatedDate,
-                            ApprovedBy = c.UpdatedBy,
+                            ApprovedBy = context.MstEmployeeMasters.Where(x => x.EmployeeCode== c.UpdatedBy).Select(x => x.UserName).FirstOrDefault(),
                         })
                         .ToListAsync();
 
