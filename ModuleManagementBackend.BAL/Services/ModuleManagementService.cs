@@ -1980,8 +1980,8 @@ namespace ModuleManagementBackend.BAL.Services
                                 : null,
 
                             CreatedDate = c.CreateDate,
-                            RejectedDate = c.UpdatedDate,
-                            RejectedBy = c.UpdatedBy,
+                            ApprovedDate = c.UpdatedDate,
+                            ApprovedBy = c.UpdatedBy,
                         })
                         .ToListAsync();
 
