@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ModuleManagementBackend.BAL.IServices;
 using ModuleManagementBackend.Model.Common;
@@ -40,16 +39,18 @@ namespace ModuleManagementBackend.API.Controllers
         public async Task<ActionResult<ResponseModel>> GetAllHolidays(
             int? unitId = null,
             string? holidayType = null,
-            string? unitName = null)
+            string? unitName = null,
+            int? Year=null)
         {
-            var result = await _holidayService.GetAllHolidays(unitId, holidayType, unitName);
+            Year ??= DateTime.Now.Year;
+            var result = await _holidayService.GetAllHolidays(unitId, holidayType, unitName,Year);
             return Ok(result);
         }
 
         [HttpGet]
         [Route("GetAllHolidaysV2")]
         [AllowAnonymous]
-        public async Task<ResponseModel> GetAllHolidaysV2(int? unitId = null, string? holidayType = null, string? unitName = null, [FromHeader(Name = "APIKey")] string apiKey = null)
+        public async Task<ResponseModel> GetAllHolidaysV2(int? unitId = null, string? holidayType = null, string? unitName = null, int? Year = null,[FromHeader(Name = "APIKey")] string apiKey = null)
         {
             if (apiKey != _apiKey)
             {
@@ -63,7 +64,8 @@ namespace ModuleManagementBackend.API.Controllers
             var response = new ResponseModel();
             try
             {
-                response = await _holidayService.GetAllHolidays(unitId, holidayType, unitName);
+                Year ??= DateTime.Now.Year;
+                response = await _holidayService.GetAllHolidays(unitId, holidayType, unitName,Year);
                 return response;
             }
             catch (Exception ex)

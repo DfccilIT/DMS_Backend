@@ -73,7 +73,7 @@ namespace ModuleManagementBackend.BAL.IServices
 
         #region Holiday Calendar
 
-        Task<ResponseModel> GetAllHolidays(int? unitId = null, string? holidayType = null, string? unitName = null);
+        Task<ResponseModel> GetAllHolidays(int? unitId = null, string? holidayType = null, string? unitName = null,int?Year=null);
 
         Task<ResponseModel> GetHolidaysByDateRange(DateTime? fromDate = null, DateTime? toDate = null, int? unitId = null);
 

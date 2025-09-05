@@ -3182,7 +3182,7 @@ namespace ModuleManagementBackend.BAL.Services
 
         #region HolidayCalender
 
-        public async Task<ResponseModel> GetAllHolidays(int? unitId = null, string? holidayType = null, string? unitName = null)
+        public async Task<ResponseModel> GetAllHolidays(int? unitId = null, string? holidayType = null, string? unitName = null,int? Year=null)
         {
             ResponseModel responseModel = new ResponseModel();
             try
@@ -3204,6 +3204,11 @@ namespace ModuleManagementBackend.BAL.Services
                 {
                     query = query.Where(h => h.UnitName != null && h.UnitName.Contains(unitName));
                 }
+                if (Year.HasValue)
+                {
+                    query = query.Where(h => h.HolidayDate.Year == Year.Value);
+                }
+
 
                 var result = await query.Select(h => new HolidayCalendarDto
                 {
