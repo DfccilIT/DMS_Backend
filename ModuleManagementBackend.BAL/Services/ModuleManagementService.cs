@@ -1672,7 +1672,7 @@ namespace ModuleManagementBackend.BAL.Services
 
         #endregion
 
-        #region Aprrove Contractual Employee 
+        #region Aproove Contractual Employee 
         public async Task<ResponseModel> ProcessEditContractualEmployeeRequest(AprooveContractualEmployeeDto request, string LoginUserId)
         {
             var response = new ResponseModel();
@@ -1857,6 +1857,7 @@ namespace ModuleManagementBackend.BAL.Services
             try
             {
                 var requests = await context.RegisterContractEmployees
+                    .Include(e => e.fkContract)
                     .Where(e => e.Status == 8)
                     .Select(e => new
                     {
@@ -1871,6 +1872,9 @@ namespace ModuleManagementBackend.BAL.Services
                         e.DOB,
                         e.DOJDFCCIL,
                         e.Status,
+                        vendorId= e.fkContractid,
+                        vendor = e.fkContract.Contractor,
+                        e.remarks,
                         e.CreateDate,
                         e.UpdatedDate,
                         e.UpdatedBy,
@@ -1936,7 +1940,7 @@ namespace ModuleManagementBackend.BAL.Services
                                 AppointmentDoc = contract != null && contract.AppointmentDoc != null
                                     ? $"{baseUrl}/DocUpload/OfficeOrder/{contract.AppointmentDoc}"
                                     : null,
-
+                                Vendor=contract!=null? contract.fkContract.Contractor:"",
                                 CreatedDate = contract==null?null: contract.CreateDate,
                                 ApprovedDate = contract==null ? null : contract.UpdatedDate,
                                 ApprovedBy = contract==null ? null :context.MstEmployeeMasters.Where(x=>x.EmployeeCode== contract.UpdatedBy).Select(x=>x.UserName).FirstOrDefault(),
@@ -1953,6 +1957,7 @@ namespace ModuleManagementBackend.BAL.Services
                 {
                     
                     var requests = await context.RegisterContractEmployees
+                        .Include(x=>x.fkContract)
                         .Where(c => c.Status == status)
                         .Select(c => new
                         {
@@ -1979,7 +1984,7 @@ namespace ModuleManagementBackend.BAL.Services
                             AppointmentDoc = c.AppointmentDoc != null
                                 ? $"{baseUrl}/DocUpload/OfficeOrder/{c.AppointmentDoc}"
                                 : null,
-
+                            Vendor = c.fkContract.Contractor,
                             CreatedDate = c.CreateDate,
                             ApprovedDate = c.UpdatedDate,
                             ApprovedBy = context.MstEmployeeMasters.Where(x => x.EmployeeCode== c.UpdatedBy).Select(x => x.UserName).FirstOrDefault(),
@@ -2000,11 +2005,6 @@ namespace ModuleManagementBackend.BAL.Services
 
             return response;
         }
-
-
-
-
-
        
         public ResponseModel GetEditEmployeeStatus(string EmployeeCode)
         {
