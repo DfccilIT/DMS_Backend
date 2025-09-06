@@ -21,12 +21,14 @@ namespace ModuleManagementBackend.API.Controllers
         private readonly IModuleManagementService managementService;
         private readonly IHttpContextAccessor httpContext;
         private readonly IDapperService dapper;
+        private readonly IConfiguration configuration;
 
-        public ModuleManagementController(IModuleManagementService managementService, IHttpContextAccessor httpContext, IDapperService dapper)
+        public ModuleManagementController(IModuleManagementService managementService, IHttpContextAccessor httpContext, IDapperService dapper,IConfiguration configuration)
         {
             this.managementService=managementService;
             this.httpContext=httpContext;
             this.dapper=dapper;
+            this.configuration=configuration;
         }
 
         private string LoginUserId
@@ -338,20 +340,21 @@ namespace ModuleManagementBackend.API.Controllers
         public async Task<IActionResult> VerifyEmailChange([FromQuery] Guid token)
         {
             var result = await managementService.VerifyEmailChangeAsync(token);
+            var environment = configuration["DeploymentModes"]??string.Empty;
+            
 
-           
             string baseUrl = $"{Request.Scheme}://{Request.Host}/email-change/result.html";
             string redirectUrl;
 
             if (result.StatusCode == HttpStatusCode.OK)
             {
                
-                redirectUrl = $"{baseUrl}?status=success&email={Uri.EscapeDataString(result.Data?.ToString() ?? "")}";
+                redirectUrl = $"{baseUrl}?status=success&email={Uri.EscapeDataString(result.Data?.ToString() ?? "")}&Env={environment}";
             }
             else
             {
               
-                redirectUrl = $"{baseUrl}?status=error&msg={Uri.EscapeDataString(result.Message ?? "Verification failed")}";
+                redirectUrl = $"{baseUrl}?status=error&msg={Uri.EscapeDataString(result.Message ?? "Verification failed")}&Env={environment}";
             }
 
             return Redirect(redirectUrl);

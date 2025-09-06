@@ -85,8 +85,12 @@
       }
     }
 
-    function goHome() {
-        window.location.href = "https://auth.dfccil.com/"; 
+        function goHome() {
+            const params = getQueryParams();
+            if (params.Env == "DFCCIL") {
+                window.location.href = "https://Dashboard.dfccil.com/";
+            }
+            window.location.href = "https://uatlogin.dfccil.com/";
     }
 
     renderResult();

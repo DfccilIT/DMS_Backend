@@ -3810,7 +3810,7 @@ namespace ModuleManagementBackend.BAL.Services
                 {
                     return new ResponseModel
                     {
-                        Message = "Invalid or already used token.",
+                        Message = "Verification link already used.",
                         StatusCode = HttpStatusCode.BadRequest,
                         Error = true
                     };
