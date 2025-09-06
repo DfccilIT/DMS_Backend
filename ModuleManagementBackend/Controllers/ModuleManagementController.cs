@@ -307,7 +307,8 @@ namespace ModuleManagementBackend.API.Controllers
         {
             return await managementService.GetSelectedEmployeeColumnsAsync(columnNamesCsv, empCode);
         }
-      
+
+        [AllowAnonymous]
         [HttpPost("generate-otp")]
         public async Task<ResponseModel> GenerateOtp([FromBody] GenerateOtpDto dto)
         {

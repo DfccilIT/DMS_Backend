@@ -18,8 +18,10 @@ using System.Data.Common;
 using System.Diagnostics.Contracts;
 using System.Net;
 using System.Net.Mail;
+using System.Numerics;
 using System.Security.Principal;
 using System.Text.RegularExpressions;
+using static ModuleManagementBackend.BAL.Services.AccountService;
 using static ModuleManagementBackend.Model.DTOs.HolidayCalenderDTO.HolidayCalenderCommonDTO;
 
 namespace ModuleManagementBackend.BAL.Services
@@ -1906,7 +1908,7 @@ namespace ModuleManagementBackend.BAL.Services
                 {
                    
                     var requests = await context.MstEmployeeMasters
-                        .Where(e => e.Status == 0 && e.TOemploy.ToLower() == "contractual")
+                        .Where(e => e.Status == 0 && e.TOemploy.ToLower() == "contractual" && e.DeptDFCCIL !="SAP CONSULTANT")
                         .GroupJoin(
                             context.RegisterContractEmployees,
                             emp => emp.EmployeeCode,
@@ -2571,6 +2573,8 @@ namespace ModuleManagementBackend.BAL.Services
 
             return response;
         }
+
+       
         #endregion
 
         public async Task<ResponseModel> GetDfccilDirectory(string? EmpCode = null)
@@ -2921,63 +2925,6 @@ namespace ModuleManagementBackend.BAL.Services
 
             return response;
         }
-        //public async Task<ResponseModel> GetSelectedEmployeeColumnsAsync(string columnNamesCsv, string? employeeCode = null)
-        //{
-        //    var response = new ResponseModel();
-        //    var conncetion = dapper.GetDbconnection();
-        //    try
-        //    {
-        //        if (string.IsNullOrWhiteSpace(columnNamesCsv))
-        //        {
-        //            response.StatusCode = HttpStatusCode.BadRequest;
-        //            response.Message = "No columns specified.";
-        //            return response;
-        //        }
-
-        //        var selectedColumns = columnNamesCsv.Split(",", StringSplitOptions.RemoveEmptyEntries)
-        //                                            .Select(c => c.Trim())
-        //                                            .ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-
-        //        var allColumns = (await conncetion.QueryAsync<string>(
-        //            @"SELECT COLUMN_NAME 
-        //          FROM INFORMATION_SCHEMA.COLUMNS 
-        //          WHERE TABLE_NAME = 'MstEmployeeMaster'")).ToList();
-
-        //        var validColumns = selectedColumns.Intersect(allColumns).ToList();
-        //        if (!validColumns.Any())
-        //        {
-        //            response.StatusCode = HttpStatusCode.BadRequest;
-        //            response.Message = "No valid columns found.";
-        //            return response;
-        //        }
-
-        //        var columnList = string.Join(",", validColumns);
-
-        //        var sql = $@"SELECT {columnList}
-        //                 FROM MstEmployeeMaster
-        //                 WHERE Status = 0";
-
-        //        if (!string.IsNullOrEmpty(employeeCode))
-        //        {
-        //            sql += " AND EmployeeCode = @empCode";
-        //        }
-
-        //        var data = await conncetion.QueryAsync(sql, new { empCode = employeeCode });
-        //        var result = data.Select(row => (IDictionary<string, object>)row).ToList();
-
-        //        response.StatusCode = HttpStatusCode.OK;
-        //        response.Message = "Employee data fetched successfully.";
-        //        response.Data = result;
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        response.StatusCode = HttpStatusCode.InternalServerError;
-        //        response.Message = ex.Message;
-        //    }
-
-        //    return response;
-        //}
 
         public async Task<ResponseModel> GetSelectedEmployeeColumnsAsync(string columnNamesCsv, string? employeeCode = null)
         {
@@ -3728,7 +3675,61 @@ namespace ModuleManagementBackend.BAL.Services
 
                 await context.tblDeviceOTPs.AddAsync(otpRecord);
                 await context.SaveChangesAsync();
+                try
+                {
 
+
+                    string username = configuration["SMSServiceUserName"] ?? string.Empty;
+                    string templateId = configuration["OfficialMobileChangeSMSTempleteId"] ?? string.Empty;
+                    string phone = string.Empty;
+                    if (configuration["DeploymentModes"] !="DFCCIL")
+                    {
+                        //phone = configuration["SMSServiceDefaultNumber"]?? string.Empty;
+                        phone = newMobileNumber;
+                    }
+                    else
+                    {
+                        phone = newMobileNumber;
+                    }
+
+
+                    string msg = $"Dear User, Your OTP for updating your registered mobile number is {otp}.Please do not share this OTP with anyone.From DFCCIL";
+
+                    string encodedMsg = Uri.EscapeDataString(msg);
+
+                    if (string.IsNullOrEmpty(phone))
+                    {
+                        return new ResponseModel();
+                    }
+                    string contextUrl = $"https://login.dfccil.com/Dfccil/DFCSMS?username={Uri.EscapeDataString(username)}&Phone={Uri.EscapeDataString(phone)}&msg={encodedMsg}&templatedid={Uri.EscapeDataString(templateId)}";
+
+                    using var httpClient = new HttpClient();
+                    var contextResponse = await httpClient.PostAsync(contextUrl, null);
+
+                    if (contextResponse.IsSuccessStatusCode)
+                    {
+                        var resultContent = await contextResponse.Content.ReadAsStringAsync();
+                        response.StatusCode = HttpStatusCode.OK;
+                        response.Message = "SMS sent successfully.";
+                        response.Data = resultContent;
+                        response.TotalRecords = 1;
+                    }
+                    else
+                    {
+                        var errorContent = await contextResponse.Content.ReadAsStringAsync();
+                        response.StatusCode = contextResponse.StatusCode;
+                        response.Message = $"Failed to send SMS. Status Code: {contextResponse.StatusCode}";
+                        response.Error = true;
+                        response.ErrorDetail = errorContent;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    response.StatusCode = HttpStatusCode.InternalServerError;
+                    response.Message = "An error occurred while sending SMS.";
+                    response.Error = true;
+                    response.ErrorDetail = ex;
+                }
 
 
                 response.Message = "OTP generated and sent successfully.";
