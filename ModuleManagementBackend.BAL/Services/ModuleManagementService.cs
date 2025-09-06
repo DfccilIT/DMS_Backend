@@ -249,7 +249,7 @@ namespace ModuleManagementBackend.BAL.Services
             }
 
             var master = await context.MstEmployeeMasters
-                .FirstOrDefaultAsync(m => m.EmployeeCode.Equals(employeeCode, StringComparison.OrdinalIgnoreCase));
+                .FirstOrDefaultAsync(m => m.EmployeeCode==employeeCode && m.Status==0);
 
             if (master == null)
             {
@@ -267,7 +267,7 @@ namespace ModuleManagementBackend.BAL.Services
 
             
             master.PersonalEmailAddress = newPersonalEmail;
-            master.Modify_Date = DateTime.UtcNow;   
+            master.Modify_Date = DateTime.Now;   
             master.Modify_By = loginUserId;           
 
             await context.SaveChangesAsync();

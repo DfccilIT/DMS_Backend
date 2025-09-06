@@ -47,6 +47,7 @@ namespace ModuleManagementBackend.API.Controllers
             return await managementService.EditEmployeeProfileAsync(dto);
         }
 
+        [AllowAnonymous]
         [HttpPost("UpdatePersonalEmail")]
         public async Task<ResponseModel> UpdatePersonalEmail([FromBody]RequestEmailDto dto)
         {
