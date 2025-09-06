@@ -3734,7 +3734,7 @@ namespace ModuleManagementBackend.BAL.Services
 
                 response.Message = "OTP generated and sent successfully.";
                 response.StatusCode = HttpStatusCode.OK;
-                response.Data = new { Mobile = newMobileNumber, Otp = otp };
+                response.Data = new { Mobile = newMobileNumber };
             }
             catch (Exception ex)
             {
