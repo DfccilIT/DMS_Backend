@@ -97,6 +97,7 @@ namespace ModuleManagementBackend.BAL.IServices
         Task<ResponseModel> GenerateOtpAsync(string userEmpCode, string newMobileNumber);
         Task<ResponseModel> RequestEmailChangeAsync(string userEmpCode, string newEmail);
         Task<ResponseModel> VerifyEmailChangeAsync(Guid token);
+        Task<ResponseModel> UpdateExtensionNoAsync(string employeeCode, string ExtensionNo, string loginUserId);
         #endregion
 
         Task<ResponseModel> GetKraReporingOfficer(string empCode, DateTime startDate, DateTime endDate);

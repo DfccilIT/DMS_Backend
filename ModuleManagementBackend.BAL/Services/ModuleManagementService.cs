@@ -3926,6 +3926,54 @@ namespace ModuleManagementBackend.BAL.Services
             return response;
         }
 
+        public async Task<ResponseModel> UpdateExtensionNoAsync(string employeeCode, string ExtensionNo, string loginUserId)
+        {
+            var response = new ResponseModel();
+
+            if (string.IsNullOrWhiteSpace(employeeCode))
+            {
+                response.StatusCode = HttpStatusCode.BadRequest;
+                response.Message = "Employee code is required.";
+                return response;
+            }
+
+            if (string.IsNullOrWhiteSpace(ExtensionNo))
+            {
+                response.StatusCode = HttpStatusCode.BadRequest;
+                response.Message = "Extension No is required.";
+                return response;
+            }
+
+            var master = await context.MstEmployeeMasters
+                .FirstOrDefaultAsync(m => m.EmployeeCode==employeeCode && m.Status==0);
+
+            if (master == null)
+            {
+                response.StatusCode = HttpStatusCode.NotFound;
+                response.Message = "Employee not found.";
+                return response;
+            }
+
+            if (string.Equals(master.ExtnNo, ExtensionNo, StringComparison.OrdinalIgnoreCase))
+            {
+                response.StatusCode = HttpStatusCode.OK;
+                response.Message = "No changes required. Extension is already same.";
+                return response;
+            }
+
+
+            master.ExtnNo = ExtensionNo;
+            master.Modify_Date = DateTime.Now;
+            master.Modify_By = loginUserId;
+
+            await context.SaveChangesAsync();
+
+            response.StatusCode = HttpStatusCode.OK;
+            response.Message = "Extension number updated successfully.";
+            response.Data = master.PersonalEmailAddress;
+            return response;
+        }
+
         #endregion
 
         #region KRA Reporting Officer

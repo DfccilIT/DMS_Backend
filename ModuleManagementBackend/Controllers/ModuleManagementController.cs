@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ModuleManagementBackend.BAL.IServices;
+using ModuleManagementBackend.BAL.Services;
 using ModuleManagementBackend.DAL.DapperServices;
 using ModuleManagementBackend.Model.Common;
 using ModuleManagementBackend.Model.DTOs.EditEmployeeDTO;
@@ -12,10 +13,10 @@ using static ModuleManagementBackend.BAL.Services.AccountService;
 namespace ModuleManagementBackend.API.Controllers
 {
 
-  
+
     [Route("api/[controller]")]
     [ApiController]
-    
+
     public class ModuleManagementController : ControllerBase
     {
         private readonly IModuleManagementService managementService;
@@ -23,7 +24,7 @@ namespace ModuleManagementBackend.API.Controllers
         private readonly IDapperService dapper;
         private readonly IConfiguration configuration;
 
-        public ModuleManagementController(IModuleManagementService managementService, IHttpContextAccessor httpContext, IDapperService dapper,IConfiguration configuration)
+        public ModuleManagementController(IModuleManagementService managementService, IHttpContextAccessor httpContext, IDapperService dapper, IConfiguration configuration)
         {
             this.managementService=managementService;
             this.httpContext=httpContext;
@@ -47,9 +48,9 @@ namespace ModuleManagementBackend.API.Controllers
             return await managementService.EditEmployeeProfileAsync(dto);
         }
 
-        [AllowAnonymous]
+
         [HttpPost("UpdatePersonalEmail")]
-        public async Task<ResponseModel> UpdatePersonalEmail([FromBody]RequestEmailDto dto)
+        public async Task<ResponseModel> UpdatePersonalEmail([FromBody] RequestEmailDto dto)
         {
             return await managementService.UpdatePersonalEmailAsync(dto.UserEmpCode, dto.NewEmail, LoginUserId);
         }
@@ -84,7 +85,7 @@ namespace ModuleManagementBackend.API.Controllers
             return await managementService.ProcessEditReportingOfficerRequest(aprooveEmployee);
         }
 
-        
+
         [HttpGet("ModuleMangement/GetDfccilDirctory")]
         public async Task<ResponseModel> GetDfccilDirctory(string? employeeCode = null)
         {
@@ -118,7 +119,7 @@ namespace ModuleManagementBackend.API.Controllers
         {
             var response = await managementService.AddEmployeeOfTheMonth(dto);
 
-            return  response;
+            return response;
         }
 
 
@@ -135,7 +136,7 @@ namespace ModuleManagementBackend.API.Controllers
         public async Task<ResponseModel> GetAllArchiveNotices()
         {
             var response = await managementService.GetAllArchiveNotices();
-            return  response;
+            return response;
         }
 
 
@@ -181,7 +182,7 @@ namespace ModuleManagementBackend.API.Controllers
             return response;
         }
 
-        
+
         [HttpGet("GetAllDependentRequests")]
         public async Task<ResponseModel> GetAllPendingRequests()
         {
@@ -189,7 +190,7 @@ namespace ModuleManagementBackend.API.Controllers
             return response;
         }
 
-        
+
         [HttpGet("GetAllDependentRequestsByCreatedBy/{empCode}")]
         public async Task<ResponseModel> GetDependentsByEmpCode(string empCode)
         {
@@ -209,7 +210,7 @@ namespace ModuleManagementBackend.API.Controllers
         public async Task<ResponseModel> UpdateDependent(int DependentId, [FromForm] AddDependentDto dto)
         {
             return await managementService.UpdateDependentAsync(DependentId, dto, LoginUserId);
-           
+
         }
 
         #endregion
@@ -298,14 +299,14 @@ namespace ModuleManagementBackend.API.Controllers
         }
 
         [HttpGet("GetEmployeeColumn")]
-       
+
         public async Task<ResponseModel> GetEmployeeColumn()
         {
             return await managementService.GetEmployeeMasterColumnsAsync();
         }
 
         [HttpGet("GetEmployeeList")]
-        
+
         public async Task<ResponseModel> GetEmployeeList(string columnNamesCsv, string? empCode = null)
         {
             return await managementService.GetSelectedEmployeeColumnsAsync(columnNamesCsv, empCode);
@@ -319,15 +320,15 @@ namespace ModuleManagementBackend.API.Controllers
             return result;
         }
 
-       
+
         [HttpPost("change-mobile-number")]
         public async Task<ResponseModel> ChangeMobileNumber([FromBody] ChangeMobileNumberDto dto)
         {
             var result = await managementService.ChangeMobileNumberAsync(dto.UserEmpCode, dto.NewMobileNumber, dto.Otp);
-            return  result;
+            return result;
         }
 
-       
+
         [HttpPost("request-email-change")]
         public async Task<ResponseModel> RequestEmailChange([FromBody] RequestEmailDto dto)
         {
@@ -342,27 +343,51 @@ namespace ModuleManagementBackend.API.Controllers
         {
             var result = await managementService.VerifyEmailChangeAsync(token);
             var environment = configuration["DeploymentModes"]??string.Empty;
-            
+
 
             string baseUrl = $"{Request.Scheme}://{Request.Host}/email-change/result.html";
             string redirectUrl;
 
             if (result.StatusCode == HttpStatusCode.OK)
             {
-               
+
                 redirectUrl = $"{baseUrl}?status=success&email={Uri.EscapeDataString(result.Data?.ToString() ?? "")}&Env={environment}";
             }
             else
             {
-              
+
                 redirectUrl = $"{baseUrl}?status=error&msg={Uri.EscapeDataString(result.Message ?? "Verification failed")}&Env={environment}";
             }
 
             return Redirect(redirectUrl);
         }
 
+        [HttpPut("UpdateExtensionNo")]
+        public async Task<IActionResult> UpdateExtensionNo(
+        [FromQuery] string employeeCode,
+        [FromQuery] string extensionNo
+       )
+        {
+            if (string.IsNullOrWhiteSpace(employeeCode) || string.IsNullOrWhiteSpace(extensionNo))
+            {
+                return BadRequest(new ResponseModel
+                {
+                    StatusCode = System.Net.HttpStatusCode.BadRequest,
+                    Message = "Employee code and extension number are required"
+                });
+            }
+
+            var response = await managementService.UpdateExtensionNoAsync(employeeCode, extensionNo, LoginUserId);
+
+            if (response.StatusCode == System.Net.HttpStatusCode.OK)
+                return Ok(response);
+
+            return StatusCode((int)response.StatusCode, response);
+        }
+
+
         [HttpGet("GetReportingOfficers")]
-       
+
         public async Task<ResponseModel> GetReportingOfficers(string empCode, DateTime startDate, DateTime endDate)
         {
             var result = await managementService.GetKraReporingOfficer(empCode, startDate, endDate);
@@ -370,7 +395,7 @@ namespace ModuleManagementBackend.API.Controllers
             return result;
         }
     }
-   
+
 }
 
 
