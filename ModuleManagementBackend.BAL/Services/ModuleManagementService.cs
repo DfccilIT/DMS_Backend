@@ -338,11 +338,8 @@ namespace ModuleManagementBackend.BAL.Services
                     mstRecord.AnniversaryDate = editRecord.DateOfAnniversary;
                     mstRecord.DOJDFCCIL = editRecord.DateOfJoining;
                     mstRecord.Location = editRecord.Location;
-                    mstRecord.Mobile = editRecord.Mobile;
-                    mstRecord.emailAddress = editRecord.Email;
-                    mstRecord.PersonalEmailAddress = editRecord.PersonalEmailId;
                     mstRecord.TOemploy = editRecord.Toemploy;
-                    mstRecord.ExtnNo = editRecord.ExtensionNo;
+                  
 
 
                     editRecord.status = 0;
