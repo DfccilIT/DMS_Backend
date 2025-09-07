@@ -66,7 +66,7 @@ namespace ModuleManagementBackend.BAL.Services
 
             var master = await context.MstEmployeeMasters
                 .AsNoTracking()
-                .FirstOrDefaultAsync(m => m.EmployeeCode.Equals(dto.EmployeeCode, StringComparison.OrdinalIgnoreCase));
+                .FirstOrDefaultAsync(m => m.EmployeeCode==dto.EmployeeCode);
 
             if (master == null)
             {
