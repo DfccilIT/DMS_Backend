@@ -3,6 +3,7 @@ using Dapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Query.Internal;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Protocols;
@@ -3661,6 +3662,14 @@ namespace ModuleManagementBackend.BAL.Services
             var response = new ResponseModel();
             try
             {
+                var IsMobileExists = await context.MstEmployeeMasters.AnyAsync(x => x.Status==0 && x.Mobile==newMobileNumber);
+                if (IsMobileExists)
+                {
+                    response.StatusCode = HttpStatusCode.Conflict;
+                    response.Message = "Mobile Number Already Exists in DFCCIL Sytem";
+                    response.Data = null;
+                    return response;
+                }
                 var otp = new Random().Next(100000, 999999).ToString();
 
                 var otpRecord = new tblDeviceOTP
@@ -3759,7 +3768,14 @@ namespace ModuleManagementBackend.BAL.Services
                     };
                 }
 
-
+                var IsMobileExists = await context.MstEmployeeMasters.AnyAsync(x => x.Status==0 && x.emailAddress==newEmail);
+                if (IsMobileExists)
+                {
+                    response.StatusCode = HttpStatusCode.Conflict;
+                    response.Message = "Email Already Exists in DFCCIL Sytem";
+                    response.Data = null;
+                    return response;
+                }
                 var token = Guid.NewGuid();
 
                 var request = new EmailChangeRequest
