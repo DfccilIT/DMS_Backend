@@ -16,6 +16,7 @@ using ModuleManagementBackend.Model.DTOs.GETEMPLOYEEDTO;
 using System.Data;
 using System.Data.Common;
 using System.Diagnostics.Contracts;
+using System.Linq;
 using System.Net;
 using System.Net.Mail;
 using System.Numerics;
@@ -3910,7 +3911,7 @@ namespace ModuleManagementBackend.BAL.Services
 
                 response.StatusCode = HttpStatusCode.OK;
                 response.Message = $"Verification email sent successfully to {email}.";
-                response.Data = new { Email = email, Link = verificationLink };
+                response.Data = new { Email = email};
             }
             catch (Exception ex)
             {
@@ -3975,55 +3976,70 @@ namespace ModuleManagementBackend.BAL.Services
 
         #region KRA Reporting Officer
 
+        public class ReportingOfficerDto
+        {
+            public int pkKraUser { get; set; }
+            public string ReportingEmployeeCode { get; set; }
+            public string reportingPost { get; set; }
+            public string reportingDept { get; set; }
+            public DateTime StartDate { get; set; }
+        }
+
         public async Task<ResponseModel> GetKraReporingOfficer(string empCode, DateTime startDate, DateTime endDate)
         {
             var responseModel = new ResponseModel();
 
             try
             {
-                var autoId = await context.MstEmployeeMasters
-                    .Where(x => x.EmployeeCode == empCode)
-                    .Select(x => x.EmployeeMasterAutoId)
-                    .FirstOrDefaultAsync();
-                var IsExistsinMaster = context.MstEmployeeMasters.Where(x => x.EmployeeMasterAutoId==autoId).FirstOrDefault();
+                var employee = await context.MstEmployeeMasters
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(x => x.EmployeeCode == empCode);
 
+                if (employee == null)
+                {
+                    responseModel.Message = "Employee not found";
+                    responseModel.StatusCode = HttpStatusCode.NotFound;
+                    return responseModel;
+                }
+
+               
                 var officersFromUsers = await context.kraUsers
                     .Where(x =>
-                        x.fkAutoId == autoId &&
+                        x.fkAutoId == employee.EmployeeMasterAutoId &&
                         x.ApprovedDate >= startDate &&
-                        x.ApprovedDate <= endDate &&
-                       (IsExistsinMaster.ReportingOfficer==x.reportingAutoId))
-                    .Select(x => new
+                        x.ApprovedDate <= endDate 
+                       )
+                    .Select(x => new ReportingOfficerDto
                     {
+                        pkKraUser = x.pkKraUser,
                         ReportingEmployeeCode = x.reportingAutoId,
-                        x.reportingPost,
-                        x.reportingDept,
-                        StartDate = IsExistsinMaster.Modify_Date
+                        reportingPost = x.reportingPost,
+                        reportingDept = x.reportingDept,
+                        StartDate = employee.Modify_Date ?? DateTime.Now
                     })
                     .ToListAsync();
 
-                var officersFromLogs = await context.kraUserlogs
-                    .Where(x =>
-                        x.status == 9 &&
-                        x.fkAutoId == autoId &&
-                        x.modifydate >= startDate &&
-                        x.modifydate <= endDate)
-                    .Select(x => new
+                var kraUserIds = officersFromUsers.Select(x => x.pkKraUser).ToList();
+
+                
+                var officersFromLogs = await context.kraformRejectedLogs
+                    .Where(x => kraUserIds.Contains(x.fkUserId.Value))
+                    .Select(x => new ReportingOfficerDto
                     {
-                        ReportingEmployeeCode = x.reportingAutoId,
-                        x.reportingPost,
-                        x.reportingDept,
-                        StartDate = x.modifydate
+                        pkKraUser = x.fkUserId.Value,
+                        ReportingEmployeeCode = x.reportingOfficer,
+                        reportingPost = x.reportingPost,
+                        reportingDept = x.reportingDept,
+                        StartDate = x.kraApprovedDate ?? DateTime.Now
                     })
                     .ToListAsync();
 
-
+               
                 var allRecords = officersFromUsers
                     .Concat(officersFromLogs)
-                    .Where(o => o.ReportingEmployeeCode != null)
+                    .Where(o => !string.IsNullOrEmpty(o.ReportingEmployeeCode))
                     .OrderBy(o => o.StartDate)
                     .ToList();
-
 
                 var finalList = allRecords
                     .Select((o, i) => new
@@ -4036,10 +4052,7 @@ namespace ModuleManagementBackend.BAL.Services
                     })
                     .ToList();
 
-                responseModel.Message = finalList.Any()
-                    ? "Data fetched successfully"
-                    : "No records found";
-
+                responseModel.Message = finalList.Any() ? "Data fetched successfully" : "No records found";
                 responseModel.StatusCode = HttpStatusCode.OK;
                 responseModel.Data = finalList;
                 responseModel.TotalRecords = finalList.Count;
@@ -4054,6 +4067,8 @@ namespace ModuleManagementBackend.BAL.Services
 
             return responseModel;
         }
+
+
 
         #endregion
 
