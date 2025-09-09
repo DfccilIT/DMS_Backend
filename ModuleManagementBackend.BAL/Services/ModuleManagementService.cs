@@ -2413,7 +2413,9 @@ namespace ModuleManagementBackend.BAL.Services
             var ReportingOfficerTemplateId = configuration["ReportingOfficerSMSTempleteId"]?? string.Empty;
 
             var EmpCode = await context.MstEmployeeMasters.FirstOrDefaultAsync(x => x.Status==0 && x.EmployeeMasterAutoId==employeeAutoId);
-            if (EmpCode!=null)
+            var eligibleGrades = new[] { "E0", "E1", "E2", "E3", "E4", "E5", "E6", "E7", "E8", "E9","DR"};
+            var eligibleTOEmployee = new[] { "PERMANENT", "ABSORBED", "DEPUTATION" };
+            if (EmpCode!=null && eligibleGrades.Contains(EmpCode.PositionGrade) && eligibleTOEmployee.Contains(EmpCode.TOemploy))
             {
                 await SendSmsAsync(ReportingOfficerTemplateId, reportingOfficerEmpCode, EmpCode.UserName);
                 await SendSmsAsync(employeeTempalteId, EmpCode.EmployeeCode);
