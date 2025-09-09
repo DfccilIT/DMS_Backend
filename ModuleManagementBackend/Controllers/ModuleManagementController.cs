@@ -242,7 +242,7 @@ namespace ModuleManagementBackend.API.Controllers
         }
 
 
-
+        [AllowAnonymous]
         [HttpGet]
         [Route("GetEditEmployeeStatus/{EmployeeCode}")]
         public ResponseModel GetEditEmployeeStatus(string EmployeeCode)

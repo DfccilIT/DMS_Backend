@@ -136,14 +136,7 @@ namespace ModuleManagementBackend.BAL.Services
             response.Data = entity;
             return response;
         }
-
-
-        public async Task<ResponseModel> GetAllEditEmployeeRequests(
-    string? employeeCode = null,
-    string? location = null,
-    string? userName = null,
-    string? empcode = null,
-    string? autoId = null)
+        public async Task<ResponseModel> GetAllEditEmployeeRequests( string? employeeCode = null, string? location = null, string? userName = null, string? empcode = null, string? autoId = null)
         {
             ResponseModel responseModel = new ResponseModel();
 
@@ -231,7 +224,6 @@ namespace ModuleManagementBackend.BAL.Services
             responseModel.TotalRecords = result.Count;
             return responseModel;
         }
-
         public async Task<ResponseModel> UpdatePersonalEmailAsync(string employeeCode, string newPersonalEmail,string loginUserId)
         {
             var response = new ResponseModel();
@@ -279,7 +271,6 @@ namespace ModuleManagementBackend.BAL.Services
             response.Data = master.PersonalEmailAddress;
             return response;
         }
-
         public async Task<ResponseModel> ProcessEditEmployeeRequest(AprooveEmployeeReportDto request)
         {
             var response = new ResponseModel();
@@ -359,7 +350,7 @@ namespace ModuleManagementBackend.BAL.Services
                 {
 
                     editRecord.remarks = remarks;
-                    editRecord.status = 0;
+                    editRecord.status = 9;
                     context.SaveChanges();
 
                     response.Message = "Rejected successfully.";
@@ -601,7 +592,7 @@ namespace ModuleManagementBackend.BAL.Services
                 else
                 {
                     editRecord.remarks = remarks;
-                    editRecord.status = 0;
+                    editRecord.status = 9;
                     context.SaveChanges();
 
                     responseModel.Message = "Rejected successfully.";
@@ -3941,7 +3932,6 @@ namespace ModuleManagementBackend.BAL.Services
 
             return response;
         }
-
         public async Task<ResponseModel> UpdateExtensionNoAsync(string employeeCode, string ExtensionNo, string loginUserId)
         {
             var response = new ResponseModel();
