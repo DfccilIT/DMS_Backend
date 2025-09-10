@@ -1,5 +1,6 @@
 ﻿using ClosedXML.Excel;
 using Dapper;
+using DocumentFormat.OpenXml.Office2016.Excel;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
@@ -4118,7 +4119,7 @@ namespace ModuleManagementBackend.BAL.Services
                         var entity = new MstEmployeeMasterProfileImage
                         {
                             EmployeeCode = employeeCode,
-                            Status = 1,
+                            Status = 0,
                             ImageType = type,
                             Image = fileName,
                             CreatedOn = DateTime.Now,
@@ -4176,7 +4177,7 @@ namespace ModuleManagementBackend.BAL.Services
                     {
                         x.ImageType,
                         x.Image,
-                        Url = $"/EmployeeThreeWayPhoto/{x.Image}"
+                        Url = $"{httpContext.HttpContext.Request.Scheme}://{httpContext.HttpContext.Request.Host}/EmployeeThreeWayPhoto/{x.Image}"
                     })
                     .ToListAsync();
 
