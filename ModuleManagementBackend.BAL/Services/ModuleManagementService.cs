@@ -4069,7 +4069,8 @@ namespace ModuleManagementBackend.BAL.Services
             return responseModel;
         }
 
-        public async Task<ResponseModel> UploadEmployeeThreeWayPhotos(string employeeCode, IFormFile leftImage, IFormFile centerImage, IFormFile rightImage)
+        public async Task<ResponseModel> UploadEmployeeThreeWayPhotos(
+    string employeeCode, IFormFile leftImage, IFormFile centerImage, IFormFile rightImage, string LoginUserId)
         {
             var response = new ResponseModel();
 
@@ -4081,23 +4082,38 @@ namespace ModuleManagementBackend.BAL.Services
                     response.StatusCode = HttpStatusCode.BadRequest;
                     return response;
                 }
-                var existingimage = context.MstEmployeeMasterProfileImages.Where(x => x.EmployeeCode==employeeCode && x.Status==0).ToList();
-                if (existingimage.Any())
-                {
-                    existingimage.ForEach(x => x.Status=9);
-                    context.SaveChanges();
-                }
 
                 var uploadPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "EmployeeThreeWayPhoto");
                 if (!Directory.Exists(uploadPath))
                     Directory.CreateDirectory(uploadPath);
 
+                
+                var existingImages = await context.MstEmployeeMasterProfileImages
+                    .Where(x => x.EmployeeCode == employeeCode && x.Status==0)
+                    .ToListAsync();
+
+                foreach (var img in existingImages)
+                {
+                    var filePath = Path.Combine(uploadPath, img.Image);
+                    if (File.Exists(filePath))
+                    {
+                        File.Delete(filePath); 
+                    }
+                }
+
+                if (existingImages.Any())
+                {
+                    context.MstEmployeeMasterProfileImages.RemoveRange(existingImages);
+                    await context.SaveChangesAsync(); 
+                }
+
+              
                 var images = new List<(IFormFile File, string Type)>
-                             {
-                                 (leftImage, "Left"),
-                                 (centerImage, "Center"),
-                                 (rightImage, "Right")
-                             };
+        {
+            (leftImage, "Left"),
+            (centerImage, "Center"),
+            (rightImage, "Right")
+        };
 
                 var entities = new List<MstEmployeeMasterProfileImage>();
 
@@ -4105,16 +4121,13 @@ namespace ModuleManagementBackend.BAL.Services
                 {
                     if (file != null && file.Length > 0)
                     {
-
                         var fileName = $"{employeeCode}_{type}_{DateTime.Now:yyyyMMddHHmmss}{Path.GetExtension(file.FileName)}";
                         var filePath = Path.Combine(uploadPath, fileName);
-
 
                         using (var stream = new FileStream(filePath, FileMode.Create))
                         {
                             await file.CopyToAsync(stream);
                         }
-
 
                         var entity = new MstEmployeeMasterProfileImage
                         {
@@ -4140,13 +4153,14 @@ namespace ModuleManagementBackend.BAL.Services
                 await context.MstEmployeeMasterProfileImages.AddRangeAsync(entities);
                 await context.SaveChangesAsync();
 
-                response.Message = "Images uploaded successfully.";
+
+                response.Message = "Images uploaded successfully (old images replaced).";
                 response.StatusCode = HttpStatusCode.OK;
                 response.Data = entities.Select(e => new
                 {
                     e.ImageType,
-                    e.Image,
-                    Url = $"/EmployeeThreeWayPhoto/{e.Image}"
+                    e.Image
+                   
                 });
             }
             catch (Exception ex)
@@ -4157,6 +4171,7 @@ namespace ModuleManagementBackend.BAL.Services
 
             return response;
         }
+
 
         public async Task<ResponseModel> GetEmployeeThreeWayPhotos(string employeeCode)
         {

@@ -397,7 +397,7 @@ namespace ModuleManagementBackend.API.Controllers
         public async Task<IActionResult> UploadEmployeeThreeWayPhotos(
        string employeeCode, IFormFile leftImage, IFormFile centerImage, IFormFile rightImage)
         {
-            var result = await managementService.UploadEmployeeThreeWayPhotos(employeeCode, leftImage, centerImage, rightImage);
+            var result = await managementService.UploadEmployeeThreeWayPhotos(employeeCode, leftImage, centerImage, rightImage,LoginUserId);
             return StatusCode((int)result.StatusCode, result);
         }
 

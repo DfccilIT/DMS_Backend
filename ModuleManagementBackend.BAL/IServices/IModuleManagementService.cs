@@ -103,7 +103,7 @@ namespace ModuleManagementBackend.BAL.IServices
         Task<ResponseModel> GetKraReporingOfficer(string empCode, DateTime startDate, DateTime endDate);
 
         Task<ResponseModel> UploadEmployeeThreeWayPhotos(
-        string employeeCode, IFormFile leftImage, IFormFile centerImage, IFormFile rightImage);
+        string employeeCode, IFormFile leftImage, IFormFile centerImage, IFormFile rightImage, string LoginUserId);
 
         Task<ResponseModel> GetEmployeeThreeWayPhotos(string employeeCode);
     }
