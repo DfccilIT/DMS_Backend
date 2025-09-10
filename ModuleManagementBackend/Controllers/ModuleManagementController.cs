@@ -400,6 +400,7 @@ namespace ModuleManagementBackend.API.Controllers
             var result = await managementService.UploadEmployeeThreeWayPhotos(employeeCode, leftImage, centerImage, rightImage,LoginUserId);
             return StatusCode((int)result.StatusCode, result);
         }
+        [AllowAnonymous]
 
         [HttpGet("GetEmployeeProfilePhoto/{employeeCode}")]
         public async Task<IActionResult> GetEmployeeThreeWayPhotos(string employeeCode)
