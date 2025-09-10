@@ -4080,6 +4080,12 @@ namespace ModuleManagementBackend.BAL.Services
                     response.StatusCode = HttpStatusCode.BadRequest;
                     return response;
                 }
+                var existingimage = context.MstEmployeeMasterProfileImages.Where(x => x.EmployeeCode==employeeCode && x.Status==0).ToList();
+                if (existingimage.Any())
+                {
+                    existingimage.ForEach(x => x.Status=9);
+                    context.SaveChanges();
+                }
 
                 var uploadPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "EmployeeThreeWayPhoto");
                 if (!Directory.Exists(uploadPath))
