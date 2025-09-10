@@ -27,6 +27,7 @@ namespace ModuleManagementBackend.DAL.Models
         public virtual DbSet<MstDepartment> MstDepartments { get; set; }
         public virtual DbSet<MstEmployeeDependent> MstEmployeeDependents { get; set; }
         public virtual DbSet<MstEmployeeMaster> MstEmployeeMasters { get; set; }
+        public virtual DbSet<MstEmployeeMasterProfileImage> MstEmployeeMasterProfileImages { get; set; }
         public virtual DbSet<MstEmployeeMaster_Log> MstEmployeeMaster_Logs { get; set; }
         public virtual DbSet<MstPost> MstPosts { get; set; }
         public virtual DbSet<MstUnit> MstUnits { get; set; }
@@ -430,6 +431,31 @@ namespace ModuleManagementBackend.DAL.Models
                 entity.Property(e => e.designation).HasMaxLength(100);
 
                 entity.Property(e => e.emailAddress).HasMaxLength(50);
+            });
+
+            modelBuilder.Entity<MstEmployeeMasterProfileImage>(entity =>
+            {
+                entity.ToTable("MstEmployeeMasterProfileImage");
+
+                entity.Property(e => e.CreatedBy)
+                    .HasMaxLength(200)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.CreatedOn)
+                    .HasColumnType("datetime")
+                    .HasDefaultValueSql("(getdate())");
+
+                entity.Property(e => e.EmployeeCode)
+                    .IsRequired()
+                    .HasMaxLength(200)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.Image).IsUnicode(false);
+
+                entity.Property(e => e.ImageType)
+                    .IsRequired()
+                    .HasMaxLength(200)
+                    .IsUnicode(false);
             });
 
             modelBuilder.Entity<MstEmployeeMaster_Log>(entity =>

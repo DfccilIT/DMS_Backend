@@ -101,5 +101,10 @@ namespace ModuleManagementBackend.BAL.IServices
         #endregion
 
         Task<ResponseModel> GetKraReporingOfficer(string empCode, DateTime startDate, DateTime endDate);
+
+        Task<ResponseModel> UploadEmployeeThreeWayPhotos(
+        string employeeCode, IFormFile leftImage, IFormFile centerImage, IFormFile rightImage);
+
+        Task<ResponseModel> GetEmployeeThreeWayPhotos(string employeeCode);
     }
 }

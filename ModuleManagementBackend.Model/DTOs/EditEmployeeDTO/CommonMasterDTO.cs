@@ -167,4 +167,14 @@ namespace ModuleManagementBackend.Model.DTOs.EditEmployeeDTO
         public string UserEmpCode { get; set; }
         public string NewEmail { get; set; }
     }
+
+    public class ReportingOfficerDto
+    {
+        public int pkKraUser { get; set; }
+        public string ReportingEmployeeCode { get; set; }
+        public string reportingPost { get; set; }
+        public string reportingDept { get; set; }
+        public DateTime StartDate { get; set; }
+    }
+
 }

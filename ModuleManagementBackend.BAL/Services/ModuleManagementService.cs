@@ -98,9 +98,9 @@ namespace ModuleManagementBackend.BAL.Services
                 (dto.DateOfAnniversary.HasValue && dto.DateOfAnniversary != master.AnniversaryDate) ||
                 (dto.DateOfJoining.HasValue && dto.DateOfJoining != master.DOJDFCCIL) ||
                 (!string.IsNullOrWhiteSpace(dto.Location) && dto.Location != master.Location) ||
-               
+
                 (!string.IsNullOrWhiteSpace(dto.Toemploy) && dto.Toemploy != master.TOemploy);
-                
+
 
             if (!isDifferent)
             {
@@ -136,7 +136,7 @@ namespace ModuleManagementBackend.BAL.Services
             response.Data = entity;
             return response;
         }
-        public async Task<ResponseModel> GetAllEditEmployeeRequests( string? employeeCode = null, string? location = null, string? userName = null, string? empcode = null, string? autoId = null)
+        public async Task<ResponseModel> GetAllEditEmployeeRequests(string? employeeCode = null, string? location = null, string? userName = null, string? empcode = null, string? autoId = null)
         {
             ResponseModel responseModel = new ResponseModel();
 
@@ -175,10 +175,10 @@ namespace ModuleManagementBackend.BAL.Services
                 {
                     if (alwaysInclude)
                     {
-                        
+
                         oldData[field] = oldVal;
 
-                        
+
                         if (Normalize(oldVal) != Normalize(newVal))
                         {
                             newData[field] = newVal;
@@ -186,7 +186,7 @@ namespace ModuleManagementBackend.BAL.Services
                     }
                     else
                     {
-                       
+
                         if (Normalize(oldVal) != Normalize(newVal))
                         {
                             oldData[field] = oldVal;
@@ -195,21 +195,21 @@ namespace ModuleManagementBackend.BAL.Services
                     }
                 }
 
-               
+
                 Compare("employeeCode", x.mm.EmployeeCode, x.ee.EmployeeCode, alwaysInclude: true);
                 Compare("userName", x.mm.UserName, x.ee.UserName, alwaysInclude: true);
                 Compare("designation", x.mm.Post, x.ee.Designation, alwaysInclude: true);
                 Compare("department", x.mm.DeptDFCCIL, x.ee.Department, alwaysInclude: true);
-                Compare("location", x.mm.Location, x.ee.Location,alwaysInclude:true);
+                Compare("location", x.mm.Location, x.ee.Location, alwaysInclude: true);
                 Compare("tOemploy", x.mm.TOemploy, x.ee.Toemploy, alwaysInclude: true);
                 Compare("gender", x.mm.Gender, x.ee.Gender);
                 Compare("positionGrade", x.mm.PositionGrade, x.ee.PositionGrade);
                 Compare("dob", x.mm.DOB, x.ee.DOB);
                 Compare("dateOfAnniversary", x.mm.AnniversaryDate, x.ee.DateOfAnniversary);
                 Compare("dateOfJoining", x.mm.DOJDFCCIL, x.ee.DateOfJoining);
-               
-               
-              
+
+
+
                 return new
                 {
                     RequestId = x.ee.EdtEmpDetID,
@@ -224,7 +224,7 @@ namespace ModuleManagementBackend.BAL.Services
             responseModel.TotalRecords = result.Count;
             return responseModel;
         }
-        public async Task<ResponseModel> UpdatePersonalEmailAsync(string employeeCode, string newPersonalEmail,string loginUserId)
+        public async Task<ResponseModel> UpdatePersonalEmailAsync(string employeeCode, string newPersonalEmail, string loginUserId)
         {
             var response = new ResponseModel();
 
@@ -259,10 +259,10 @@ namespace ModuleManagementBackend.BAL.Services
                 return response;
             }
 
-            
+
             master.PersonalEmailAddress = newPersonalEmail;
-            master.Modify_Date = DateTime.Now;   
-            master.Modify_By = loginUserId;           
+            master.Modify_Date = DateTime.Now;
+            master.Modify_By = loginUserId;
 
             await context.SaveChangesAsync();
 
@@ -332,7 +332,7 @@ namespace ModuleManagementBackend.BAL.Services
                     mstRecord.DOJDFCCIL = editRecord.DateOfJoining;
                     mstRecord.Location = editRecord.Location;
                     mstRecord.TOemploy = editRecord.Toemploy;
-                  
+
 
 
                     editRecord.status = 0;
@@ -1864,7 +1864,7 @@ namespace ModuleManagementBackend.BAL.Services
                         e.DOB,
                         e.DOJDFCCIL,
                         e.Status,
-                        vendorId= e.fkContractid,
+                        vendorId = e.fkContractid,
                         vendor = e.fkContract.Contractor,
                         e.remarks,
                         e.CreateDate,
@@ -1896,7 +1896,7 @@ namespace ModuleManagementBackend.BAL.Services
             {
                 if (status == 0)
                 {
-                   
+
                     var requests = await context.MstEmployeeMasters
                         .Where(e => e.Status == 0 && e.TOemploy.ToLower() == "contractual" && e.DeptDFCCIL !="SAP CONSULTANT")
                         .GroupJoin(
@@ -1932,10 +1932,10 @@ namespace ModuleManagementBackend.BAL.Services
                                 AppointmentDoc = contract != null && contract.AppointmentDoc != null
                                     ? $"{baseUrl}/DocUpload/OfficeOrder/{contract.AppointmentDoc}"
                                     : null,
-                                Vendor=contract!=null? contract.fkContract.Contractor:"",
-                                CreatedDate = contract==null?null: contract.CreateDate,
+                                Vendor = contract!=null ? contract.fkContract.Contractor : "",
+                                CreatedDate = contract==null ? null : contract.CreateDate,
                                 ApprovedDate = contract==null ? null : contract.UpdatedDate,
-                                ApprovedBy = contract==null ? null :context.MstEmployeeMasters.Where(x=>x.EmployeeCode== contract.UpdatedBy).Select(x=>x.UserName).FirstOrDefault(),
+                                ApprovedBy = contract==null ? null : context.MstEmployeeMasters.Where(x => x.EmployeeCode== contract.UpdatedBy).Select(x => x.UserName).FirstOrDefault(),
                             }
                         )
                         .ToListAsync();
@@ -1947,9 +1947,9 @@ namespace ModuleManagementBackend.BAL.Services
                 }
                 else
                 {
-                    
+
                     var requests = await context.RegisterContractEmployees
-                        .Include(x=>x.fkContract)
+                        .Include(x => x.fkContract)
                         .Where(c => c.Status == status)
                         .Select(c => new
                         {
@@ -1997,7 +1997,7 @@ namespace ModuleManagementBackend.BAL.Services
 
             return response;
         }
-       
+
         public ResponseModel GetEditEmployeeStatus(string EmployeeCode)
         {
             var response = new ResponseModel();
@@ -2404,7 +2404,7 @@ namespace ModuleManagementBackend.BAL.Services
             var ReportingOfficerTemplateId = configuration["ReportingOfficerSMSTempleteId"]?? string.Empty;
 
             var EmpCode = await context.MstEmployeeMasters.FirstOrDefaultAsync(x => x.Status==0 && x.EmployeeMasterAutoId==employeeAutoId);
-            var eligibleGrades = new[] { "E0", "E1", "E2", "E3", "E4", "E5", "E6", "E7", "E8", "E9","DR"};
+            var eligibleGrades = new[] { "E0", "E1", "E2", "E3", "E4", "E5", "E6", "E7", "E8", "E9", "DR" };
             var eligibleTOEmployee = new[] { "PERMANENT", "ABSORBED", "DEPUTATION" };
             if (EmpCode!=null && eligibleGrades.Contains(EmpCode.PositionGrade) && eligibleTOEmployee.Contains(EmpCode.TOemploy))
             {
@@ -2566,7 +2566,7 @@ namespace ModuleManagementBackend.BAL.Services
             return response;
         }
 
-       
+
         #endregion
 
         public async Task<ResponseModel> GetDfccilDirectory(string? EmpCode = null)
@@ -2930,7 +2930,7 @@ namespace ModuleManagementBackend.BAL.Services
                     return response;
                 }
 
-                
+
                 int? validEmployeeCode = null;
                 if (!string.IsNullOrEmpty(employeeCode))
                 {
@@ -2962,13 +2962,13 @@ namespace ModuleManagementBackend.BAL.Services
                     cacheKey,
                     async () =>
                     {
-                        
+
                         var selectedColumns = columnNamesCsv
                             .Split(",", StringSplitOptions.RemoveEmptyEntries)
                             .Select(c => c.Trim())
-                            .Where(c => !string.IsNullOrWhiteSpace(c)) 
-                            .Where(c => c.Length <= 128) 
-                            .Where(c => IsValidColumnName(c)) 
+                            .Where(c => !string.IsNullOrWhiteSpace(c))
+                            .Where(c => c.Length <= 128)
+                            .Where(c => IsValidColumnName(c))
                             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
                         if (!selectedColumns.Any())
@@ -2980,7 +2980,7 @@ namespace ModuleManagementBackend.BAL.Services
                             };
                         }
 
-                        
+
                         var allowedColumns = await GetCachedAllowedColumns(connection);
 
                         var validColumns = selectedColumns.Intersect(allowedColumns).ToList();
@@ -2993,7 +2993,7 @@ namespace ModuleManagementBackend.BAL.Services
                             };
                         }
 
-                      
+
                         var quotedColumns = validColumns.Select(col => $"[{col}]").ToList();
                         var columnList = string.Join(",", quotedColumns);
 
@@ -3027,12 +3027,12 @@ namespace ModuleManagementBackend.BAL.Services
             {
                 _logger.LogError(ex, "Error in GetSelectedEmployeeColumnsAsync for employeeCode {EmployeeCode}", employeeCode);
                 response.StatusCode = HttpStatusCode.InternalServerError;
-                response.Message = "An error occurred while fetching employee data."; 
+                response.Message = "An error occurred while fetching employee data.";
             }
             return response;
         }
 
-       
+
 
         private bool IsValidEmployeeCode(string employeeCode, out int? validEmployeeCode)
         {
@@ -3040,9 +3040,9 @@ namespace ModuleManagementBackend.BAL.Services
 
             if (string.IsNullOrWhiteSpace(employeeCode))
             {
-                return true; 
+                return true;
             }
-           
+
             if (employeeCode.Length > 10)
             {
                 return false;
@@ -3074,7 +3074,7 @@ namespace ModuleManagementBackend.BAL.Services
                         @"SELECT COLUMN_NAME 
                   FROM INFORMATION_SCHEMA.COLUMNS 
                   WHERE TABLE_NAME = 'MstEmployeeMaster' 
-                    AND TABLE_SCHEMA = 'dbo'"); 
+                    AND TABLE_SCHEMA = 'dbo'");
 
                     return new HashSet<string>(columns, StringComparer.OrdinalIgnoreCase);
                 },
@@ -3121,7 +3121,7 @@ namespace ModuleManagementBackend.BAL.Services
 
         #region HolidayCalender
 
-        public async Task<ResponseModel> GetAllHolidays(int? unitId = null, string? holidayType = null, string? unitName = null,int? Year=null)
+        public async Task<ResponseModel> GetAllHolidays(int? unitId = null, string? holidayType = null, string? unitName = null, int? Year = null)
         {
             ResponseModel responseModel = new ResponseModel();
             try
@@ -3920,7 +3920,7 @@ namespace ModuleManagementBackend.BAL.Services
 
                 response.StatusCode = HttpStatusCode.OK;
                 response.Message = $"Verification email sent successfully to {email}.";
-                response.Data = new { Email = email};
+                response.Data = new { Email = email };
             }
             catch (Exception ex)
             {
@@ -3984,15 +3984,7 @@ namespace ModuleManagementBackend.BAL.Services
 
         #region KRA Reporting Officer
 
-        public class ReportingOfficerDto
-        {
-            public int pkKraUser { get; set; }
-            public string ReportingEmployeeCode { get; set; }
-            public string reportingPost { get; set; }
-            public string reportingDept { get; set; }
-            public DateTime StartDate { get; set; }
-        }
-
+        
         public async Task<ResponseModel> GetKraReporingOfficer(string empCode, DateTime startDate, DateTime endDate)
         {
             var responseModel = new ResponseModel();
@@ -4010,12 +4002,12 @@ namespace ModuleManagementBackend.BAL.Services
                     return responseModel;
                 }
 
-               
+
                 var officersFromUsers = await context.kraUsers
                     .Where(x =>
                         x.fkAutoId == employee.EmployeeMasterAutoId &&
                         x.ApprovedDate >= startDate &&
-                        x.ApprovedDate <= endDate 
+                        x.ApprovedDate <= endDate
                        )
                     .Select(x => new ReportingOfficerDto
                     {
@@ -4029,7 +4021,7 @@ namespace ModuleManagementBackend.BAL.Services
 
                 var kraUserIds = officersFromUsers.Select(x => x.pkKraUser).ToList();
 
-                
+
                 var officersFromLogs = await context.kraformRejectedLogs
                     .Where(x => kraUserIds.Contains(x.fkUserId.Value))
                     .Select(x => new ReportingOfficerDto
@@ -4042,7 +4034,7 @@ namespace ModuleManagementBackend.BAL.Services
                     })
                     .ToListAsync();
 
-               
+
                 var allRecords = officersFromUsers
                     .Concat(officersFromLogs)
                     .Where(o => !string.IsNullOrEmpty(o.ReportingEmployeeCode))
@@ -4076,12 +4068,136 @@ namespace ModuleManagementBackend.BAL.Services
             return responseModel;
         }
 
+        public async Task<ResponseModel> UploadEmployeeThreeWayPhotos(string employeeCode, IFormFile leftImage, IFormFile centerImage, IFormFile rightImage)
+        {
+            var response = new ResponseModel();
+
+            try
+            {
+                if (string.IsNullOrEmpty(employeeCode))
+                {
+                    response.Message = "EmployeeCode is required.";
+                    response.StatusCode = HttpStatusCode.BadRequest;
+                    return response;
+                }
+
+                var uploadPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "EmployeeThreeWayPhoto");
+                if (!Directory.Exists(uploadPath))
+                    Directory.CreateDirectory(uploadPath);
+
+                var images = new List<(IFormFile File, string Type)>
+                             {
+                                 (leftImage, "Left"),
+                                 (centerImage, "Center"),
+                                 (rightImage, "Right")
+                             };
+
+                var entities = new List<MstEmployeeMasterProfileImage>();
+
+                foreach (var (file, type) in images)
+                {
+                    if (file != null && file.Length > 0)
+                    {
+
+                        var fileName = $"{employeeCode}_{type}_{DateTime.Now:yyyyMMddHHmmss}{Path.GetExtension(file.FileName)}";
+                        var filePath = Path.Combine(uploadPath, fileName);
 
 
-        #endregion
+                        using (var stream = new FileStream(filePath, FileMode.Create))
+                        {
+                            await file.CopyToAsync(stream);
+                        }
 
+
+                        var entity = new MstEmployeeMasterProfileImage
+                        {
+                            EmployeeCode = employeeCode,
+                            Status = 1,
+                            ImageType = type,
+                            Image = fileName,
+                            CreatedOn = DateTime.Now,
+                            CreatedBy = "System"
+                        };
+
+                        entities.Add(entity);
+                    }
+                }
+
+                if (!entities.Any())
+                {
+                    response.Message = "No valid images were uploaded.";
+                    response.StatusCode = HttpStatusCode.BadRequest;
+                    return response;
+                }
+
+                await context.MstEmployeeMasterProfileImages.AddRangeAsync(entities);
+                await context.SaveChangesAsync();
+
+                response.Message = "Images uploaded successfully.";
+                response.StatusCode = HttpStatusCode.OK;
+                response.Data = entities.Select(e => new
+                {
+                    e.ImageType,
+                    e.Image,
+                    Url = $"/EmployeeThreeWayPhoto/{e.Image}"
+                });
+            }
+            catch (Exception ex)
+            {
+                response.Message = $"Error: {ex.Message}";
+                response.StatusCode = HttpStatusCode.InternalServerError;
+            }
+
+            return response;
+        }
+
+        public async Task<ResponseModel> GetEmployeeThreeWayPhotos(string employeeCode)
+        {
+            var response = new ResponseModel();
+
+            try
+            {
+                if (string.IsNullOrEmpty(employeeCode))
+                {
+                    response.Message = "EmployeeCode is required.";
+                    response.StatusCode = HttpStatusCode.BadRequest;
+                    return response;
+                }
+
+                var photos = await context.MstEmployeeMasterProfileImages
+                    .Where(x => x.EmployeeCode == employeeCode && x.Status == 0)
+                    .Select(x => new
+                    {
+                        x.ImageType,
+                        x.Image,
+                        Url = $"/EmployeeThreeWayPhoto/{x.Image}"
+                    })
+                    .ToListAsync();
+
+                if (!photos.Any())
+                {
+                    response.Message = "No images found for this employee.";
+                    response.StatusCode = HttpStatusCode.NotFound;
+                    return response;
+                }
+
+                response.Message = "Images retrieved successfully.";
+                response.StatusCode = HttpStatusCode.OK;
+                response.Data = photos;
+            }
+            catch (Exception ex)
+            {
+                response.Message = $"Error: {ex.Message}";
+                response.StatusCode = HttpStatusCode.InternalServerError;
+            }
+
+            return response;
+        }
     }
-
+    #endregion
 
 }
+
+
+
 

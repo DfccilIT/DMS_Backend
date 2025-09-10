@@ -16,7 +16,7 @@ namespace ModuleManagementBackend.API.Controllers
 
     [Route("api/[controller]")]
     [ApiController]
-
+    
     public class ModuleManagementController : ControllerBase
     {
         private readonly IModuleManagementService managementService;
@@ -241,8 +241,6 @@ namespace ModuleManagementBackend.API.Controllers
             return await managementService.GetEmployeeProfile(empCode);
         }
 
-
-        [AllowAnonymous]
         [HttpGet]
         [Route("GetEditEmployeeStatus/{EmployeeCode}")]
         public ResponseModel GetEditEmployeeStatus(string EmployeeCode)
@@ -393,6 +391,21 @@ namespace ModuleManagementBackend.API.Controllers
             var result = await managementService.GetKraReporingOfficer(empCode, startDate, endDate);
 
             return result;
+        }
+
+        [HttpPost("uploadEmployeeProfilePhoto")]
+        public async Task<IActionResult> UploadEmployeeThreeWayPhotos(
+       string employeeCode, IFormFile leftImage, IFormFile centerImage, IFormFile rightImage)
+        {
+            var result = await managementService.UploadEmployeeThreeWayPhotos(employeeCode, leftImage, centerImage, rightImage);
+            return StatusCode((int)result.StatusCode, result);
+        }
+
+        [HttpGet("GetEmployeeProfilePhoto/{employeeCode}")]
+        public async Task<IActionResult> GetEmployeeThreeWayPhotos(string employeeCode)
+        {
+            var result = await managementService.GetEmployeeThreeWayPhotos(employeeCode);
+            return StatusCode((int)result.StatusCode, result);
         }
     }
 

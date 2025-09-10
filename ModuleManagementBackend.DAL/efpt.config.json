@@ -60,6 +60,10 @@
          "ObjectType": 0
       },
       {
+         "Name": "[dbo].[MstEmployeeMasterProfileImage]",
+         "ObjectType": 0
+      },
+      {
          "Name": "[dbo].[mstPositionGreades]",
          "ObjectType": 0
       },
