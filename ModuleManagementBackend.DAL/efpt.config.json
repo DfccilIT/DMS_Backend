@@ -16,7 +16,19 @@
    "T4TemplatePath": null,
    "Tables": [
       {
+         "Name": "[API].[apiUsers]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[API].[apiUsersCredits]",
+         "ObjectType": 0
+      },
+      {
          "Name": "[API].[tblDeviceOTP]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[API].[tblWhiteListedDevicesAndIP]",
          "ObjectType": 0
       },
       {
@@ -25,6 +37,10 @@
       },
       {
          "Name": "[dbo].[EmailChangeRequests]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[EmailSmsManagement]",
          "ObjectType": 0
       },
       {

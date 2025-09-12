@@ -22,6 +22,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Mail;
 using System.Numerics;
+using System.Reflection.Emit;
 using System.Security.Principal;
 using System.Text.RegularExpressions;
 using static ModuleManagementBackend.BAL.Services.AccountService;
@@ -38,10 +39,11 @@ namespace ModuleManagementBackend.BAL.Services
         private readonly ICacheService _cacheService;
         private readonly IDatabaseChangesService _dbChangeService;
         private readonly ILogger<ModuleManagementService> _logger;
+        private readonly INotificationManageService notificationManage;
         private readonly string baseUrl;
 
 
-        public ModuleManagementService(SAPTOKENContext _context, IDapperService _dapper, IHttpContextAccessor _httpContext, IConfiguration _configuration, ICacheService CacheService, IDatabaseChangesService DbChangeService, ILogger<ModuleManagementService> logger)
+        public ModuleManagementService(SAPTOKENContext _context, IDapperService _dapper, IHttpContextAccessor _httpContext, IConfiguration _configuration, ICacheService CacheService, IDatabaseChangesService DbChangeService, ILogger<ModuleManagementService> logger,INotificationManageService notificationManage)
         {
             context=_context;
             dapper=_dapper;
@@ -53,7 +55,7 @@ namespace ModuleManagementBackend.BAL.Services
             _cacheService = CacheService;
             _dbChangeService = DbChangeService;
             _logger = logger;
-
+            this.notificationManage=notificationManage;
         }
 
         public async Task<ResponseModel> EditEmployeeProfileAsync(EditEmployeeDto dto)
@@ -2460,26 +2462,34 @@ namespace ModuleManagementBackend.BAL.Services
                 {
                     return new ResponseModel();
                 }
-                string contextUrl = $"https://login.dfccil.com/Dfccil/DFCSMS?username={Uri.EscapeDataString(username)}&Phone={Uri.EscapeDataString(phone)}&msg={encodedMsg}&templatedid={Uri.EscapeDataString(templateId)}";
+                var appId = ((configuration["DeploymentModes"] ?? string.Empty) == "DFCCIL_UAT")
+            ? (configuration["UAT_AppId"] ?? string.Empty)
+            : (configuration["PROD_AppId"] ?? string.Empty);
 
-                using var httpClient = new HttpClient();
-                var contextResponse = await httpClient.PostAsync(contextUrl, null);
+                var ClientId = ((configuration["DeploymentModes"] ?? string.Empty) == "DFCCIL_UAT")
+            ? (configuration["UAT_ClientId"] ?? string.Empty)
+            : (configuration["PROD_ClientId"] ?? string.Empty);
+                var contextResponse = await notificationManage.SendSMSUsingURL(
+                    smstext: msg,
+                    mobile: phone,
+                    userid: empCode,
+                    templateId: templateId,
+                    clientId: ClientId,
+                    appId: appId);
 
-                if (contextResponse.IsSuccessStatusCode)
+                if (contextResponse.StatusCode==HttpStatusCode.OK)
                 {
-                    var resultContent = await contextResponse.Content.ReadAsStringAsync();
                     response.StatusCode = HttpStatusCode.OK;
                     response.Message = "SMS sent successfully.";
-                    response.Data = resultContent;
+                    response.Data = contextResponse.Data;
                     response.TotalRecords = 1;
                 }
                 else
                 {
-                    var errorContent = await contextResponse.Content.ReadAsStringAsync();
                     response.StatusCode = contextResponse.StatusCode;
                     response.Message = $"Failed to send SMS. Status Code: {contextResponse.StatusCode}";
                     response.Error = true;
-                    response.ErrorDetail = errorContent;
+                    response.ErrorDetail = contextResponse.Data;
                 }
             }
             catch (Exception ex)
@@ -2534,26 +2544,36 @@ namespace ModuleManagementBackend.BAL.Services
                 {
                     return new ResponseModel();
                 }
-                string contextUrl = $"https://login.dfccil.com/Dfccil/DFCSMS?username={Uri.EscapeDataString(Username)}&Phone={Uri.EscapeDataString(phone)}&msg={encodedMsg}&templatedid={Uri.EscapeDataString(templateId)}";
+               var appId  = ((configuration["DeploymentModes"] ?? string.Empty) == "DFCCIL_UAT")
+             ? (configuration["UAT_AppId"] ?? string.Empty)
+             : (configuration["PROD_AppId"] ?? string.Empty);
 
-                using var httpClient = new HttpClient();
-                var contextResponse = await httpClient.PostAsync(contextUrl, null);
+                var ClientId = ((configuration["DeploymentModes"] ?? string.Empty) == "DFCCIL_UAT")
+            ? (configuration["UAT_ClientId"] ?? string.Empty)
+            : (configuration["PROD_ClientId"] ?? string.Empty);
+                var contextResponse = await notificationManage.SendSMSUsingURL(
+                    smstext: msg,
+                    mobile: phone,
+                    userid: EmpCode,
+                    templateId: templateId,
+                    clientId: ClientId,
+                    appId: appId );
+                
 
-                if (contextResponse.IsSuccessStatusCode)
+                if (contextResponse.StatusCode==HttpStatusCode.OK)
                 {
-                    var resultContent = await contextResponse.Content.ReadAsStringAsync();
                     response.StatusCode = HttpStatusCode.OK;
                     response.Message = "SMS sent successfully.";
-                    response.Data = resultContent;
+                    response.Data = contextResponse.Data;
                     response.TotalRecords = 1;
                 }
                 else
                 {
-                    var errorContent = await contextResponse.Content.ReadAsStringAsync();
+                  
                     response.StatusCode = contextResponse.StatusCode;
                     response.Message = $"Failed to send SMS. Status Code: {contextResponse.StatusCode}";
                     response.Error = true;
-                    response.ErrorDetail = errorContent;
+                    response.ErrorDetail = contextResponse.Data;
                 }
             }
             catch (Exception ex)
@@ -3685,7 +3705,7 @@ namespace ModuleManagementBackend.BAL.Services
                     string phone = string.Empty;
                     if (configuration["DeploymentModes"] !="DFCCIL")
                     {
-                        //phone = configuration["SMSServiceDefaultNumber"]?? string.Empty;
+                        
                         phone = newMobileNumber;
                     }
                     else
@@ -3702,26 +3722,36 @@ namespace ModuleManagementBackend.BAL.Services
                     {
                         return new ResponseModel();
                     }
-                    string contextUrl = $"https://login.dfccil.com/Dfccil/DFCSMS?username={Uri.EscapeDataString(username)}&Phone={Uri.EscapeDataString(phone)}&msg={encodedMsg}&templatedid={Uri.EscapeDataString(templateId)}";
+                    var appId = ((configuration["DeploymentModes"] ?? string.Empty) == "DFCCIL_UAT")
+                                   ? (configuration["UAT_AppId"] ?? string.Empty)
+                                   : (configuration["PROD_AppId"] ?? string.Empty);
 
-                    using var httpClient = new HttpClient();
-                    var contextResponse = await httpClient.PostAsync(contextUrl, null);
+                    var ClientId = ((configuration["DeploymentModes"] ?? string.Empty) == "DFCCIL_UAT")
+                                   ? (configuration["UAT_ClientId"] ?? string.Empty)
+                                   : (configuration["PROD_ClientId"] ?? string.Empty);
+                    var contextResponse = await notificationManage.SendSMSUsingURL(
+                        smstext: msg,
+                        mobile: phone,
+                        userid: userEmpCode,
+                        templateId: templateId,
+                        clientId: ClientId,
+                        appId: appId);
 
-                    if (contextResponse.IsSuccessStatusCode)
+                    if (contextResponse.StatusCode==HttpStatusCode.OK)
                     {
-                        var resultContent = await contextResponse.Content.ReadAsStringAsync();
+                       
                         response.StatusCode = HttpStatusCode.OK;
                         response.Message = "SMS sent successfully.";
-                        response.Data = resultContent;
+                        response.Data = contextResponse.Data;
                         response.TotalRecords = 1;
                     }
                     else
                     {
-                        var errorContent = await contextResponse.Content.ReadAsStringAsync();
+                       
                         response.StatusCode = contextResponse.StatusCode;
                         response.Message = $"Failed to send SMS. Status Code: {contextResponse.StatusCode}";
                         response.Error = true;
-                        response.ErrorDetail = errorContent;
+                        response.ErrorDetail = contextResponse.Data;
                     }
                 }
                 catch (Exception ex)
@@ -4069,8 +4099,7 @@ namespace ModuleManagementBackend.BAL.Services
             return responseModel;
         }
 
-        public async Task<ResponseModel> UploadEmployeeThreeWayPhotos(
-    string employeeCode, IFormFile leftImage, IFormFile centerImage, IFormFile rightImage, string LoginUserId)
+        public async Task<ResponseModel> UploadEmployeeThreeWayPhotos(string employeeCode, IFormFile leftImage, IFormFile centerImage, IFormFile rightImage, string LoginUserId)
         {
             var response = new ResponseModel();
 

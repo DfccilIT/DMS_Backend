@@ -22,6 +22,7 @@ namespace ModuleManagementBackend.BAL.Extension
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IModuleManagementService, ModuleManagementService>();
             services.AddScoped<IPolicyService, PoliciesService>();
+            services.AddTransient<INotificationManageService, NotificationManageService>();
             
 
         }

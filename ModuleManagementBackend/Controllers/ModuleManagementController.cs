@@ -227,8 +227,8 @@ namespace ModuleManagementBackend.API.Controllers
         {
             return await managementService.GetAcceptOrRejectContractualEmployeeEditRequestsAsync(Status);
         }
+        [AllowAnonymous]
         [HttpPut("ProcessContractualEmployeeRequest")]
-
         public async Task<ResponseModel> ProcessEditContractualEmployeeRequest([FromBody] AprooveContractualEmployeeDto request)
         {
             return await managementService.ProcessEditContractualEmployeeRequest(request, LoginUserId);

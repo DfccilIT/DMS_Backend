@@ -20,6 +20,7 @@ namespace ModuleManagementBackend.DAL.Models
 
         public virtual DbSet<EditEmployeeDetail> EditEmployeeDetails { get; set; }
         public virtual DbSet<EmailChangeRequest> EmailChangeRequests { get; set; }
+        public virtual DbSet<EmailSmsManagement> EmailSmsManagements { get; set; }
         public virtual DbSet<EmployeeDependentDocument> EmployeeDependentDocuments { get; set; }
         public virtual DbSet<MasterHolidayCalendar> MasterHolidayCalendars { get; set; }
         public virtual DbSet<MstContractEmployeeMaster> MstContractEmployeeMasters { get; set; }
@@ -34,6 +35,8 @@ namespace ModuleManagementBackend.DAL.Models
         public virtual DbSet<RegisterContractEmployee> RegisterContractEmployees { get; set; }
         public virtual DbSet<SMSLogDetail> SMSLogDetails { get; set; }
         public virtual DbSet<UnitNameDetail> UnitNameDetails { get; set; }
+        public virtual DbSet<apiUser> apiUsers { get; set; }
+        public virtual DbSet<apiUsersCredit> apiUsersCredits { get; set; }
         public virtual DbSet<kraUser> kraUsers { get; set; }
         public virtual DbSet<kraUserlog> kraUserlogs { get; set; }
         public virtual DbSet<kraformRejectedLog> kraformRejectedLogs { get; set; }
@@ -44,6 +47,7 @@ namespace ModuleManagementBackend.DAL.Models
         public virtual DbSet<tblNoticeBoard> tblNoticeBoards { get; set; }
         public virtual DbSet<tblPolice> tblPolices { get; set; }
         public virtual DbSet<tblPolicyItem> tblPolicyItems { get; set; }
+        public virtual DbSet<tblWhiteListedDevicesAndIP> tblWhiteListedDevicesAndIPs { get; set; }
         public virtual DbSet<todoList> todoLists { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -129,6 +133,25 @@ namespace ModuleManagementBackend.DAL.Models
                 entity.Property(e => e.UserEmpCode)
                     .IsRequired()
                     .HasMaxLength(50);
+            });
+
+            modelBuilder.Entity<EmailSmsManagement>(entity =>
+            {
+                entity.ToTable("EmailSmsManagement");
+
+                entity.Property(e => e.CreatedBy)
+                    .HasMaxLength(200)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.CreatedOn)
+                    .HasColumnType("datetime")
+                    .HasDefaultValueSql("(getdate())");
+
+                entity.Property(e => e.Phone_Email).HasMaxLength(200);
+
+                entity.Property(e => e.ServiceType)
+                    .HasMaxLength(200)
+                    .IsUnicode(false);
             });
 
             modelBuilder.Entity<EmployeeDependentDocument>(entity =>
@@ -682,6 +705,49 @@ namespace ModuleManagementBackend.DAL.Models
                     .HasMaxLength(150);
             });
 
+            modelBuilder.Entity<apiUser>(entity =>
+            {
+                entity.HasKey(e => e.pkApiUserId)
+                    .HasName("PK__apiUsers__61437638BAB73556");
+
+                entity.ToTable("apiUsers", "API");
+
+                entity.Property(e => e.api).IsUnicode(false);
+
+                entity.Property(e => e.apiUserName)
+                    .HasMaxLength(100)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.createdate).HasColumnType("datetime");
+
+                entity.Property(e => e.modifydate).HasColumnType("datetime");
+
+                entity.Property(e => e.status).HasDefaultValueSql("((0))");
+            });
+
+            modelBuilder.Entity<apiUsersCredit>(entity =>
+            {
+                entity.HasKey(e => e.pkApiUserCreditId)
+                    .HasName("PK__apiUsers__04AE6D213B590D5F");
+
+                entity.ToTable("apiUsersCredits", "API");
+
+                entity.Property(e => e.apiUserName).HasMaxLength(100);
+
+                entity.Property(e => e.createdate).HasColumnType("datetime");
+
+                entity.Property(e => e.lastNotificationDate).HasColumnType("datetime");
+
+                entity.Property(e => e.notificationSent).HasDefaultValueSql("((0))");
+
+                entity.Property(e => e.thresholdPercentage).HasDefaultValueSql("((80))");
+
+                entity.HasOne(d => d.fkApiuser)
+                    .WithMany(p => p.apiUsersCredits)
+                    .HasForeignKey(d => d.fkApiuserId)
+                    .HasConstraintName("FK__apiUsersC__fkApi__06D8BD46");
+            });
+
             modelBuilder.Entity<kraUser>(entity =>
             {
                 entity.HasKey(e => e.pkKraUser)
@@ -871,6 +937,26 @@ namespace ModuleManagementBackend.DAL.Models
                     .WithMany(p => p.tblPolicyItems)
                     .HasForeignKey(d => d.fkPolId)
                     .HasConstraintName("FK__tblPolicy__fkPol__4381D8D3");
+            });
+
+            modelBuilder.Entity<tblWhiteListedDevicesAndIP>(entity =>
+            {
+                entity.HasKey(e => e.pkLoginDetailId)
+                    .HasName("PK__tblLogin__C56125774049425D");
+
+                entity.ToTable("tblWhiteListedDevicesAndIP", "API");
+
+                entity.Property(e => e.DeviceId).HasMaxLength(1000);
+
+                entity.Property(e => e.MAC)
+                    .HasMaxLength(1000)
+                    .HasDefaultValueSql("((0))");
+
+                entity.Property(e => e.Make).HasMaxLength(1000);
+
+                entity.Property(e => e.Model).HasMaxLength(1000);
+
+                entity.Property(e => e.Userid).HasMaxLength(100);
             });
 
             modelBuilder.Entity<todoList>(entity =>
