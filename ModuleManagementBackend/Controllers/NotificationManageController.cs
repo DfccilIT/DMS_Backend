@@ -49,6 +49,7 @@ namespace ModuleManagementBackend.API.Controllers
         //}
 
         [HttpPost("SendEmail")]
+        [AllowAnonymous]
         public async Task<IActionResult> SendEmail([FromBody] EmailRequestDto request)
         {
             var result = await notificationManage.SendEmailAsync(

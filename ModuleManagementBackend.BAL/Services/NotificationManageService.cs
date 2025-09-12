@@ -175,7 +175,7 @@ public class NotificationManageService:INotificationManageService
             };
         }
     }
-    public async Task<ResponseModel> SendEmailAsync(string subject,string bodyHtml, List<string> toEmails, string clientId, string appId,  string createdBy,List<string>? ccEmails = null, List<string>? bccEmails = null)
+    public async Task<ResponseModel> SendEmailAsync(string subject,string bodyHtml,List<string> toEmails,string clientId, string appId, string createdBy, List<string>? ccEmails = null, List<string>? bccEmails = null)
     {
         var response = new ResponseModel();
 
@@ -190,13 +190,30 @@ public class NotificationManageService:INotificationManageService
                 };
             }
 
+           
+            var allEmails = toEmails
+                .Concat(ccEmails ?? Enumerable.Empty<string>())
+                .Concat(bccEmails ?? Enumerable.Empty<string>())
+                .Distinct()
+                .ToList();
+
+            var invalidEmails = allEmails.Where(e => !IsValidEmail(e)).ToList();
+            if (invalidEmails.Any())
+            {
+                return new ResponseModel
+                {
+                    StatusCode = HttpStatusCode.BadRequest,
+                    Message = $"Invalid email address(es): {string.Join(", ", invalidEmails)}"
+                };
+            }
+
             ServicePointManager.SecurityProtocol =
                 SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
 
-            var smtpServer = configuration["MailSettings:Server"] ?? string.Empty;
-            var port = int.Parse(configuration["MailSettings:Port"] ?? "587");
-            var senderEmail = configuration["MailSettings:SenderEmail"] ?? string.Empty;
-            var password = configuration["MailSettings:Password"] ?? string.Empty;
+            var smtpServer = configuration["MailSettingsProd:Server"] ?? string.Empty;
+            var port = int.Parse(configuration["MailSettingsProd:Port"] ?? "587");
+            var senderEmail = configuration["MailSettingsProd:SenderEmail"] ?? string.Empty;
+            var password = configuration["MailSettingsProd:Password"] ?? string.Empty;
 
             using (var client = new SmtpClient(smtpServer, port))
             {
@@ -207,18 +224,15 @@ public class NotificationManageService:INotificationManageService
                 {
                     message.From = new MailAddress(senderEmail);
 
-                   
                     foreach (var to in toEmails.Distinct())
                         message.To.Add(to);
 
-                  
                     if (ccEmails != null)
                     {
                         foreach (var cc in ccEmails.Distinct())
                             message.CC.Add(cc);
                     }
 
-                   
                     if (bccEmails != null)
                     {
                         foreach (var bcc in bccEmails.Distinct())
@@ -233,32 +247,36 @@ public class NotificationManageService:INotificationManageService
                 }
             }
 
-            
-            var smsLog = new EmailSmsManagement
+           
+            foreach (var email in allEmails)
             {
-                ClientId = clientId,
-                AppId = appId,
-                ServiceType="Email",
-                TemplateId = "",
-                Phone_Email = string.Join(",", toEmails.Concat(ccEmails ?? new List<string>()).Concat(bccEmails ?? new List<string>())),
-                ListOfVariable = bodyHtml,
-                CreatedBy = createdBy,
-                CreatedOn = DateTime.Now
-            };
+                var smsLog = new EmailSmsManagement
+                {
+                    ClientId = clientId,
+                    AppId = appId,
+                    ServiceType = "Email",
+                    TemplateId = "",
+                    Phone_Email = email, 
+                    ListOfVariable = bodyHtml,
+                    CreatedBy = createdBy,
+                    CreatedOn = DateTime.Now
+                };
 
-            context.EmailSmsManagements.Add(smsLog);
+                context.EmailSmsManagements.Add(smsLog);
+            }
+
             await context.SaveChangesAsync();
 
             response.StatusCode = HttpStatusCode.OK;
-            response.Message = "Email sent and logged successfully.";
+            response.Message = "Email sent successfully and logged per recipient.";
             response.Data = new
             {
                 To = toEmails,
                 Cc = ccEmails,
                 Bcc = bccEmails,
                 ClientId = clientId,
-                AppId = appId
-                
+                AppId = appId,
+                LoggedCount = allEmails.Count
             };
         }
         catch (Exception ex)
@@ -270,6 +288,22 @@ public class NotificationManageService:INotificationManageService
         }
 
         return response;
+    }
+
+    private bool IsValidEmail(string email)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+            return false;
+
+        try
+        {
+            var addr = new MailAddress(email);
+            return addr.Address == email;
+        }
+        catch
+        {
+            return false;
+        }
     }
     private async Task InsertSmsManagementLog(string clientId, string appId, string templateId, string phoneEmail, string variables, string SeviceType, string createdBy)
     {
