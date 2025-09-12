@@ -255,7 +255,7 @@ public class NotificationManageService:INotificationManageService
                     ClientId = clientId,
                     AppId = appId,
                     ServiceType = "Email",
-                    TemplateId = "",
+                    TemplateId = null,
                     Phone_Email = email, 
                     ListOfVariable = bodyHtml,
                     CreatedBy = createdBy,
