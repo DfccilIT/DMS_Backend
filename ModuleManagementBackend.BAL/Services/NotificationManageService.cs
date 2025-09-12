@@ -175,7 +175,7 @@ public class NotificationManageService:INotificationManageService
             };
         }
     }
-    public async Task<ResponseModel> SendEmailAsync(string subject,string bodyHtml,List<string> toEmails,string clientId, string appId, string createdBy, List<string>? ccEmails = null, List<string>? bccEmails = null)
+    public async Task<ResponseModel> SendEmailAsync( string subject, string bodyHtml, List<string> toEmails,string clientId, string appId, string createdBy,List<string>? ccEmails = null, List<string>? bccEmails = null)
     {
         var response = new ResponseModel();
 
@@ -207,22 +207,35 @@ public class NotificationManageService:INotificationManageService
                 };
             }
 
+           
+            var emailConfig = await context.mstEmailsConfigurations
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.AppId == appId);
+
+            if (emailConfig == null)
+            {
+                return new ResponseModel
+                {
+                    StatusCode = HttpStatusCode.BadRequest,
+                    Message = $"No email configuration found for AppId: {appId}"
+                };
+            }
+
             ServicePointManager.SecurityProtocol =
                 SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
 
-            var smtpServer = configuration["MailSettingsProd:Server"] ?? string.Empty;
-            var port = int.Parse(configuration["MailSettingsProd:Port"] ?? "587");
-            var senderEmail = configuration["MailSettingsProd:SenderEmail"] ?? string.Empty;
-            var password = configuration["MailSettingsProd:Password"] ?? string.Empty;
-
-            using (var client = new SmtpClient(smtpServer, port))
+            using (var client = new SmtpClient(emailConfig.SmtpServer, emailConfig.Port))
             {
-                client.EnableSsl = true;
-                client.Credentials = new NetworkCredential(senderEmail, password);
+                client.EnableSsl = emailConfig.EnableSsl ?? false;
+                client.Credentials = new NetworkCredential(emailConfig.SenderEmail, emailConfig.Password);
 
                 using (var message = new MailMessage())
                 {
-                    message.From = new MailAddress(senderEmail);
+                   
+                    if (!string.IsNullOrWhiteSpace(emailConfig.DisplayName))
+                        message.From = new MailAddress(emailConfig.SenderEmail, emailConfig.DisplayName);
+                    else
+                        message.From = new MailAddress(emailConfig.SenderEmail);
 
                     foreach (var to in toEmails.Distinct())
                         message.To.Add(to);
@@ -247,7 +260,7 @@ public class NotificationManageService:INotificationManageService
                 }
             }
 
-           
+            
             foreach (var email in allEmails)
             {
                 var smsLog = new EmailSmsManagement
@@ -255,8 +268,8 @@ public class NotificationManageService:INotificationManageService
                     ClientId = clientId,
                     AppId = appId,
                     ServiceType = "Email",
-                    TemplateId = null,
-                    Phone_Email = email, 
+                    TemplateId = "",
+                    Phone_Email = email,
                     ListOfVariable = bodyHtml,
                     CreatedBy = createdBy,
                     CreatedOn = DateTime.Now
@@ -289,6 +302,7 @@ public class NotificationManageService:INotificationManageService
 
         return response;
     }
+
 
     private bool IsValidEmail(string email)
     {

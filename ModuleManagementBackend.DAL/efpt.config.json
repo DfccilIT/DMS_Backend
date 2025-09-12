@@ -64,6 +64,10 @@
          "ObjectType": 0
       },
       {
+         "Name": "[dbo].[mstEmailsConfiguration]",
+         "ObjectType": 0
+      },
+      {
          "Name": "[dbo].[MstEmployeeDependent]",
          "ObjectType": 0
       },

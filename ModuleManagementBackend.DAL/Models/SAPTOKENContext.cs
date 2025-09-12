@@ -40,6 +40,7 @@ namespace ModuleManagementBackend.DAL.Models
         public virtual DbSet<kraUser> kraUsers { get; set; }
         public virtual DbSet<kraUserlog> kraUserlogs { get; set; }
         public virtual DbSet<kraformRejectedLog> kraformRejectedLogs { get; set; }
+        public virtual DbSet<mstEmailsConfiguration> mstEmailsConfigurations { get; set; }
         public virtual DbSet<mstPositionGreade> mstPositionGreades { get; set; }
         public virtual DbSet<tblDeviceOTP> tblDeviceOTPs { get; set; }
         public virtual DbSet<tblDownLoadLog> tblDownLoadLogs { get; set; }
@@ -799,6 +800,48 @@ namespace ModuleManagementBackend.DAL.Models
                     .WithMany(p => p.kraformRejectedLogs)
                     .HasForeignKey(d => d.fkUserId)
                     .HasConstraintName("FK__kraformRe__fkUse__2157A958");
+            });
+
+            modelBuilder.Entity<mstEmailsConfiguration>(entity =>
+            {
+                entity.HasKey(e => e.EmailConfigId)
+                    .HasName("PK__mstEmail__C57B0D09414959ED");
+
+                entity.ToTable("mstEmailsConfiguration");
+
+                entity.Property(e => e.AppId)
+                    .IsRequired()
+                    .HasMaxLength(100);
+
+                entity.Property(e => e.CreatedBy).HasMaxLength(100);
+
+                entity.Property(e => e.CreatedOn)
+                    .HasColumnType("datetime")
+                    .HasDefaultValueSql("(getdate())");
+
+                entity.Property(e => e.DisplayName).HasMaxLength(255);
+
+                entity.Property(e => e.EnableSsl)
+                    .IsRequired()
+                    .HasDefaultValueSql("((1))");
+
+                entity.Property(e => e.ModifiedBy).HasMaxLength(100);
+
+                entity.Property(e => e.ModifiedOn).HasColumnType("datetime");
+
+                entity.Property(e => e.Password)
+                    .IsRequired()
+                    .HasMaxLength(255);
+
+                entity.Property(e => e.Port).HasDefaultValueSql("((587))");
+
+                entity.Property(e => e.SenderEmail)
+                    .IsRequired()
+                    .HasMaxLength(255);
+
+                entity.Property(e => e.SmtpServer)
+                    .IsRequired()
+                    .HasMaxLength(255);
             });
 
             modelBuilder.Entity<mstPositionGreade>(entity =>
