@@ -17,36 +17,36 @@ namespace ModuleManagementBackend.API.Controllers
             this.notificationManage=notificationManage;
         }
 
-        //[HttpPost("SendSMS")]
-        //public async Task<IActionResult> SendSMS([FromBody] SendSMSRequest request)
-        //{
-        //    var result = await notificationManage.SendSMSUsingURL(
-        //        smstext: request.SmsText,
-        //        mobile: request.Mobile,
-        //        userid: request.UserId,
-        //        templateId: request.TemplateId,
-        //        clientId: request.ClientId,
-        //        appId: request.AppId
-        //    );
+        [HttpPost("SendSMS")]
+        public async Task<IActionResult> SendSMS([FromBody] SendSMSRequest request)
+        {
+            var result = await notificationManage.SendSMSUsingURL(
+                smstext: request.SmsText,
+                mobile: request.Mobile,
+                userid: request.UserId,
+                templateId: request.TemplateId,
+                clientId: request.ClientId,
+                appId: request.AppId
+            );
 
-        //    return StatusCode((int)result.StatusCode, result);
-        //}
+            return StatusCode((int)result.StatusCode, result);
+        }
 
-        
-        //[HttpPost("SendWhatsAppSMS")]
-        //public async Task<IActionResult> SendWhatsAppSMS([FromBody] SendWhatsAppRequest request)
-        //{
-        //    var result = await notificationManage.SendWhatsAppSMS(
-        //        clientId: request.ClientId,
-        //        appId: request.AppId,
-        //        templateId: request.TemplateId,
-        //        phoneNumber: request.PhoneNumber,
-        //        variables: request.Variables,
-        //        createdBy: request.CreatedBy
-        //    );
 
-        //    return StatusCode((int)result.StatusCode, result);
-        //}
+        [HttpPost("SendWhatsAppSMS")]
+        public async Task<IActionResult> SendWhatsAppSMS([FromBody] SendWhatsAppRequest request)
+        {
+            var result = await notificationManage.SendWhatsAppSMS(
+                clientId: request.ClientId,
+                appId: request.AppId,
+                templateId: request.TemplateId,
+                phoneNumber: request.PhoneNumber,
+                variables: request.Variables,
+                createdBy: request.CreatedBy
+            );
+
+            return StatusCode((int)result.StatusCode, result);
+        }
 
         [HttpPost("SendEmail")]
         [AllowAnonymous]

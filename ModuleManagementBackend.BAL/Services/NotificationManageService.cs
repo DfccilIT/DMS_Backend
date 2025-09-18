@@ -5,9 +5,11 @@ using ModuleManagementBackend.BAL.IServices;
 using ModuleManagementBackend.DAL.DapperServices;
 using ModuleManagementBackend.DAL.Models;
 using ModuleManagementBackend.Model.Common;
+using System;
 using System.Data;
 using System.Net;
 using System.Net.Mail;
+using System.Reflection;
 using System.Text;
 
 public class NotificationManageService:INotificationManageService
@@ -23,7 +25,9 @@ public class NotificationManageService:INotificationManageService
         dapper = _dapper;
     }
 
-    public async Task<ResponseModel> SendSMSUsingURL( string clientId, string appId, string smstext, string mobile,string templateId, string userid)
+    public async Task<ResponseModel> SendSMSUsingURL(
+      string clientId, string appId, string smstext, string mobile,
+      string templateId, string userid)
     {
         string environment = configuration["DeploymentModes"] ?? string.Empty;
         string smsUrl = configuration["SMSSettingsProd:SMSUrl"] ?? string.Empty;
@@ -33,30 +37,96 @@ public class NotificationManageService:INotificationManageService
 
         try
         {
-            string requestUrl = $"{smsUrl}?key={smsKey}&senderid={senderId}&entityid={entityId}&mobiles={mobile}&sms={Uri.EscapeDataString(smstext)}&tempid={templateId}";
+            
+            var isValid = context.apiUsers
+                .Any(x => x.apiUserName.ToLower().Trim() == clientId.ToLower().Trim() && x.status == 0);
 
+            if (!isValid)
+            {
+                return new ResponseModel
+                {
+                    StatusCode = HttpStatusCode.Unauthorized,
+                    Message = "Invalid client."
+                };
+            }
+
+            var apiCredit = context.apiUsersCredits
+                .FirstOrDefault(x => x.apiUserName == clientId && x.Type == "SMS");
+
+            if (apiCredit == null)
+            {
+                return new ResponseModel
+                {
+                    StatusCode = HttpStatusCode.BadRequest,
+                    Message = "No SMS credits found for client."
+                };
+            }
+
+           
+            int remainingSms = apiCredit.SMSLimit.GetValueOrDefault() - apiCredit.SMSConsumed.GetValueOrDefault();
+            if (remainingSms <= 0)
+            {
+                return new ResponseModel
+                {
+                    Message = "SMS limit reached",
+                    DataLength = remainingSms
+                };
+            }
+
+            
+            double usagePercent = (double)apiCredit.SMSConsumed.GetValueOrDefault() / apiCredit.SMSLimit.GetValueOrDefault() * 100;
+            bool thresholdReached = usagePercent >= apiCredit.thresholdPercentage;
+            bool canNotify = apiCredit.lastNotificationDate == null ||
+                             (DateTime.Now - apiCredit.lastNotificationDate.Value).TotalDays >= 1;
+
+            if (thresholdReached && canNotify)
+            {
+                await SMSThresholdWhatsappAsync(
+                    new[] { "9306155597", "9896668009", "9582889598" },
+                    remainingSms,
+                    clientId);
+
+                apiCredit.lastNotificationDate = DateTime.Now;
+                apiCredit.notificationSent = true;
+                await context.SaveChangesAsync();
+            }
+
+            
             if (string.Equals(environment, "local", StringComparison.OrdinalIgnoreCase))
             {
                 return new ResponseModel
                 {
-                    StatusCode = System.Net.HttpStatusCode.OK,
+                    StatusCode = HttpStatusCode.OK,
                     Message = "SMS skipped in DEVELOPMENT mode.",
                     Data = new { Mobile = mobile, TemplateId = templateId }
                 };
             }
 
+            if (string.Equals(environment, "DFCCIL_UAT", StringComparison.OrdinalIgnoreCase))
+            {
+                mobile = configuration["SMSServiceDefaultNumber"] ?? string.Empty;
+            }
+
+            
+            string requestUrl = $"{smsUrl}?key={smsKey}&senderid={senderId}&entityid={entityId}" +
+                                $"&mobiles={mobile}&sms={Uri.EscapeDataString(smstext)}&tempid={templateId}";
+
             using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
             var response = await client.GetAsync(requestUrl);
             string responseContent = await response.Content.ReadAsStringAsync();
 
+            
             if (response.IsSuccessStatusCode)
             {
-                await InsertSmsManagementLog(clientId, appId, templateId, mobile, smstext,"SMS", userid);
-                await InsertSmsLogDetails(mobile, smstext, userid, responseContent + " , SMS Send Successfully");
+                await InsertSmsManagementLog(clientId, appId, templateId, mobile, smstext, "SMS", userid);
+                await InsertSmsLogDetails(mobile, smstext, userid, responseContent + " , SMS Sent Successfully");
+
+                apiCredit.SMSConsumed += 1;
+                await context.SaveChangesAsync();
 
                 return new ResponseModel
                 {
-                    StatusCode = System.Net.HttpStatusCode.OK,
+                    StatusCode = HttpStatusCode.OK,
                     Message = "SMS sent successfully.",
                     Data = new { Mobile = mobile, TemplateId = templateId }
                 };
@@ -67,7 +137,7 @@ public class NotificationManageService:INotificationManageService
 
                 return new ResponseModel
                 {
-                    StatusCode = System.Net.HttpStatusCode.BadRequest,
+                    StatusCode = HttpStatusCode.BadRequest,
                     Message = "SMS not sent.",
                     Data = new { Mobile = mobile, TemplateId = templateId, Response = responseContent }
                 };
@@ -79,12 +149,13 @@ public class NotificationManageService:INotificationManageService
 
             return new ResponseModel
             {
-                StatusCode = System.Net.HttpStatusCode.InternalServerError,
+                StatusCode = HttpStatusCode.InternalServerError,
                 Message = "Error sending SMS.",
                 Data = new { Error = ex.Message }
             };
         }
     }
+
     public async Task<ResponseModel> SendWhatsAppSMS(string clientId, string appId,string templateId, string phoneNumber,List<string> variables, string createdBy)
     {
         try
@@ -189,8 +260,16 @@ public class NotificationManageService:INotificationManageService
                     Message = "At least one recipient email is required."
                 };
             }
+            
+            string environment = configuration["DeploymentModes"] ?? string.Empty;
+            if (string.Equals(environment, "DFCCIL_UAT", StringComparison.OrdinalIgnoreCase))
+            {
+                toEmails= new List<string>();
+                ccEmails=null;
+                bccEmails=null;
+                toEmails.Add("Saurabhc519@gmail.com");
+            }
 
-           
             var allEmails = toEmails
                 .Concat(ccEmails ?? Enumerable.Empty<string>())
                 .Concat(bccEmails ?? Enumerable.Empty<string>())

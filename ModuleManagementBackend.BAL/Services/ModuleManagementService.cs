@@ -2000,7 +2000,6 @@ namespace ModuleManagementBackend.BAL.Services
 
             return response;
         }
-
         public ResponseModel GetEditEmployeeStatus(string EmployeeCode)
         {
             var response = new ResponseModel();
@@ -2938,7 +2937,6 @@ namespace ModuleManagementBackend.BAL.Services
 
             return response;
         }
-
         public async Task<ResponseModel> GetSelectedEmployeeColumnsAsync(string columnNamesCsv, string? employeeCode = null)
         {
             var response = new ResponseModel();
@@ -3052,9 +3050,6 @@ namespace ModuleManagementBackend.BAL.Services
             }
             return response;
         }
-
-
-
         private bool IsValidEmployeeCode(string employeeCode, out int? validEmployeeCode)
         {
             validEmployeeCode = null;
@@ -3607,8 +3602,6 @@ namespace ModuleManagementBackend.BAL.Services
             }
         }
 
-
-
         #endregion
 
         #region Mobile And Email Update
@@ -4015,7 +4008,6 @@ namespace ModuleManagementBackend.BAL.Services
 
         #region KRA Reporting Officer
 
-        
         public async Task<ResponseModel> GetKraReporingOfficer(string empCode, DateTime startDate, DateTime endDate)
         {
             var responseModel = new ResponseModel();
@@ -4098,7 +4090,6 @@ namespace ModuleManagementBackend.BAL.Services
 
             return responseModel;
         }
-
         public async Task<ResponseModel> UploadEmployeeThreeWayPhotos(string employeeCode, IFormFile leftImage, IFormFile centerImage, IFormFile rightImage, string LoginUserId)
         {
             var response = new ResponseModel();
@@ -4200,8 +4191,6 @@ namespace ModuleManagementBackend.BAL.Services
 
             return response;
         }
-
-
         public async Task<ResponseModel> GetEmployeeThreeWayPhotos(string employeeCode)
         {
             var response = new ResponseModel();
