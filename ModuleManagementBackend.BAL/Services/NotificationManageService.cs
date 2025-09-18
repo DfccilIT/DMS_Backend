@@ -25,9 +25,7 @@ public class NotificationManageService:INotificationManageService
         dapper = _dapper;
     }
 
-    public async Task<ResponseModel> SendSMSUsingURL(
-      string clientId, string appId, string smstext, string mobile,
-      string templateId, string userid)
+    public async Task<ResponseModel> SendSMSUsingURL(string clientId, string appId, string smstext, string mobile, string templateId, string userid)
     {
         string environment = configuration["DeploymentModes"] ?? string.Empty;
         string smsUrl = configuration["SMSSettingsProd:SMSUrl"] ?? string.Empty;
@@ -155,7 +153,6 @@ public class NotificationManageService:INotificationManageService
             };
         }
     }
-
     public async Task<ResponseModel> SendWhatsAppSMS(string clientId, string appId,string templateId, string phoneNumber,List<string> variables, string createdBy)
     {
         try
@@ -415,7 +412,6 @@ public class NotificationManageService:INotificationManageService
         context.EmailSmsManagements.Add(smsLog);
         await context.SaveChangesAsync();
     }
-
     private async Task InsertSmsLogDetails(string mobile, string smsText, string modifiedBy, string responseText)
     {
         await using var connection = new SqlConnection(context.Database.GetConnectionString());
@@ -432,8 +428,6 @@ public class NotificationManageService:INotificationManageService
         await connection.OpenAsync();
         await cmd.ExecuteNonQueryAsync();
     }
-
-
     public async Task<ResponseModel> SMSThresholdWhatsappAsync(string[] phoneNumbers, int smsRemaining, string clientName)
     {
         try
@@ -499,8 +493,6 @@ public class NotificationManageService:INotificationManageService
             };
         }
     }
-
-
     public async Task<ResponseModel> HawaWhatsAppSMS(string templateName, string phoneNumber, string[] args)
     {
         try
