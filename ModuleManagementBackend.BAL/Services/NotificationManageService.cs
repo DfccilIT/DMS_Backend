@@ -258,14 +258,14 @@ public class NotificationManageService:INotificationManageService
                 };
             }
             
-            string environment = configuration["DeploymentModes"] ?? string.Empty;
-            if (string.Equals(environment, "DFCCIL_UAT", StringComparison.OrdinalIgnoreCase))
-            {
-                toEmails= new List<string>();
-                ccEmails=null;
-                bccEmails=null;
-                toEmails.Add("Saurabhc519@gmail.com");
-            }
+            //string environment = configuration["DeploymentModes"] ?? string.Empty;
+            ////if (string.Equals(environment, "DFCCIL_UAT", StringComparison.OrdinalIgnoreCase))
+            ////{
+            ////    toEmails= new List<string>();
+            ////    ccEmails=null;
+            ////    bccEmails=null;
+            ////    toEmails.Add("Saurabhc519@gmail.com");
+            ////}
 
             var allEmails = toEmails
                 .Concat(ccEmails ?? Enumerable.Empty<string>())
@@ -373,7 +373,7 @@ public class NotificationManageService:INotificationManageService
             response.StatusCode = HttpStatusCode.InternalServerError;
             response.Message = "Failed to send email.";
             response.Error = true;
-            response.ErrorDetail = ex;
+            response.ErrorDetail = ex.Message;
         }
 
         return response;
