@@ -17,7 +17,11 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddApiProjectServices(builder.Configuration);
 builder.Services.AddBusinessLayerServices(builder.Configuration);
 builder.Services.AddDataAccessLayerServices(builder.Configuration);
-
+app.MapGet("/health", () =>
+ {
+     return Results.Ok(new { status = "Healthy" });
+ });
+ app.MapGet("/", () => Results.Ok("API is running"));
 var app = builder.Build();
 app.ExceptionHandler();
 
