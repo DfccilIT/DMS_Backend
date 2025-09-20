@@ -95,7 +95,7 @@ namespace ModuleManagementBackend.API.Controllers
 
         [HttpPost]
         [Route("CreateHoliday")]
-        public async Task<ActionResult<ResponseModel>> CreateHoliday([FromBody] CreateHolidayCalendarDto createHolidayDto)
+        public async Task<ActionResult<ResponseModel>> CreateHoliday([FromBody] CreateHolidayCalendarNewDto createHolidayDto)
         {
             if (!ModelState.IsValid)
             {
