@@ -77,7 +77,7 @@ namespace ModuleManagementBackend.BAL.IServices
 
         Task<ResponseModel> GetHolidaysByDateRange(DateTime? fromDate = null, DateTime? toDate = null, int? unitId = null);
 
-        Task<ResponseModel> CreateHoliday(CreateHolidayCalendarDto createHolidayDto, string loginUserId);
+        Task<ResponseModel> CreateHoliday(CreateHolidayCalendarNewDto createHolidayDto, string loginUserId);
 
         Task<ResponseModel> UpdateHoliday(UpdateHolidayCalendarDto updateHolidayDto, string loginUserId);
 

@@ -50,6 +50,42 @@ namespace ModuleManagementBackend.Model.DTOs.HolidayCalenderDTO
             [StringLength(100)]
             public string UnitName { get; set; }
 
+
+        }
+
+        public class CreateHolidayCalendarNewDto
+        {
+
+            [Required]
+            public DateTime HolidayDate { get; set; }
+
+            public string? HolidayDescription { get; set; }
+
+            [Required]
+            [StringLength(10)]
+            public string HolidayType { get; set; }
+
+            [Required]
+            [StringLength(20)]
+            public string DayOfWeek { get; set; }
+
+            //[Required]
+            //public int UnitId { get; set; }
+
+            //[Required]
+            //[StringLength(100)]
+            //public string UnitName { get; set; }
+            public List<UnitsDto> Units { get; set; }
+
+        }
+        public class UnitsDto
+        {
+            [Required]
+            public int UnitId { get; set; }
+
+            [Required]
+            [StringLength(100)]
+            public string UnitName { get; set; }
         }
 
         public class UpdateHolidayCalendarDto

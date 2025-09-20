@@ -43,7 +43,7 @@ namespace ModuleManagementBackend.BAL.Services
         private readonly string baseUrl;
 
 
-        public ModuleManagementService(SAPTOKENContext _context, IDapperService _dapper, IHttpContextAccessor _httpContext, IConfiguration _configuration, ICacheService CacheService, IDatabaseChangesService DbChangeService, ILogger<ModuleManagementService> logger,INotificationManageService notificationManage)
+        public ModuleManagementService(SAPTOKENContext _context, IDapperService _dapper, IHttpContextAccessor _httpContext, IConfiguration _configuration, ICacheService CacheService, IDatabaseChangesService DbChangeService, ILogger<ModuleManagementService> logger, INotificationManageService notificationManage)
         {
             context=_context;
             dapper=_dapper;
@@ -2543,9 +2543,9 @@ namespace ModuleManagementBackend.BAL.Services
                 {
                     return new ResponseModel();
                 }
-               var appId  = ((configuration["DeploymentModes"] ?? string.Empty) == "DFCCIL_UAT")
-             ? (configuration["UAT_AppId"] ?? string.Empty)
-             : (configuration["PROD_AppId"] ?? string.Empty);
+                var appId = ((configuration["DeploymentModes"] ?? string.Empty) == "DFCCIL_UAT")
+              ? (configuration["UAT_AppId"] ?? string.Empty)
+              : (configuration["PROD_AppId"] ?? string.Empty);
 
                 var ClientId = ((configuration["DeploymentModes"] ?? string.Empty) == "DFCCIL_UAT")
             ? (configuration["UAT_ClientId"] ?? string.Empty)
@@ -2556,8 +2556,8 @@ namespace ModuleManagementBackend.BAL.Services
                     userid: EmpCode,
                     templateId: templateId,
                     clientId: ClientId,
-                    appId: appId );
-                
+                    appId: appId);
+
 
                 if (contextResponse.StatusCode==HttpStatusCode.OK)
                 {
@@ -2568,7 +2568,7 @@ namespace ModuleManagementBackend.BAL.Services
                 }
                 else
                 {
-                  
+
                     response.StatusCode = contextResponse.StatusCode;
                     response.Message = $"Failed to send SMS. Status Code: {contextResponse.StatusCode}";
                     response.Error = true;
@@ -3250,44 +3250,55 @@ namespace ModuleManagementBackend.BAL.Services
                 return responseModel;
             }
         }
-        public async Task<ResponseModel> CreateHoliday(CreateHolidayCalendarDto createHolidayDto, string loginUserId)
+        public async Task<ResponseModel> CreateHoliday(CreateHolidayCalendarNewDto createHolidayDto, string loginUserId)
         {
             ResponseModel responseModel = new ResponseModel();
             try
             {
 
-                var existingHoliday = await context.MasterHolidayCalendars
-                    .FirstOrDefaultAsync(h => h.HolidayDate == createHolidayDto.HolidayDate
-                                           && h.UnitId == createHolidayDto.UnitId
-                                           && h.IsActive == true);
+                var conflictingUnit = await context.MasterHolidayCalendars
+                    .Where(h => h.HolidayDate == createHolidayDto.HolidayDate
+                                && createHolidayDto.Units.Select(u => u.UnitId).Contains(h.UnitId)
+                                && h.IsActive == true)
+                    .FirstOrDefaultAsync();
 
-                if (existingHoliday != null)
+                if (conflictingUnit != null)
                 {
-                    responseModel.Message = "Holiday already exists for this date and unit";
+                    responseModel.Message = $"Holiday already exists for {conflictingUnit.UnitName} on this date.";
                     responseModel.StatusCode = HttpStatusCode.Conflict;
                     return responseModel;
                 }
 
-                var holiday = new MasterHolidayCalendar
-                {
-                    HolidayDate = createHolidayDto.HolidayDate,
-                    HolidayDescription = createHolidayDto.HolidayDescription,
-                    HolidayType = createHolidayDto.HolidayType,
-                    DayOfWeek = createHolidayDto.DayOfWeek,
-                    UnitId = createHolidayDto.UnitId,
-                    UnitName = createHolidayDto.UnitName,
-                    IsActive = true,
-                    CreatedBy = loginUserId,
-                    CreatedDate = DateTime.Now
-                };
+                var createdHolidays = new List<MasterHolidayCalendar>();
 
-                context.MasterHolidayCalendars.Add(holiday);
+                foreach (var unit in createHolidayDto.Units)
+                {
+                   
+                    var holiday = new MasterHolidayCalendar
+                    {
+                        HolidayDate = createHolidayDto.HolidayDate,
+                        HolidayDescription = createHolidayDto.HolidayDescription,
+                        HolidayType = createHolidayDto.HolidayType,
+                        DayOfWeek = createHolidayDto.DayOfWeek,
+                        UnitId = unit.UnitId,
+                        UnitName = unit.UnitName,
+                        IsActive = true,
+                        CreatedBy = loginUserId,
+                        CreatedDate = DateTime.Now
+                    };
+
+                    createdHolidays.Add(holiday);
+                }
+
+               
+                context.MasterHolidayCalendars.AddRange(createdHolidays);
                 await context.SaveChangesAsync();
 
-                responseModel.Message = "Holiday created successfully";
+                responseModel.Message = "Holidays created successfully for all units.";
                 responseModel.StatusCode = HttpStatusCode.OK;
-                responseModel.Data = holiday.HolidayId;
-                responseModel.TotalRecords = 1;
+                responseModel.Data = createdHolidays.Select(h => h.HolidayId).ToList();
+                responseModel.TotalRecords = createdHolidays.Count;
+
                 return responseModel;
             }
             catch (Exception ex)
@@ -3298,6 +3309,7 @@ namespace ModuleManagementBackend.BAL.Services
                 return responseModel;
             }
         }
+
         public async Task<ResponseModel> UpdateHoliday(UpdateHolidayCalendarDto updateHolidayDto, string loginUserId)
         {
             ResponseModel responseModel = new ResponseModel();
@@ -3698,7 +3710,7 @@ namespace ModuleManagementBackend.BAL.Services
                     string phone = string.Empty;
                     if (configuration["DeploymentModes"] !="DFCCIL")
                     {
-                        
+
                         phone = newMobileNumber;
                     }
                     else
@@ -3732,7 +3744,7 @@ namespace ModuleManagementBackend.BAL.Services
 
                     if (contextResponse.StatusCode==HttpStatusCode.OK)
                     {
-                       
+
                         response.StatusCode = HttpStatusCode.OK;
                         response.Message = "SMS sent successfully.";
                         response.Data = contextResponse.Data;
@@ -3740,7 +3752,7 @@ namespace ModuleManagementBackend.BAL.Services
                     }
                     else
                     {
-                       
+
                         response.StatusCode = contextResponse.StatusCode;
                         response.Message = $"Failed to send SMS. Status Code: {contextResponse.StatusCode}";
                         response.Error = true;
@@ -4107,7 +4119,7 @@ namespace ModuleManagementBackend.BAL.Services
                 if (!Directory.Exists(uploadPath))
                     Directory.CreateDirectory(uploadPath);
 
-                
+
                 var existingImages = await context.MstEmployeeMasterProfileImages
                     .Where(x => x.EmployeeCode == employeeCode && x.Status==0)
                     .ToListAsync();
@@ -4117,17 +4129,17 @@ namespace ModuleManagementBackend.BAL.Services
                     var filePath = Path.Combine(uploadPath, img.Image);
                     if (File.Exists(filePath))
                     {
-                        File.Delete(filePath); 
+                        File.Delete(filePath);
                     }
                 }
 
                 if (existingImages.Any())
                 {
                     context.MstEmployeeMasterProfileImages.RemoveRange(existingImages);
-                    await context.SaveChangesAsync(); 
+                    await context.SaveChangesAsync();
                 }
 
-              
+
                 var images = new List<(IFormFile File, string Type)>
         {
             (leftImage, "Left"),
@@ -4180,7 +4192,7 @@ namespace ModuleManagementBackend.BAL.Services
                 {
                     e.ImageType,
                     e.Image
-                   
+
                 });
             }
             catch (Exception ex)
