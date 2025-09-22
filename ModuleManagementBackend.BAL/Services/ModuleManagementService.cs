@@ -2909,8 +2909,9 @@ namespace ModuleManagementBackend.BAL.Services
                     .Select(c => new { c.Contractor, c.PkContractid })
                     .ToListAsync();
 
-                var mstUnit = await context.UnitNameDetails
+                var mstUnit = await context.UnitNameDetails.Where(x=>x.IsActive == true)
                    .OrderBy(c => c.SequenceID)
+
                    .Select(c => new { c.Id, c.Name, c.SequenceID, c.Abbrivation })
                    .ToListAsync();
 
