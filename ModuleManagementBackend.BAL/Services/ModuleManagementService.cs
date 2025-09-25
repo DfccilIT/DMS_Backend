@@ -2586,7 +2586,6 @@ namespace ModuleManagementBackend.BAL.Services
             return response;
         }
 
-
         #endregion
 
         public async Task<ResponseModel> GetDfccilDirectory(string? EmpCode = null)
@@ -3310,7 +3309,6 @@ namespace ModuleManagementBackend.BAL.Services
                 return responseModel;
             }
         }
-
         public async Task<ResponseModel> UpdateHoliday(UpdateHolidayCalendarDto updateHolidayDto, string loginUserId)
         {
             ResponseModel responseModel = new ResponseModel();
