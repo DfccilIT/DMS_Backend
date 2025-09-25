@@ -102,7 +102,14 @@ public class NotificationManageService:INotificationManageService
 
             if (string.Equals(environment, "DFCCIL_UAT", StringComparison.OrdinalIgnoreCase))
             {
-                mobile = configuration["SMSServiceDefaultNumber"] ?? string.Empty;
+                //mobile = configuration["SMSServiceDefaultNumber"] ?? string.Empty;
+
+                return new ResponseModel
+                {
+                    StatusCode = HttpStatusCode.OK,
+                    Message = "SMS skipped in UAT mode.",
+                    Data = new { Mobile = mobile, TemplateId = templateId }
+                };
             }
 
             

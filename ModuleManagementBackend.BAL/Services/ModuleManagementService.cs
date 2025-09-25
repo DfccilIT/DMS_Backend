@@ -3632,7 +3632,20 @@ namespace ModuleManagementBackend.BAL.Services
                     return response;
                 }
 
+                if (((configuration["DeploymentModes"] ?? string.Empty) == "DFCCIL_UAT") && otp == "111111")
+                {
+                    user.Mobile = newMobileNumber;
+                    user.Modify_By = userEmpCode;
+                    user.Modify_Date = DateTime.Now;
 
+                    context.MstEmployeeMasters.Update(user);
+                    await context.SaveChangesAsync();
+
+                    response.Message = "Mobile number updated successfully.";
+                    response.StatusCode = HttpStatusCode.OK;
+                    response.Data = new { user.EmployeeCode, user.Mobile };
+                    return response;
+                }
                 var otpRecord = await context.tblDeviceOTPs
                     .OrderByDescending(o => o.CreateDate)
                     .FirstOrDefaultAsync(o => o.UserId == userEmpCode && o.status==0);
