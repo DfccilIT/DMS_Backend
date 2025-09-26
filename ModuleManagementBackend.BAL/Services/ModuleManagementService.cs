@@ -2773,61 +2773,10 @@ namespace ModuleManagementBackend.BAL.Services
                 return response;
             }
         }
-
-
-        public async Task<ResponseModel> GetEmployeeProfile(string EmpCode)
+        public async Task<ResponseModel> GetEmployeeProfile(string empCode)
         {
             try
             {
-                var cacheKey = $"GetEmployeeProfile_{EmpCode ?? "X"}";
-                var versionCacheKey = $"{cacheKey}_version";
-
-
-
-
-                var cachedDbVersion = await _dbChangeService.GetDataVersionAsync();
-                var cachedProfileVersion = await _cacheService.GetAsync<long?>(versionCacheKey);
-
-
-                if (cachedProfileVersion == null || cachedProfileVersion != cachedDbVersion)
-                {
-                    await _cacheService.RemoveAsync(cacheKey);
-                    await _cacheService.SetAsync(versionCacheKey, cachedDbVersion, TimeSpan.FromHours(3));
-
-                    _logger.LogInformation(
-                        "EmployeeProfile cache invalidated for EmpCode {EmpCode}. DBVersion={DbVersion}, CachedProfileVersion={ProfileVersion}",
-                        EmpCode, cachedDbVersion, cachedProfileVersion
-                    );
-                }
-
-
-                var responseModel = await _cacheService.GetOrSetAsync(
-                    cacheKey,
-                    async () => await GetEmployeeProfileData(EmpCode),
-                    TimeSpan.FromHours(2),
-                    TimeSpan.FromHours(2)
-                );
-
-
-
-                return responseModel;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error in GetEmployeeProfile for EmpCode {EmpCode}", EmpCode);
-                return new ResponseModel
-                {
-                    Message = $"An error occurred: {ex.Message}",
-                    StatusCode = HttpStatusCode.InternalServerError
-                };
-            }
-        }
-        private static int count = 0;
-        public async Task<ResponseModel> GetEmployeeProfileData(string empCode)
-        {
-            try
-            {
-
                 using var connection = dapper.GetConnection();
 
                 using var multi = await connection.QueryMultipleAsync(
@@ -2837,43 +2786,134 @@ namespace ModuleManagementBackend.BAL.Services
                 );
 
                 var employees = await multi.ReadAsync<EmployeeProfileDto>();
-                //var units = await multi.ReadAsync<UnitDto>();
-
-                var employee = employees.ToList();
-
-                //var Grade = context.mstPositionGreades.Select(x => new
-                //{
-                //    x.PositionGrade,
-                //    x.PGOrder
-                //}).OrderByDescending(x => x.PGOrder).ToList();
+                var employeeList = employees.ToList();
 
                 var result = new
                 {
-                    employee = employee
-                    //units = null,
-                    //PositionGrades = Grade
+                    employee = employeeList
                 };
-                var currentCount = Interlocked.Increment(ref count);
-                return new ResponseModel()
+
+                
+
+                return new ResponseModel
                 {
-                    StatusCode=HttpStatusCode.OK,
-                    Data=result,
-                    Message=$"Employee Details Fetched Successfully{count}."
-
-
+                    StatusCode = HttpStatusCode.OK,
+                    Data = result,
+                    Message = $"Employee Details Fetched Successfully "
                 };
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error in GetEmployeeProfile for EmpCode {EmpCode}", empCode);
 
-                return new ResponseModel()
+                return new ResponseModel
                 {
-                    StatusCode=HttpStatusCode.InternalServerError,
-                    Message=ex.Message,
-
+                    StatusCode = HttpStatusCode.InternalServerError,
+                    Message = $"An error occurred: {ex.Message}"
                 };
             }
         }
+
+
+        //public async Task<ResponseModel> GetEmployeeProfile(string EmpCode)
+        //{
+        //    try
+        //    {
+        //        var cacheKey = $"GetEmployeeProfile_{EmpCode ?? "X"}";
+        //        var versionCacheKey = $"{cacheKey}_version";
+
+
+
+
+        //        var cachedDbVersion = await _dbChangeService.GetDataVersionAsync();
+        //        var cachedProfileVersion = await _cacheService.GetAsync<long?>(versionCacheKey);
+
+
+        //        if (cachedProfileVersion == null || cachedProfileVersion != cachedDbVersion)
+        //        {
+        //            await _cacheService.RemoveAsync(cacheKey);
+        //            await _cacheService.SetAsync(versionCacheKey, cachedDbVersion, TimeSpan.FromHours(3));
+
+        //            _logger.LogInformation(
+        //                "EmployeeProfile cache invalidated for EmpCode {EmpCode}. DBVersion={DbVersion}, CachedProfileVersion={ProfileVersion}",
+        //                EmpCode, cachedDbVersion, cachedProfileVersion
+        //            );
+        //        }
+
+
+        //        var responseModel = await _cacheService.GetOrSetAsync(
+        //            cacheKey,
+        //            async () => await GetEmployeeProfileData(EmpCode),
+        //            TimeSpan.FromHours(2),
+        //            TimeSpan.FromHours(2)
+        //        );
+
+
+
+        //        return responseModel;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, "Error in GetEmployeeProfile for EmpCode {EmpCode}", EmpCode);
+        //        return new ResponseModel
+        //        {
+        //            Message = $"An error occurred: {ex.Message}",
+        //            StatusCode = HttpStatusCode.InternalServerError
+        //        };
+        //    }
+        //}
+        //private static int count = 0;
+        //public async Task<ResponseModel> GetEmployeeProfileData(string empCode)
+        //{
+        //    try
+        //    {
+
+        //        using var connection = dapper.GetConnection();
+
+        //        using var multi = await connection.QueryMultipleAsync(
+        //            "[dbo].[GetEmployeeOptimise]",
+        //            new { EmployeeCode = empCode },
+        //            commandType: CommandType.StoredProcedure
+        //        );
+
+        //        var employees = await multi.ReadAsync<EmployeeProfileDto>();
+        //        //var units = await multi.ReadAsync<UnitDto>();
+
+        //        var employee = employees.ToList();
+
+        //        //var Grade = context.mstPositionGreades.Select(x => new
+        //        //{
+        //        //    x.PositionGrade,
+        //        //    x.PGOrder
+        //        //}).OrderByDescending(x => x.PGOrder).ToList();
+
+        //        var result = new
+        //        {
+        //            employee = employee
+        //            //units = null,
+        //            //PositionGrades = Grade
+        //        };
+        //        var currentCount = Interlocked.Increment(ref count);
+        //        return new ResponseModel()
+        //        {
+        //            StatusCode=HttpStatusCode.OK,
+        //            Data=result,
+        //            Message=$"Employee Details Fetched Successfully{count}."
+
+
+        //        };
+        //    }
+        //    catch (Exception ex)
+        //    {
+
+        //        return new ResponseModel()
+        //        {
+        //            StatusCode=HttpStatusCode.InternalServerError,
+        //            Message=ex.Message,
+
+        //        };
+        //    }
+        //}
         public async Task<ResponseModel> GetAllMastersAsync()
         {
             var response = new ResponseModel();
