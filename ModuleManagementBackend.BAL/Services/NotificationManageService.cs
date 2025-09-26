@@ -264,15 +264,8 @@ public class NotificationManageService:INotificationManageService
                     Message = "At least one recipient email is required."
                 };
             }
-            
-            //string environment = configuration["DeploymentModes"] ?? string.Empty;
-            ////if (string.Equals(environment, "DFCCIL_UAT", StringComparison.OrdinalIgnoreCase))
-            ////{
-            ////    toEmails= new List<string>();
-            ////    ccEmails=null;
-            ////    bccEmails=null;
-            ////    toEmails.Add("Saurabhc519@gmail.com");
-            ////}
+
+
 
             var allEmails = toEmails
                 .Concat(ccEmails ?? Enumerable.Empty<string>())
@@ -281,6 +274,7 @@ public class NotificationManageService:INotificationManageService
                 .ToList();
 
             var invalidEmails = allEmails.Where(e => !IsValidEmail(e)).ToList();
+
             if (invalidEmails.Any())
             {
                 return new ResponseModel
@@ -290,7 +284,14 @@ public class NotificationManageService:INotificationManageService
                 };
             }
 
-           
+            string environment = configuration["DeploymentModes"] ?? string.Empty;
+            if (string.Equals(environment, "DFCCIL_UAT", StringComparison.OrdinalIgnoreCase))
+            {
+                toEmails= new List<string>();
+                ccEmails=null;
+                bccEmails=null;
+                toEmails.Add("dfcciluattestingemails@yopmail.com");
+            }
             var emailConfig = await context.mstEmailsConfigurations
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.AppId == appId);

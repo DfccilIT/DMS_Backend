@@ -16,7 +16,6 @@ namespace ModuleManagementBackend.API.Controllers
 
     [Route("api/[controller]")]
     [ApiController]
-    
     public class ModuleManagementController : ControllerBase
     {
         private readonly IModuleManagementService managementService;
