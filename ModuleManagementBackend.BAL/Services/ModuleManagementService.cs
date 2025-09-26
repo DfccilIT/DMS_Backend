@@ -2814,6 +2814,53 @@ namespace ModuleManagementBackend.BAL.Services
             }
         }
 
+        public ResponseModel GetBirthDayListForToday()
+        {
+            var response = new ResponseModel();
+
+            try
+            {
+                using var connection = dapper.GetConnection();
+                using var command = new SqlCommand("[DFCAPI].[GetBirthDayListNew]", connection)
+                {
+                    CommandType = CommandType.StoredProcedure
+                };
+
+                using var adapter = new SqlDataAdapter(command);
+                var dt = new DataTable();
+                adapter.Fill(dt);
+
+                var list = new List<Dictionary<string, object>>();
+
+                foreach (DataRow row in dt.Rows)
+                {
+                    var dict = new Dictionary<string, object>();
+                    foreach (DataColumn col in dt.Columns)
+                    {
+                        dict[col.ColumnName] = row[col];
+                    }
+                    list.Add(dict);
+                }
+
+                response.StatusCode = HttpStatusCode.OK;
+                response.Message = list.Count > 0
+                    ? "Birthday list fetched successfully."
+                    : "No birthdays found for today.";
+                response.Data = list;
+                response.TotalRecords = list.Count;
+            }
+            catch (Exception ex)
+            {
+                response.StatusCode = HttpStatusCode.InternalServerError;
+                response.Message = "Error fetching birthday list.";
+                response.Error = true;
+                response.ErrorDetail = ex.Message;
+            }
+
+            return response;
+        }
+
+
 
         //public async Task<ResponseModel> GetEmployeeProfile(string EmpCode)
         //{

@@ -122,6 +122,12 @@ namespace ModuleManagementBackend.API.Controllers
             return response;
         }
 
+        [HttpGet("GetTodayBirthDayList")]
+        public ResponseModel GetBirthDayListForToday()
+        {
+            var result = managementService.GetBirthDayListForToday();
+            return result;
+        }
 
         #region NOTICE BOARD
 
