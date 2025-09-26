@@ -2920,7 +2920,7 @@ namespace ModuleManagementBackend.BAL.Services
 
             try
             {
-                var EmployeeType = await context.MstEmployeeMasters.Where(x => x.Status==0 && x.TOemploy!=null).Select(x => x.TOemploy).Distinct().ToListAsync();
+                var EmployeeType = await context.MstEmployeeMasters.Where(x => x.Status==0 && x.TOemploy!=null).Select(x => x.TOemploy.ToUpper()).Distinct().ToListAsync();
 
                 var positionGrades = await context.mstPositionGreades
                     .OrderByDescending(p => p.PGOrder)

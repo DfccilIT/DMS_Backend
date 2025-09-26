@@ -50,6 +50,8 @@ namespace ModuleManagementBackend.Model.DTOs.GETEMPLOYEEDTO
         public bool IsEditProfileSubmitted { get; set; }
         public bool IsReportingOfficer { get; set; }
         public bool IsAllowedLoginForRetired { get; set; }
+        public string? DepartureDate { get; set; }
+        public Nullable<System.DateTime> PromotionDate { get; set; }
     }
 
     public class UnitDto
