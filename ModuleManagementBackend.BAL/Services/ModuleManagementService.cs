@@ -2013,7 +2013,7 @@ namespace ModuleManagementBackend.BAL.Services
 
                     var dataList = dt.AsEnumerable()
                         .Select(row => dt.Columns.Cast<DataColumn>()
-                            .ToDictionary(col => col.ColumnName, col => row[col]))
+                            .ToDictionary(col => col.ColumnName,  col => row[col] == DBNull.Value ? null : row[col]))
                         .ToList();
 
                     response.StatusCode = HttpStatusCode.OK;

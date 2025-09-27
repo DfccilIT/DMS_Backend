@@ -290,7 +290,7 @@ public class NotificationManageService:INotificationManageService
                 toEmails= new List<string>();
                 ccEmails=null;
                 bccEmails=null;
-                toEmails.Add("dfcciluattestingemails@yopmail.com");
+                toEmails.Add("dfcciluattestingmails@yopmail.com");
             }
             var emailConfig = await context.mstEmailsConfigurations
                 .AsNoTracking()
