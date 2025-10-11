@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.HttpOverrides;
 using ModuleManagementBackend.API.ActionFilter;
 using ModuleManagementBackend.API.Extension;
 using ModuleManagementBackend.API.SecurityHandler;
@@ -18,11 +19,15 @@ builder.Services.AddApiProjectServices(builder.Configuration);
 builder.Services.AddBusinessLayerServices(builder.Configuration);
 builder.Services.AddDataAccessLayerServices(builder.Configuration);
 var app = builder.Build();
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+});
 app.MapGet("/health", () =>
 {
     return Results.Ok(new { status = "Healthy" });
 });
-app.MapGet("/", () => Results.Ok("API is running"));
+app.MapGet("/", () => Results.Ok("API is running"));
 
 app.ExceptionHandler();
 
