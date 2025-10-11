@@ -73,7 +73,6 @@ namespace ModuleManagementBackend.BAL.Services
             ResponseModel responseModel = new ResponseModel();
             responseModel.StatusCode = System.Net.HttpStatusCode.OK;
             responseModel.Message = "Successfully sent message";
-            responseModel.Data = response;
 
             return responseModel;
 
