@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ModuleManagementBackend.BAL.IServices;
+using ModuleManagementBackend.Model.Common;
 using static ModuleManagementBackend.Model.DTOs.NotificationDTO.NotificationDTO;
 
 namespace ModuleManagementBackend.API.Controllers
@@ -67,7 +68,12 @@ namespace ModuleManagementBackend.API.Controllers
             return Ok(result);
         }
 
-        
+        [HttpPost("SendPushNotification")]
+        [AllowAnonymous]
+        public async Task<ResponseModel> UpastithiAlertNotification()
+        {
+            return await notificationManage.SendPushNotificationAsync();
+        }
 
     }
 }

@@ -30,6 +30,7 @@ namespace ModuleManagementBackend.BAL.IServices
         List<string>? ccEmails = null,
         List<string>? bccEmails = null
     );
+        Task<ResponseModel> SendPushNotificationAsync();
     }
 }
 

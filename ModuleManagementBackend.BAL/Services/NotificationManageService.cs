@@ -2,8 +2,11 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using ModuleManagementBackend.BAL.IServices;
+using ModuleManagementBackend.BAL.Services;
 using ModuleManagementBackend.DAL.DapperServices;
+using ModuleManagementBackend.DAL.FirebaseModels;
 using ModuleManagementBackend.DAL.Models;
+using ModuleManagementBackend.DAL.UpastithiModel;
 using ModuleManagementBackend.Model.Common;
 using System;
 using System.Data;
@@ -17,12 +20,18 @@ public class NotificationManageService:INotificationManageService
     private readonly IConfiguration configuration;
     private readonly SAPTOKENContext context;
     private readonly IDapperService dapper;
+    private readonly UpastithiContext upastithiContext;
+    private readonly IPushNotification firebase;
+    private readonly UpastithiDBContext upastithiDB;
 
-    public NotificationManageService(IConfiguration configuration, SAPTOKENContext _context, IDapperService _dapper)
+    public NotificationManageService(IConfiguration configuration, SAPTOKENContext _context, IDapperService _dapper,UpastithiContext upastithiContext, IPushNotification firebase, UpastithiDBContext upastithiDB)
     {
         this.configuration = configuration;
         context = _context;
         dapper = _dapper;
+        this.upastithiContext=upastithiContext;
+        this.firebase=firebase;
+        this.upastithiDB=upastithiDB;
     }
 
     public async Task<ResponseModel> SendSMSUsingURL(string clientId, string appId, string smstext, string mobile, string templateId, string userid)
@@ -562,6 +571,49 @@ public class NotificationManageService:INotificationManageService
                 StatusCode = HttpStatusCode.InternalServerError,
                 Message = "Error sending WhatsApp SMS",
                 Data = new { Error = ex.Message }
+            };
+        }
+    }
+    public async Task<ResponseModel> SendPushNotificationAsync()
+    {
+
+        bool alreadyCheckedIn = await upastithiDB.DayWiseAttendences
+            .AnyAsync(a =>  a.CreatedDate == DateTime.Today && a.CheckInTime != null);
+
+        if (alreadyCheckedIn)
+        {
+
+            return new ResponseModel()
+            {
+                StatusCode=HttpStatusCode.OK,
+                Message="Employee already checked in today"
+            };
+        }
+
+
+        string title = "Attendance Reminder";
+        string body = "Good morning! Please remember to check in as per your scheduled office hours.";
+
+       
+        var fcmToken = await upastithiContext.FirebaseNotifications
+            .Select(y => y.FCM_Token)
+            .ToArrayAsync();
+
+        
+
+      
+        try
+        {
+           var response= await firebase.SendPushNotificationToMultipleDevicesAsync(fcmToken, title, body);
+            return response;
+        }
+        catch (Exception ex)
+        {
+
+            return new ResponseModel()
+            {
+                StatusCode=HttpStatusCode.InternalServerError,
+                Message=ex.Message
             };
         }
     }

@@ -1,13 +1,13 @@
 ﻿{
    "CodeGenerationMode": 2,
-   "ContextClassName": "SAPTOKENContext",
+   "ContextClassName": "UpastithiDBContext",
    "ContextNamespace": null,
    "FilterSchemas": false,
    "IncludeConnectionString": false,
    "MinimumProductVersion": "2.6.0",
    "ModelNamespace": null,
    "OutputContextPath": null,
-   "OutputPath": "Models",
+   "OutputPath": "UpastithiModel",
    "PreserveCasingWithRegex": true,
    "ProjectRootNamespace": "ModuleManagementBackend.DAL",
    "Schemas": null,
@@ -16,131 +16,7 @@
    "T4TemplatePath": null,
    "Tables": [
       {
-         "Name": "[API].[apiUsers]",
-         "ObjectType": 0
-      },
-      {
-         "Name": "[API].[apiUsersCredits]",
-         "ObjectType": 0
-      },
-      {
-         "Name": "[API].[tblDeviceOTP]",
-         "ObjectType": 0
-      },
-      {
-         "Name": "[API].[tblWhiteListedDevicesAndIP]",
-         "ObjectType": 0
-      },
-      {
-         "Name": "[dbo].[EditEmployeeDetails]",
-         "ObjectType": 0
-      },
-      {
-         "Name": "[dbo].[EmailChangeRequests]",
-         "ObjectType": 0
-      },
-      {
-         "Name": "[dbo].[EmailSmsManagement]",
-         "ObjectType": 0
-      },
-      {
-         "Name": "[dbo].[EmployeeDependentDocuments]",
-         "ObjectType": 0
-      },
-      {
-         "Name": "[dbo].[MasterHolidayCalendar]",
-         "ObjectType": 0
-      },
-      {
-         "Name": "[dbo].[MstContractEmployeeMaster]",
-         "ObjectType": 0
-      },
-      {
-         "Name": "[dbo].[MstContractMaster]",
-         "ObjectType": 0
-      },
-      {
-         "Name": "[dbo].[MstDepartment]",
-         "ObjectType": 0
-      },
-      {
-         "Name": "[dbo].[mstEmailsConfiguration]",
-         "ObjectType": 0
-      },
-      {
-         "Name": "[dbo].[MstEmployeeDependent]",
-         "ObjectType": 0
-      },
-      {
-         "Name": "[dbo].[MstEmployeeMaster]",
-         "ObjectType": 0
-      },
-      {
-         "Name": "[dbo].[MstEmployeeMaster_Log]",
-         "ObjectType": 0
-      },
-      {
-         "Name": "[dbo].[MstEmployeeMasterProfileImage]",
-         "ObjectType": 0
-      },
-      {
-         "Name": "[dbo].[mstPositionGreades]",
-         "ObjectType": 0
-      },
-      {
-         "Name": "[dbo].[MstPosts]",
-         "ObjectType": 0
-      },
-      {
-         "Name": "[dbo].[MstUnit]",
-         "ObjectType": 0
-      },
-      {
-         "Name": "[dbo].[RegisterContractEmployees]",
-         "ObjectType": 0
-      },
-      {
-         "Name": "[dbo].[SMSLogDetail]",
-         "ObjectType": 0
-      },
-      {
-         "Name": "[dbo].[tblEmployeeOfTheMonth]",
-         "ObjectType": 0
-      },
-      {
-         "Name": "[dbo].[tblNoticeBoard]",
-         "ObjectType": 0
-      },
-      {
-         "Name": "[dbo].[todoList]",
-         "ObjectType": 0
-      },
-      {
-         "Name": "[dbo].[UnitNameDetails]",
-         "ObjectType": 0
-      },
-      {
-         "Name": "[DFCpolicy].[tblDownLoadLog]",
-         "ObjectType": 0
-      },
-      {
-         "Name": "[DFCpolicy].[tblPolices]",
-         "ObjectType": 0
-      },
-      {
-         "Name": "[DFCpolicy].[tblPolicyItems]",
-         "ObjectType": 0
-      },
-      {
-         "Name": "[form].[kraformRejectedLog]",
-         "ObjectType": 0
-      },
-      {
-         "Name": "[form].[kraUser]",
-         "ObjectType": 0
-      },
-      {
-         "Name": "[form].[kraUserlog]",
+         "Name": "[dbo].[DayWiseAttendences]",
          "ObjectType": 0
       }
    ],
