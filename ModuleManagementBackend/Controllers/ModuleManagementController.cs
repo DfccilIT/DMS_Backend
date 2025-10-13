@@ -245,6 +245,11 @@ namespace ModuleManagementBackend.API.Controllers
         {
             return await managementService.GetEmployeeProfile(empCode);
         }
+        [HttpGet("GetwithdrawalEmployee/{empCode}")]
+        public async Task<ResponseModel> GetwithdrawalEmployee(string empCode)
+        {
+            return await managementService.GetEmployeeProfile(empCode,9);
+        }
 
         [HttpGet]
         [Route("GetEditEmployeeStatus/{EmployeeCode}")]

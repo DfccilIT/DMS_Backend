@@ -64,7 +64,7 @@ namespace ModuleManagementBackend.BAL.IServices
         #endregion
 
         #region Employee Badge
-        Task<ResponseModel> GetEmployeeProfile(string empCode);
+        Task<ResponseModel> GetEmployeeProfile(string empCode,int status=0);
         Task<ResponseModel> GetAllMastersAsync();
         Task<ResponseModel> GetSelectedEmployeeColumnsAsync(string columnNamesCsv, string? employeeCode = null);
         Task<ResponseModel> GetEmployeeMasterColumnsAsync();

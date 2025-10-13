@@ -595,8 +595,8 @@ public class NotificationManageService:INotificationManageService
         string body = "Good morning! Please remember to check in as per your scheduled office hours.";
 
        
-        var fcmToken = await upastithiContext.FirebaseNotifications
-            .Select(y => y.FCM_Token)
+        var fcmToken = await upastithiContext.FirebaseNotifications.Where(x=>x.EMPId==900033)
+            .Select(y => y.FCM_Token )
             .ToArrayAsync();
 
         

@@ -2773,7 +2773,7 @@ namespace ModuleManagementBackend.BAL.Services
                 return response;
             }
         }
-        public async Task<ResponseModel> GetEmployeeProfile(string empCode)
+        public async Task<ResponseModel> GetEmployeeProfile(string empCode, int status=0)
         {
             try
             {
@@ -2781,7 +2781,7 @@ namespace ModuleManagementBackend.BAL.Services
 
                 using var multi = await connection.QueryMultipleAsync(
                     "[dbo].[GetEmployeeOptimise]",
-                    new { EmployeeCode = empCode },
+                    new { EmployeeCode = empCode,Status=status },
                     commandType: CommandType.StoredProcedure
                 );
 
