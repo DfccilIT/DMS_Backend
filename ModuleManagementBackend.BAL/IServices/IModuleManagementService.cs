@@ -106,5 +106,6 @@ namespace ModuleManagementBackend.BAL.IServices
         string employeeCode, IFormFile leftImage, IFormFile centerImage, IFormFile rightImage, string LoginUserId);
 
         Task<ResponseModel> GetEmployeeThreeWayPhotos(string employeeCode);
+        Task<ResponseModel> GetAllEmployeeThreeWayPhotos();
     }
 }

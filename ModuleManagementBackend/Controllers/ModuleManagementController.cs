@@ -418,6 +418,14 @@ namespace ModuleManagementBackend.API.Controllers
             var result = await managementService.GetEmployeeThreeWayPhotos(employeeCode);
             return StatusCode((int)result.StatusCode, result);
         }
+
+        [AllowAnonymous]
+        [HttpGet("GetAllEmployeeProfilePhoto")]
+        public async Task<IActionResult> GetAllEmployeeProfilePhoto()
+        {
+            var result = await managementService.GetAllEmployeeThreeWayPhotos();
+            return StatusCode((int)result.StatusCode, result);
+        }
     }
 
 }

@@ -1,13 +1,10 @@
 ﻿using ClosedXML.Excel;
 using Dapper;
-using DocumentFormat.OpenXml.Office2016.Excel;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Query.Internal;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Microsoft.IdentityModel.Protocols;
 using ModuleManagementBackend.BAL.IServices;
 using ModuleManagementBackend.BAL.IServices.ICacheServices;
 using ModuleManagementBackend.DAL.DapperServices;
@@ -16,16 +13,9 @@ using ModuleManagementBackend.Model.Common;
 using ModuleManagementBackend.Model.DTOs.EditEmployeeDTO;
 using ModuleManagementBackend.Model.DTOs.GETEMPLOYEEDTO;
 using System.Data;
-using System.Data.Common;
-using System.Diagnostics.Contracts;
-using System.Linq;
 using System.Net;
 using System.Net.Mail;
-using System.Numerics;
-using System.Reflection.Emit;
-using System.Security.Principal;
 using System.Text.RegularExpressions;
-using static ModuleManagementBackend.BAL.Services.AccountService;
 using static ModuleManagementBackend.Model.DTOs.HolidayCalenderDTO.HolidayCalenderCommonDTO;
 
 namespace ModuleManagementBackend.BAL.Services
@@ -2013,7 +2003,7 @@ namespace ModuleManagementBackend.BAL.Services
 
                     var dataList = dt.AsEnumerable()
                         .Select(row => dt.Columns.Cast<DataColumn>()
-                            .ToDictionary(col => col.ColumnName,  col => row[col] == DBNull.Value ? null : row[col]))
+                            .ToDictionary(col => col.ColumnName, col => row[col] == DBNull.Value ? null : row[col]))
                         .ToList();
 
                     response.StatusCode = HttpStatusCode.OK;
@@ -2773,7 +2763,7 @@ namespace ModuleManagementBackend.BAL.Services
                 return response;
             }
         }
-        public async Task<ResponseModel> GetEmployeeProfile(string empCode, int status=0)
+        public async Task<ResponseModel> GetEmployeeProfile(string empCode, int status = 0)
         {
             try
             {
@@ -2781,7 +2771,7 @@ namespace ModuleManagementBackend.BAL.Services
 
                 using var multi = await connection.QueryMultipleAsync(
                     "[dbo].[GetEmployeeOptimise]",
-                    new { EmployeeCode = empCode,Status=status },
+                    new { EmployeeCode = empCode, Status = status },
                     commandType: CommandType.StoredProcedure
                 );
 
@@ -2793,7 +2783,7 @@ namespace ModuleManagementBackend.BAL.Services
                     employee = employeeList
                 };
 
-                
+
 
                 return new ResponseModel
                 {
@@ -2995,7 +2985,7 @@ namespace ModuleManagementBackend.BAL.Services
                     .Select(c => new { c.Contractor, c.PkContractid })
                     .ToListAsync();
 
-                var mstUnit = await context.UnitNameDetails.Where(x=>x.IsActive == true)
+                var mstUnit = await context.UnitNameDetails.Where(x => x.IsActive == true)
                    .OrderBy(c => c.SequenceID)
 
                    .Select(c => new { c.Id, c.Name, c.SequenceID, c.Abbrivation })
@@ -3360,7 +3350,7 @@ namespace ModuleManagementBackend.BAL.Services
 
                 foreach (var unit in createHolidayDto.Units)
                 {
-                   
+
                     var holiday = new MasterHolidayCalendar
                     {
                         HolidayDate = createHolidayDto.HolidayDate,
@@ -3377,7 +3367,7 @@ namespace ModuleManagementBackend.BAL.Services
                     createdHolidays.Add(holiday);
                 }
 
-               
+
                 context.MasterHolidayCalendars.AddRange(createdHolidays);
                 await context.SaveChangesAsync();
 
@@ -4315,26 +4305,41 @@ namespace ModuleManagementBackend.BAL.Services
                     return response;
                 }
 
+               
                 var photos = await context.MstEmployeeMasterProfileImages
                     .Where(x => x.EmployeeCode == employeeCode && x.Status == 0)
                     .Select(x => new
                     {
                         x.ImageType,
                         x.Image,
-                        Url = $"{httpContext.HttpContext.Request.Scheme}://{httpContext.HttpContext.Request.Host}/EmployeeThreeWayPhoto/{x.Image}"
+                        x.CreatedOn
                     })
                     .ToListAsync();
 
-                if (!photos.Any())
+               
+                var employeePhotos = new List<object>();
+
+                if (photos.Any())
                 {
-                    response.Message = "No images found for this employee.";
-                    response.StatusCode = HttpStatusCode.NotFound;
-                    return response;
+                    var formatted = new
+                    {
+                        EmployeeCode = employeeCode,
+                        Photos = photos.Select(p => new
+                        {
+                            p.ImageType,
+                            p.Image,
+                            LastUpdatedOn = p.CreatedOn,
+                            Url = $"{httpContext.HttpContext.Request.Scheme}://{httpContext.HttpContext.Request.Host}/EmployeeThreeWayPhoto/{p.Image}"
+                        }).ToList()
+                    };
+
+                    employeePhotos.Add(formatted);
                 }
 
+                
                 response.Message = "Images retrieved successfully.";
                 response.StatusCode = HttpStatusCode.OK;
-                response.Data = photos;
+                response.Data = employeePhotos.Any() ? employeePhotos : new List<object>();
             }
             catch (Exception ex)
             {
@@ -4344,6 +4349,58 @@ namespace ModuleManagementBackend.BAL.Services
 
             return response;
         }
+
+
+
+        public async Task<ResponseModel> GetAllEmployeeThreeWayPhotos()
+        {
+            var response = new ResponseModel();
+
+            try
+            {
+                
+                var rawData = await context.MstEmployeeMasterProfileImages
+                    .Where(x => x.Status == 0)
+                    .Select(x => new
+                    {
+                        x.EmployeeCode,
+                        x.ImageType,
+                        x.Image,
+                        x.CreatedOn
+                    })
+                    .ToListAsync();
+
+               
+                var groupedPhotos = rawData
+                    .GroupBy(x => x.EmployeeCode)
+                    .Select(g => new
+                    {
+                        EmployeeCode = g.Key,
+                        Photos = g.Select(p => new
+                        {
+                            p.ImageType,
+                            p.Image,
+                            LastUpdatedOn = p.CreatedOn,
+                            Url = $"{httpContext.HttpContext.Request.Scheme}://{httpContext.HttpContext.Request.Host}/EmployeeThreeWayPhoto/{p.Image}"
+                        }).ToList()
+                    })
+                    .ToList();
+
+                response.Message = "Images retrieved successfully.";
+                response.StatusCode = HttpStatusCode.OK;
+                response.Data = groupedPhotos.Any() ? groupedPhotos : new List<object>();
+            }
+            catch (Exception ex)
+            {
+                response.Message = $"Error: {ex.Message}";
+                response.StatusCode = HttpStatusCode.InternalServerError;
+            }
+
+            return response;
+        }
+
+
+
     }
     #endregion
 
