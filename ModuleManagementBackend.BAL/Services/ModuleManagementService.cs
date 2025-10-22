@@ -4350,32 +4350,62 @@ namespace ModuleManagementBackend.BAL.Services
             return response;
         }
 
-
-
         public async Task<ResponseModel> GetAllEmployeeThreeWayPhotos()
         {
             var response = new ResponseModel();
 
             try
             {
-                
                 var rawData = await context.MstEmployeeMasterProfileImages
+                    .Join(context.MstEmployeeMasters,
+                        img => img.EmployeeCode,
+                        emp => emp.EmployeeCode,
+                        (img, emp) => new { img, emp }) 
+                    .GroupJoin(context.UnitNameDetails, 
+                        joined => joined.emp.Location,
+                        unit => unit.Name,
+                        (joined, units) => new { joined, units }) 
+                    .SelectMany(
+                        temp => temp.units.DefaultIfEmpty(), 
+                        (temp, unit) => new
+                        {
+                            temp.joined.img.EmployeeCode,
+                            temp.joined.img.ImageType,
+                            temp.joined.img.Image,
+                            temp.joined.img.CreatedOn,
+                            temp.joined.emp.Status,
+                            temp.joined.emp.UserName,
+                            temp.joined.emp.Post,
+                            temp.joined.emp.Location,
+                            temp.joined.emp.DeptDFCCIL,
+                            UnitId = unit != null ? unit.Id.ToString() : null  
+                        })
                     .Where(x => x.Status == 0)
                     .Select(x => new
                     {
                         x.EmployeeCode,
+                        x.UserName,
+                        x.Post,
+                        x.DeptDFCCIL,
+                        x.Location,
+                        x.UnitId,
                         x.ImageType,
                         x.Image,
                         x.CreatedOn
                     })
                     .ToListAsync();
 
-               
                 var groupedPhotos = rawData
                     .GroupBy(x => x.EmployeeCode)
                     .Select(g => new
                     {
                         EmployeeCode = g.Key,
+                        EmployeeName = g.First().UserName,
+                        Designation = g.First().Post,
+                        Department = g.First().DeptDFCCIL,
+                        UnitId = g.First().UnitId,
+                        UnitName = g.First().Location,
+                        
                         Photos = g.Select(p => new
                         {
                             p.ImageType,
@@ -4398,6 +4428,74 @@ namespace ModuleManagementBackend.BAL.Services
 
             return response;
         }
+
+
+        //public async Task<ResponseModel> GetAllEmployeeThreeWayPhotos()
+        //{
+        //    var response = new ResponseModel();
+
+        //    try
+        //    {
+
+        //        var rawData = await context.MstEmployeeMasterProfileImages.
+        //                            Join(context.MstEmployeeMasters,
+        //                                 img => img.EmployeeCode,
+        //                                 emp => emp.EmployeeCode,
+        //                                 (img, emp) => new
+        //                                 {
+        //                                     img.EmployeeCode,
+        //                                     img.ImageType,
+        //                                     img.Image,
+        //                                     img.CreatedOn,
+        //                                     emp.Status,
+        //                                     emp.UserName,
+        //                                     emp.Post,
+        //                                     emp.Location,
+        //                                     emp.DeptDFCCIL
+        //                                 })
+        //            .Where(x => x.Status == 0)
+        //            .Select(x => new
+        //            {
+        //                x.EmployeeCode,
+        //                x.UserName,
+        //                x.Post,
+        //                x.DeptDFCCIL,
+        //                x.Location,
+        //                x.ImageType,
+        //                x.Image,
+        //                x.CreatedOn
+
+        //            })
+        //            .ToListAsync();
+
+
+        //        var groupedPhotos = rawData
+        //            .GroupBy(x => x.EmployeeCode)
+        //            .Select(g => new
+        //            {
+        //                EmployeeCode = g.Key,
+        //                Photos = g.Select(p => new
+        //                {
+        //                    p.ImageType,
+        //                    p.Image,
+        //                    LastUpdatedOn = p.CreatedOn,
+        //                    Url = $"{httpContext.HttpContext.Request.Scheme}://{httpContext.HttpContext.Request.Host}/EmployeeThreeWayPhoto/{p.Image}"
+        //                }).ToList()
+        //            })
+        //            .ToList();
+
+        //        response.Message = "Images retrieved successfully.";
+        //        response.StatusCode = HttpStatusCode.OK;
+        //        response.Data = groupedPhotos.Any() ? groupedPhotos : new List<object>();
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        response.Message = $"Error: {ex.Message}";
+        //        response.StatusCode = HttpStatusCode.InternalServerError;
+        //    }
+
+        //    return response;
+        //}
 
 
 
