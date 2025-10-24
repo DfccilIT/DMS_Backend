@@ -1,24 +1,26 @@
-﻿using System.IdentityModel.Tokens.Jwt;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
+using ModuleManagementBackend.BAL.IServices;
+using ModuleManagementBackend.DAL.DBContext;
+using ModuleManagementBackend.DAL.Models;
+using ModuleManagementBackend.Model.Common;
+using Newtonsoft.Json;
+using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Text;
-using Microsoft.Extensions.Configuration;
-using Microsoft.IdentityModel.Tokens;
-using Newtonsoft.Json;
-using ModuleManagementBackend.BAL.IServices;
-using ModuleManagementBackend.DAL.DBContext;
-using ModuleManagementBackend.Model.Common;
 
 namespace ModuleManagementBackend.BAL.Services
 {
-    public class AccountService: IAccountService
+    public class AccountService : IAccountService
     {
         private readonly IConfiguration configuration;
         private readonly ModuleManagementDbContext dbContext;
         private readonly IEmployeeService employeeService;
 
-        public AccountService(IConfiguration configuration,ModuleManagementDbContext dbContext,IEmployeeService employeeService)
+        public AccountService(IConfiguration configuration, ModuleManagementDbContext dbContext, IEmployeeService employeeService)
         {
             this.configuration = configuration;
             this.dbContext = dbContext;
@@ -37,7 +39,31 @@ namespace ModuleManagementBackend.BAL.Services
             }
         }
 
-        public async Task<List<string>> GetUserRolesAsync(int empCode)
+        //public async Task<List<string>> GetUserRolesAsync(int empCode)
+        //{
+        //    try
+        //    {
+        //        var isSuperAdmin = configuration["SuperAdmin"]?.ToString() == empCode.ToString();
+
+        //        if (isSuperAdmin)
+        //        {
+        //            return new List<string> { "superAdmin" };
+        //        }
+
+        //        var query = (from ur in dbContext.userRoleMappings
+        //                     join rm in dbContext.RoleMasters on ur.RoleMasterId equals rm.Id
+        //                     where ur.EmpCode == empCode
+        //                     select rm.RoleName).ToList();
+
+        //        return query.Any() ? query : new List<string> { "user" };
+        //    }
+        //    catch (Exception ex)
+        //    {
+
+        //        return new List<string> { "user" };
+        //    }
+        //}
+        public async Task<List<object>> GetUserRolesAsync(SAPTOKENContext ticketContext, int empCode)
         {
             try
             {
@@ -45,25 +71,91 @@ namespace ModuleManagementBackend.BAL.Services
 
                 if (isSuperAdmin)
                 {
-                    return new List<string> { "superAdmin" };
+                    return new List<object>
+            {
+                new
+                {
+                    RoleAssign = "superAdmin",
+                    Units = new List<object>
+                    {
+                        new { UnitId = 0, UnitName = "All Units" }
+                    }
+                }
+            };
                 }
 
-                var query = (from ur in dbContext.userRoleMappings
-                             join rm in dbContext.RoleMasters on ur.RoleMasterId equals rm.Id
-                             where ur.EmpCode == empCode
-                             select rm.RoleName).ToList();
+                
+                var userRoles = await dbContext.userRoleMappings
+                    .Include(x => x.Role)
+                    .Where(ur => ur.EmpCode == empCode)
+                    .Select(ur => new
+                    {
+                        ur.Role.RoleName,
+                        ur.UnitId
+                    })
+                    .ToListAsync();
 
-                return query.Any() ? query : new List<string> { "user" };
-            }
-            catch (Exception ex)
+                if (!userRoles.Any())
+                {
+                    return new List<object>
             {
+                new
+                {
+                    RoleAssign = "user",
+                    Units = new List<object>()
+                }
+            };
+                }
 
-                return new List<string> { "user" };
+                
+                var unitDetails = await ticketContext.UnitNameDetails
+                    .Select(u => new
+                    {
+                        u.Id,
+                        u.Name
+                    })
+                    .ToListAsync();
+
+                
+                var roleWithUnits = userRoles
+                    .GroupBy(ur => ur.RoleName)
+                    .Select(g => new
+                    {
+                        RoleAssign = g.Key,
+                        Units = g
+                            .Join(unitDetails,
+                                  ur => ur.UnitId,
+                                  ud => ud.Id,
+                                  (ur, ud) => new
+                                  {
+                                      UnitId = ud.Id,
+                                      UnitName = ud.Name
+                                  })
+                            .Distinct()
+                            .ToList()
+                    })
+                    .ToList<object>();
+
+                return roleWithUnits;
+            }
+            catch
+            {
+                return new List<object>
+        {
+            new
+            {
+                RoleAssign = "user",
+                Units = new List<object>()
+            }
+        };
             }
         }
+
+
+
         public async Task<ResponseModel> IsValidProgress(string token, string empCode)
         {
-            ResponseModel responseModel = new ResponseModel(); 
+            ResponseModel responseModel = new ResponseModel();
 
             var Environment = configuration["DeploymentModes"]?.ToString().Trim();
             var TokenExpireTime = Convert.ToInt32(configuration["TokenExpireTime"]);

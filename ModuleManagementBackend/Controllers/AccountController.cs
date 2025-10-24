@@ -25,7 +25,7 @@ namespace ModuleManagementBackend.API.Controllers
         }
 
 
-       
+
 
         [HttpGet("profile")]
         public async Task<ResponseModel> GetUserProfile()
@@ -77,16 +77,7 @@ namespace ModuleManagementBackend.API.Controllers
                     var isSuperAdmin = _configuration["SuperAdmin"]?.ToString() == employeeDetails.Emp.EmployeeCode;
                     List<string> userRoles = new List<string>();
 
-                    if (!isSuperAdmin)
-                    {
-
-                        var roles = await _accountRepository.GetUserRolesAsync(empCode);
-                        userRoles = roles.Any() ? roles : new List<string> { "user" };
-                    }
-                    else
-                    {
-                        userRoles.Add("superAdmin");
-                    }
+                    var roles = await _accountRepository.GetUserRolesAsync(context, empCode);
                     var cadreData = await GetCadreDataAsync();
 
 
@@ -146,7 +137,7 @@ namespace ModuleManagementBackend.API.Controllers
                         UnitId = employeeDetails.Id,
                         Department = employeeDetails.Emp.DeptDFCCIL,
                         Level = employeeDetails.Emp.PositionGrade,
-                        DMSRoles = userRoles,
+                        DMSRoles = roles,
                         GlobelAssigndRolesAndUnits = MainunitAssigned
                     };
 
@@ -179,7 +170,7 @@ namespace ModuleManagementBackend.API.Controllers
 
             try
             {
-                var roles = await _accountRepository.GetUserRolesAsync(empCode);
+                var roles = await _accountRepository.GetUserRolesAsync(context, empCode);
 
                 responseModel.StatusCode = System.Net.HttpStatusCode.OK;
                 responseModel.Message = "Roles retrieved successfully";

@@ -1,4 +1,5 @@
-﻿using ModuleManagementBackend.Model.Common;
+﻿using ModuleManagementBackend.DAL.Models;
+using ModuleManagementBackend.Model.Common;
 
 namespace ModuleManagementBackend.BAL.IServices
 {
@@ -6,6 +7,6 @@ namespace ModuleManagementBackend.BAL.IServices
     {
         Task<ResponseModel> IsValidProgress(string token, string empCode);
         Task<EmployeeDetails> GetEmployeeDetailsAsync(int empCode);
-        Task<List<string>> GetUserRolesAsync(int empCode);
+        Task<List<object>> GetUserRolesAsync(SAPTOKENContext ticketContext, int empCode);
     }
 }
