@@ -221,16 +221,17 @@ namespace ModuleManagementBackend.API.Controllers
         #endregion
 
         #region CONTRACTUAL EMPLOYEE
-
-        [HttpGet("GetAllContractualEmployeeRequests")]
-        public async Task<ResponseModel> GetAllContractualEmployeeEditRequests()
+        //[AllowAnonymous]
+        [HttpGet("GetAllContractualEmployeeRequests/{unitId}")]
+        public async Task<ResponseModel> GetAllContractualEmployeeEditRequests(int unitId = 0)
         {
-            return await managementService.GetAllContractualEmployeeEditRequestsAsync();
+            return await managementService.GetAllContractualEmployeeEditRequestsAsync(unitId);
         }
-        [HttpGet("GetAcceptOrRejectContractualEmployeeRequests/{Status}")]
-        public async Task<ResponseModel> GetAcceptOrRejectContractualEmployeeRequests(int Status)
+        //[AllowAnonymous]
+        [HttpGet("GetAcceptOrRejectContractualEmployeeRequests/{Status}/{UnitId}")]
+        public async Task<ResponseModel> GetAcceptOrRejectContractualEmployeeRequests(int Status,int UnitId=0)
         {
-            return await managementService.GetAcceptOrRejectContractualEmployeeEditRequestsAsync(Status);
+            return await managementService.GetAcceptOrRejectContractualEmployeeEditRequestsAsync(Status, UnitId);
         }
         [AllowAnonymous]
         [HttpPut("ProcessContractualEmployeeRequest")]

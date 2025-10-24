@@ -1834,41 +1834,57 @@ namespace ModuleManagementBackend.BAL.Services
                 return response;
             }
         }
-        public async Task<ResponseModel> GetAllContractualEmployeeEditRequestsAsync()
+
+        public async Task<ResponseModel> GetAllContractualEmployeeEditRequestsAsync(int unitId = 0)
         {
             var response = new ResponseModel();
 
-
             try
             {
+                
                 var requests = await context.RegisterContractEmployees
                     .Include(e => e.fkContract)
                     .Where(e => e.Status == 8)
-                    .Select(e => new
-                    {
-                        e.ContEmpID,
-                        e.UserName,
-                        e.DeptDFCCIL,
-                        e.Location,
-                        e.Mobile,
-                        e.emailAddress,
-                        e.TOemploy,
-                        e.Gender,
-                        e.DOB,
-                        e.DOJDFCCIL,
-                        e.Status,
-                        vendorId = e.fkContractid,
-                        vendor = e.fkContract.Contractor,
-                        e.remarks,
-                        e.CreateDate,
-                        e.UpdatedDate,
-                        e.UpdatedBy,
-                        AppointmentDoc = e.AppointmentDoc!=null ? $"{baseUrl}/DocUpload/OfficeOrder/{e.AppointmentDoc}" : null,
-                        ImageUrl = e.ProfilePhoto!=null ? $"{baseUrl}/DocUpload/ProfilePhoto/{e.ProfilePhoto}" : null
-                    })
+                    .Join(
+                        context.UnitNameDetails
+                            .Where(u => unitId == 0 || u.Id == unitId),  
+                        e => e.Location, 
+                        u => u.Name,  
+                        (e, u) => new   
+                        {
+                            e.ContEmpID,
+                            e.UserName,
+                            e.DeptDFCCIL,
+                            e.Location,
+                            e.Mobile,
+                            e.emailAddress,
+                            e.TOemploy,
+                            e.Gender,
+                            e.DOB,
+                            e.DOJDFCCIL,
+                            e.Status,
+                            vendorId = e.fkContractid,
+                            vendor = e.fkContract.Contractor,
+                            e.remarks,
+                            e.CreateDate,
+                            e.UpdatedDate,
+                            e.UpdatedBy,
+
+                            
+                            UnitID = u.Id,
+                            UnitName = u.Name,
+                            
+
+                            AppointmentDoc = e.AppointmentDoc != null
+                                ? $"{baseUrl}/DocUpload/OfficeOrder/{e.AppointmentDoc}"
+                                : null,
+                            ImageUrl = e.ProfilePhoto != null
+                                ? $"{baseUrl}/DocUpload/ProfilePhoto/{e.ProfilePhoto}"
+                                : null
+                        })
                     .ToListAsync();
 
-                response.Message = "Contratual Employee requests fetched successfully.";
+                response.Message = "Contractual employee requests fetched successfully.";
                 response.StatusCode = HttpStatusCode.OK;
                 response.Data = requests;
                 response.TotalRecords = requests.Count;
@@ -1881,17 +1897,68 @@ namespace ModuleManagementBackend.BAL.Services
 
             return response;
         }
-        public async Task<ResponseModel> GetAcceptOrRejectContractualEmployeeEditRequestsAsync(int status)
+
+
+        //public async Task<ResponseModel> GetAllContractualEmployeeEditRequestsAsync()
+        //{
+        //    var response = new ResponseModel();
+
+
+        //    try
+        //    {
+        //        var requests = await context.RegisterContractEmployees
+        //            .Include(e => e.fkContract)
+        //            .Where(e => e.Status == 8)
+        //            .Select(e => new
+        //            {
+        //                e.ContEmpID,
+        //                e.UserName,
+        //                e.DeptDFCCIL,
+        //                e.Location,
+        //                e.Mobile,
+        //                e.emailAddress,
+        //                e.TOemploy,
+        //                e.Gender,
+        //                e.DOB,
+        //                e.DOJDFCCIL,
+        //                e.Status,
+        //                vendorId = e.fkContractid,
+        //                vendor = e.fkContract.Contractor,
+        //                e.remarks,
+        //                e.CreateDate,
+        //                e.UpdatedDate,
+        //                e.UpdatedBy,
+        //                AppointmentDoc = e.AppointmentDoc!=null ? $"{baseUrl}/DocUpload/OfficeOrder/{e.AppointmentDoc}" : null,
+        //                ImageUrl = e.ProfilePhoto!=null ? $"{baseUrl}/DocUpload/ProfilePhoto/{e.ProfilePhoto}" : null
+        //            })
+        //            .ToListAsync();
+
+        //        response.Message = "Contratual Employee requests fetched successfully.";
+        //        response.StatusCode = HttpStatusCode.OK;
+        //        response.Data = requests;
+        //        response.TotalRecords = requests.Count;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        response.Message = $"An error occurred: {ex.Message}";
+        //        response.StatusCode = HttpStatusCode.InternalServerError;
+        //    }
+
+        //    return response;
+        //}
+        public async Task<ResponseModel> GetAcceptOrRejectContractualEmployeeEditRequestsAsync(int status,int unitId=0)
         {
             var response = new ResponseModel();
 
             try
             {
+                var unitname = context.UnitNameDetails.Where(x => x.Id==unitId).FirstOrDefault()?.Name;
+
                 if (status == 0)
                 {
 
                     var requests = await context.MstEmployeeMasters
-                        .Where(e => e.Status == 0 && e.TOemploy.ToLower() == "contractual" && e.DeptDFCCIL !="SAP CONSULTANT")
+                        .Where(e => e.Status == 0 && e.TOemploy.ToLower() == "contractual" && e.DeptDFCCIL !="SAP CONSULTANT" && (e.Location==unitname|| unitId==0))
                         .GroupJoin(
                             context.RegisterContractEmployees,
                             emp => emp.EmployeeCode,
@@ -1943,7 +2010,7 @@ namespace ModuleManagementBackend.BAL.Services
 
                     var requests = await context.RegisterContractEmployees
                         .Include(x => x.fkContract)
-                        .Where(c => c.Status == status)
+                        .Where(c => c.Status == status &&( c.Location==unitname|| unitId==0))
                         .Select(c => new
                         {
                             c.ContEmpID,

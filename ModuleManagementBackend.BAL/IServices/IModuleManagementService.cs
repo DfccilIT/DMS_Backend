@@ -46,8 +46,8 @@ namespace ModuleManagementBackend.BAL.IServices
         #endregion
 
         #region Contractual Employee Edit Requests
-        Task<ResponseModel> GetAllContractualEmployeeEditRequestsAsync();
-        Task<ResponseModel> GetAcceptOrRejectContractualEmployeeEditRequestsAsync(int status);
+        Task<ResponseModel> GetAllContractualEmployeeEditRequestsAsync(int unitId = 0);
+        Task<ResponseModel> GetAcceptOrRejectContractualEmployeeEditRequestsAsync(int status, int unitId);
         Task<ResponseModel> ProcessEditContractualEmployeeRequest(AprooveContractualEmployeeDto request, string LoginUserId);
         #endregion
 
