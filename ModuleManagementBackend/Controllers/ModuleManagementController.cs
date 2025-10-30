@@ -403,7 +403,7 @@ namespace ModuleManagementBackend.API.Controllers
 
             return result;
         }
-
+        [AllowAnonymous]
         [HttpPost("uploadEmployeeProfilePhoto")]
         public async Task<IActionResult> UploadEmployeeThreeWayPhotos(
        string employeeCode, IFormFile leftImage, IFormFile centerImage, IFormFile rightImage)
