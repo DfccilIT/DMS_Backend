@@ -1,13 +1,10 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ModuleManagementBackend.BAL.IServices;
-using ModuleManagementBackend.BAL.Services;
 using ModuleManagementBackend.DAL.DapperServices;
 using ModuleManagementBackend.Model.Common;
 using ModuleManagementBackend.Model.DTOs.EditEmployeeDTO;
-using Newtonsoft.Json.Linq;
 using System.Net;
-using System.Text.Json;
 using static ModuleManagementBackend.BAL.Services.AccountService;
 
 namespace ModuleManagementBackend.API.Controllers
