@@ -415,6 +415,7 @@ namespace ModuleManagementBackend.API.Controllers
 
             return result;
         }
+
         [AllowAnonymous]
         [HttpPost("uploadEmployeeProfilePhoto")]
         public async Task<IActionResult> UploadEmployeeThreeWayPhotos(
