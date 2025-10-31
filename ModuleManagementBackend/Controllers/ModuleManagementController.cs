@@ -137,6 +137,7 @@ namespace ModuleManagementBackend.API.Controllers
             return result;
         }
 
+
         #region NOTICE BOARD
 
         [HttpGet("GetAllNoticeBoard")]
