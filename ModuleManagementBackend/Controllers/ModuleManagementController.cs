@@ -60,6 +60,12 @@ namespace ModuleManagementBackend.API.Controllers
             return await managementService.GetAllEditEmployeeRequests(employeeCode, location, userName);
         }
 
+        [HttpGet("ModuleMangement/GetAllEditEmployeeRequestForContractual")]
+        public async Task<ResponseModel> GetAllEditEmployeeRequestForContractual(string? employeeCode = null, string? location = null, string? userName = null)
+        {
+            return await managementService.GetAllEditEmployeeRequestsForContractual(employeeCode, location, userName);
+        }
+
         [HttpPut("ModuleMangement/ProceedEditEmployeeRequest")]
         public async Task<ResponseModel> ProceedEditEmployeeRequest([FromBody] AprooveEmployeeReportDto aprooveEmployee)
         {
@@ -76,6 +82,12 @@ namespace ModuleManagementBackend.API.Controllers
         public async Task<ResponseModel> GetAllReportingOfficerRequest(string? employeeCode = null, string? location = null, string? userName = null)
         {
             return await managementService.GetAllReportingOfficerRequest(employeeCode, location, userName);
+        }
+
+        [HttpGet("ModuleMangement/GetAllReportingOfficerRequestForContractual")]
+        public async Task<ResponseModel> GetAllReportingOfficerRequestForContractual(string? employeeCode = null, string? location = null, string? userName = null)
+        {
+            return await managementService.GetAllReportingOfficerRequestForContractual(employeeCode, location, userName);
         }
 
         [HttpPut("ModuleMangement/ProceedReportingOfficerRequest")]

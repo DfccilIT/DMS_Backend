@@ -11,6 +11,8 @@ namespace ModuleManagementBackend.BAL.IServices
 {
     public interface IModuleManagementService
     {
+        Task<ResponseModel> GetAllReportingOfficerRequestForContractual(string? employeeCode = null, string? location = null, string? userName = null);
+        Task<ResponseModel> GetAllEditEmployeeRequestsForContractual(string? employeeCode = null, string? location = null, string? userName = null, string? empcode = null, string? autoId = null);
         Task<ResponseModel> EditEmployeeProfileAsync(EditEmployeeDto incoming);
         Task<ResponseModel> GetAllEditEmployeeRequests(string? employeeCode = null, string? location = null, string? userName = null, string? empcode = null, string? autoId = null);
         Task<ResponseModel> ProcessEditEmployeeRequest(AprooveEmployeeReportDto request);

@@ -138,7 +138,95 @@ namespace ModuleManagementBackend.BAL.Services
                     ee => ee.EmployeeCode,
                     mm => mm.EmployeeCode,
                     (ee, mm) => new { ee, mm })
-                .Where(e => e.ee.status == 99 && e.ee.TableName == "P");
+                .Where(e => e.ee.status == 99 && e.ee.TableName == "P" && e.mm.TOemploy.ToLower()!="contractual");
+
+            if (!string.IsNullOrWhiteSpace(employeeCode))
+                query = query.Where(e => e.ee.EmployeeCode == employeeCode);
+
+            if (!string.IsNullOrWhiteSpace(location))
+                query = query.Where(e => e.ee.Location != null && e.ee.Location.Contains(location));
+
+            if (!string.IsNullOrWhiteSpace(userName))
+                query = query.Where(e => e.ee.UserName != null && e.ee.UserName.Contains(userName));
+
+            var tempResult = await query
+                .OrderByDescending(x => x.ee.EdtEmpDetID)
+                .ToListAsync();
+
+            var result = tempResult.Select(x =>
+            {
+                var oldData = new Dictionary<string, object?>();
+                var newData = new Dictionary<string, object?>();
+
+                string Normalize(object? val)
+                {
+                    if (val == null) return "";
+                    return val.ToString()?.Trim().ToLower() ?? "";
+                }
+
+                void Compare(string field, object? oldVal, object? newVal, bool alwaysInclude = false)
+                {
+                    if (alwaysInclude)
+                    {
+
+                        oldData[field] = oldVal;
+
+
+                        if (Normalize(oldVal) != Normalize(newVal))
+                        {
+                            newData[field] = newVal;
+                        }
+                    }
+                    else
+                    {
+
+                        if (Normalize(oldVal) != Normalize(newVal))
+                        {
+                            oldData[field] = oldVal;
+                            newData[field] = newVal;
+                        }
+                    }
+                }
+
+
+                Compare("employeeCode", x.mm.EmployeeCode, x.ee.EmployeeCode, alwaysInclude: true);
+                Compare("userName", x.mm.UserName, x.ee.UserName, alwaysInclude: true);
+                Compare("designation", x.mm.Post, x.ee.Designation, alwaysInclude: true);
+                Compare("department", x.mm.DeptDFCCIL, x.ee.Department, alwaysInclude: true);
+                Compare("location", x.mm.Location, x.ee.Location, alwaysInclude: true);
+                Compare("tOemploy", x.mm.TOemploy, x.ee.Toemploy, alwaysInclude: true);
+                Compare("gender", x.mm.Gender, x.ee.Gender);
+                Compare("positionGrade", x.mm.PositionGrade, x.ee.PositionGrade);
+                Compare("dob", x.mm.DOB, x.ee.DOB);
+                Compare("dateOfAnniversary", x.mm.AnniversaryDate, x.ee.DateOfAnniversary);
+                Compare("dateOfJoining", x.mm.DOJDFCCIL, x.ee.DateOfJoining);
+
+
+
+                return new
+                {
+                    RequestId = x.ee.EdtEmpDetID,
+                    OldRecored = oldData,
+                    NewRecords = newData
+                };
+            }).ToList();
+
+            responseModel.Message = "Data fetched successfully";
+            responseModel.StatusCode = System.Net.HttpStatusCode.OK;
+            responseModel.Data = result;
+            responseModel.TotalRecords = result.Count;
+            return responseModel;
+        }
+        public async Task<ResponseModel> GetAllEditEmployeeRequestsForContractual(string? employeeCode = null, string? location = null, string? userName = null, string? empcode = null, string? autoId = null)
+        {
+            ResponseModel responseModel = new ResponseModel();
+
+            var query = context.EditEmployeeDetails
+                .Join(context.MstEmployeeMasters,
+                    ee => ee.EmployeeCode,
+                    mm => mm.EmployeeCode,
+                    (ee, mm) => new { ee, mm })
+                .Where(e => e.ee.status == 99 && e.ee.TableName == "P" && e.mm.TOemploy.ToLower()=="contractual");
 
             if (!string.IsNullOrWhiteSpace(employeeCode))
                 query = query.Where(e => e.ee.EmployeeCode == employeeCode);
@@ -427,6 +515,102 @@ namespace ModuleManagementBackend.BAL.Services
             return response;
         }
         public async Task<ResponseModel> GetAllReportingOfficerRequest(string? employeeCode = null, string? location = null, string? userName = null)
+        {
+
+            ResponseModel responseModel = new ResponseModel();
+            try
+            {
+
+
+                var query = context.EditEmployeeDetails
+            .Join(context.MstEmployeeMasters,
+                  ee => ee.EmployeeCode,
+                  mm => mm.EmployeeCode,
+                  (ee, mm) => new { ee, mm })
+
+
+               .Where(e => e.ee.status == 99 && e.ee.TableName=="R" && e.mm.TOemploy.ToLower().Trim()=="contractual");
+                if (!string.IsNullOrWhiteSpace(employeeCode))
+                {
+                    query = query.Where(e => e.ee.EmployeeCode == employeeCode);
+                }
+
+                if (!string.IsNullOrWhiteSpace(location))
+                {
+                    query = query.Where(e => e.ee.Location != null && e.ee.Location.Contains(location));
+                }
+
+                if (!string.IsNullOrWhiteSpace(userName))
+                {
+                    query = query.Where(e => e.ee.UserName != null && e.ee.UserName.Contains(userName));
+                }
+
+                var result = await query.Select(x => new
+                {
+                    RequestId = x.ee.EdtEmpDetID,
+                    OldRecored = new
+                    {
+                        x.mm.EmployeeCode,
+                        x.mm.UserName,
+                        x.mm.Gender,
+                        Designation = x.mm.Post,
+                        x.mm.PositionGrade,
+                        Department = x.mm.DeptDFCCIL,
+                        x.mm.DOB,
+                        DateOfAnniversary = x.mm.AnniversaryDate,
+                        DateOfJoining = x.mm.DOJDFCCIL,
+                        x.mm.Location,
+                        x.mm.Mobile,
+                        x.mm.emailAddress,
+                        x.mm.PersonalEmailAddress,
+                        x.mm.TOemploy,
+                        x.mm.AboutUs,
+                        x.mm.Photo,
+                        x.mm.ReportingOfficer,
+                        ExtensionNo = x.mm.ExtnNo,
+
+                    },
+                    NewRecords = new
+                    {
+                        x.ee.EmployeeCode,
+                        x.ee.UserName,
+                        x.ee.Gender,
+                        x.ee.Designation,
+                        x.ee.PositionGrade,
+                        x.ee.Department,
+                        x.ee.DOB,
+                        x.ee.DateOfAnniversary,
+                        x.ee.DateOfJoining,
+                        x.ee.Location,
+                        x.ee.Mobile,
+                        emailAddress = x.ee.Email,
+                        PersonalEmailAddress = x.ee.PersonalEmailId,
+                        TOemploy = x.ee.Toemploy,
+                        x.ee.AboutUs,
+                        x.ee.Photo,
+                        x.ee.ReportingOfficer,
+                        x.ee.ExtensionNo,
+                    },
+                }).OrderByDescending(x => x.RequestId).ToListAsync();
+
+
+
+                responseModel.Message="Data fetched successfully";
+                responseModel.StatusCode=System.Net.HttpStatusCode.OK;
+                responseModel.Data = result;
+                responseModel.TotalRecords=result.Count();
+
+                return responseModel;
+            }
+            catch (Exception ex)
+            {
+                responseModel.Message="Internal Server Error";
+                responseModel.StatusCode=System.Net.HttpStatusCode.InternalServerError;
+                responseModel.Data = ex.Message;
+                return responseModel;
+            }
+        }
+        public async Task<ResponseModel> GetAllReportingOfficerRequestForContractual(string? employeeCode = null, string? location = null, string? userName = null)
         {
 
             ResponseModel responseModel = new ResponseModel();
