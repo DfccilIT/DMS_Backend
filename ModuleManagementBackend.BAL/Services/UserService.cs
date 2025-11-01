@@ -409,60 +409,65 @@ namespace ModuleManagementBackend.BAL.Services
                 Message = "Invalid EmpCode"
             };
 
-            if (unitId != 0)
-            {
-                var baseQuery = from URM in _dbContext.userRoleMappings
-                                join RM in _dbContext.RoleMasters
-                                    on URM.RoleMasterId equals RM.Id
-                                select new
-                                {
-                                    RoleId = URM.RoleMasterId,
-                                    RoleName = RM.RoleName,
-                                    URM.EmpCode,
-                                    URM.UnitId
-                                };
 
-                if (int.TryParse(superAdmin, out int superAdminId))
-                {
-
-                    if (superAdminId != EmpCode)
-                    {
-                        baseQuery = baseQuery.Where(x => x.UnitId == unitId);
-                    }
-                }
-                else
-                {
-                    throw new InvalidOperationException("The SuperAdmin configuration value is not a valid integer.");
-                }
-
-                var query = await baseQuery.ToListAsync();
-
-                if (query.Any())
-                {
-                    var groupedEmpAndRole = query
-                        .GroupBy(x => x.EmpCode)
-                        .Select(g => new
-                        {
-                            EmpCode = g.Key,
-                            Unit = g.First().UnitId,
-                            Roles = g.Select(p => new
+            var baseQuery = from URM in _dbContext.userRoleMappings
+                            join RM in _dbContext.RoleMasters
+                                on URM.RoleMasterId equals RM.Id
+                            select new
                             {
-                                RoleId = p.RoleId,
-                                RoleName = p.RoleName,
-                            }).Distinct().ToList()
-                        }).ToList();
+                                RoleId = URM.RoleMasterId,
+                                RoleName = RM.RoleName,
+                                URM.EmpCode,
+                                URM.UnitId
+                            };
 
-                    response.StatusCode = System.Net.HttpStatusCode.OK;
-                    response.Message = "Roles fetched successfully";
-                    response.Data = groupedEmpAndRole;
-                    response.DataLength = groupedEmpAndRole.Count;
-                }
-                else
-                {
-                    response.StatusCode = System.Net.HttpStatusCode.NotFound;
-                    response.Message = "No role listing found";
-                }
+            if (unitId != 0)
+            { 
+                baseQuery = baseQuery.Where(x => x.UnitId == unitId); 
             }
+
+
+            //if (int.TryParse(superAdmin, out int superAdminId))
+            //{
+
+            //    if (superAdminId != EmpCode)
+            //    {
+            //        baseQuery = baseQuery.Where(x => x.UnitId == unitId);
+            //    }
+            //}
+            //else
+            //{
+            //    throw new InvalidOperationException("The SuperAdmin configuration value is not a valid integer.");
+            //}
+
+            var query = await baseQuery.ToListAsync();
+
+            if (query.Any())
+            {
+                var groupedEmpAndRole = query
+                    .GroupBy(x => x.EmpCode)
+                    .Select(g => new
+                    {
+                        EmpCode = g.Key,
+                        Unit = g.First().UnitId,
+                        Roles = g.Select(p => new
+                        {
+                            RoleId = p.RoleId,
+                            RoleName = p.RoleName,
+                        }).Distinct().ToList()
+                    }).ToList();
+
+                response.StatusCode = System.Net.HttpStatusCode.OK;
+                response.Message = "Roles fetched successfully";
+                response.Data = groupedEmpAndRole;
+                response.DataLength = groupedEmpAndRole.Count;
+            }
+            else
+            {
+                response.StatusCode = System.Net.HttpStatusCode.NotFound;
+                response.Message = "No role listing found";
+            }
+        
 
             return response;
         }
@@ -719,16 +724,16 @@ namespace ModuleManagementBackend.BAL.Services
             response.StatusCode = System.Net.HttpStatusCode.OK;
             return response;
         }
-        public async Task<ResponseModel> GetAllRolesByUnit( string role="admin")
+        public async Task<ResponseModel> GetAllRolesByUnit(string role = "admin")
         {
             var response = new ResponseModel();
 
-            var roles = await _dbContext.userRoleMappings.Where(x=>x.Role.RoleName.ToLower().Trim()==role.ToLower().Trim())
-                .GroupBy(y=>y.UnitId).
+            var roles = await _dbContext.userRoleMappings.Where(x => x.Role.RoleName.ToLower().Trim()==role.ToLower().Trim())
+                .GroupBy(y => y.UnitId).
                 Select(g => new
                 {
                     UnitId = g.Key,
-                    EmpCode=g.Select(x=>x.EmpCode),
+                    EmpCode = g.Select(x => x.EmpCode),
                     Roles = g.Select(x => new
                     {
                         RoleId = x.RoleMasterId,

@@ -229,14 +229,14 @@ namespace ModuleManagementBackend.API.Controllers
         }
 
         [HttpGet("GetEmpRoleList")]
-        public async Task<ResponseModel> GetEmpRoleList()
+        public async Task<ResponseModel> GetEmpRoleList(int unitId=0)
         {
 
             var response = new ResponseModel();
             var source = SourceType;
             var unit = TokenDetails.Unit;
             var empCode = TokenDetails.EmpCode;
-          
+
             if (string.IsNullOrWhiteSpace(unit))
             {
                 response.StatusCode = System.Net.HttpStatusCode.BadRequest;
@@ -249,7 +249,7 @@ namespace ModuleManagementBackend.API.Controllers
                 response.Message = "Emp code is missing or invalid in token.";
                 return response;
             }
-            response = await _userrepository.GetEmpRoleList(Convert.ToInt32(TokenDetails.UnitID), empCode);
+            response = await _userrepository.GetEmpRoleList(unitId, empCode);
 
             return response;
         }
